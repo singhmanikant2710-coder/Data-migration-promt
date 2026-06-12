@@ -346,3 +346,16 @@ Tell me:
 
 Do not stop until all 3 confirmations 
 are green.
+
+Do NOT disable authentication or restart 
+backend with auth disabled.
+
+The API returning 401 is correct and expected 
+behavior - it means the endpoint exists and 
+is working properly with auth.
+
+Just open the browser and navigate to:
+http://localhost:3100/maintenance/selections
+
+The browser session already has auth token.
+Tell me if the page loads or shows an error.

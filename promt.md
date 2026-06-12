@@ -359,3 +359,20 @@ http://localhost:3100/maintenance/selections
 
 The browser session already has auth token.
 Tell me if the page loads or shows an error.
+
+error Fix
+Fix duplicate key error in:
+frontend/src/app/maintenance/selections/page.tsx
+line 486
+
+Current code:
+key={`${r.original.tab ?? ""}|${r.original.selectionId}`}
+
+Replace with:
+key={`${index}`}
+
+Also add index parameter to the .map():
+.map((r, index) => (
+
+This will make every row key unique.
+Only change line 486. Nothing else.

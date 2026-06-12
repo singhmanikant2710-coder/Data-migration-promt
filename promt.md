@@ -246,3 +246,58 @@ full file path. Wait for approval
 before FILE 7.
 
 
+FILE 6 confirmed. Now create FILE 7:
+
+Create the frontend page following exact 
+same pattern as:
+frontend/src/app/maintenance/cas-findings/
+page.tsx
+
+FILE 7:
+frontend/src/app/maintenance/selections/
+page.tsx
+
+Page title: "Selections — Library Maintenance"
+
+FILTER SECTION:
+- "Filter by Tab" dropdown
+- Populated from getDistinctTabs()
+- Default: "All Tabs"
+- On change: refetch list with tab filter
+
+ADD NEW SELECTION FORM:
+- Tab: dropdown (from getDistinctTabs())
+- Section: dropdown 
+  (cascades based on selected Tab,
+  populated from getSectionsByTab(tab))
+- Selection_id: number input
+- Selection: text input
+- Create button
+- Validation: all fields required
+- Show inline error on duplicate
+
+SELECTIONS TABLE:
+Columns:
+Tab | Section | Selection_id | 
+Selection | Actions
+
+Actions per row:
+- Edit: makes row inline editable
+- Save: calls updateSelection()
+- Delete: calls deleteSelection() 
+  with confirmation dialog
+
+Import service from:
+frontend/src/services/api/selections.ts
+
+Use exact same:
+- Loading state pattern
+- Error handling pattern
+- TypeScript interfaces
+- Component structure
+as cas-findings page.tsx
+
+After creating FILE 7, stop and confirm 
+full file path. Wait for approval 
+before FILE 8.
+

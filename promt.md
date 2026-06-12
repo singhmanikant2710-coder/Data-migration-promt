@@ -84,3 +84,52 @@ Requirements:
 After creating FILE 3, stop and confirm 
 full file path. Wait for approval 
 before FILE 4.
+
+
+FILE 3 confirmed. Now create FILE 4:
+
+Create the SelectionsController following 
+exact same pattern as FindingsController.cs
+that you already read.
+
+FILE 4:
+backend/src/Casrr.Api/Controllers/
+SelectionsController.cs
+
+Requirements:
+- Route: "api/v1/selections"
+- Authorize policy: "RequireActiveUser"
+- Inherit: BaseTemplateController
+- Inject: ISelectionRepository, ILogger, 
+  TelemetryClient, IGraphUserInfoProvider
+- Same error codes pattern as 
+  FindingsController
+
+ENDPOINTS:
+1. GET api/v1/selections/library
+   - Optional ?tab= filter
+   - Returns list of SelectionLibraryItem
+
+2. GET api/v1/selections/library/{id}
+   - Returns single item, 404 if missing
+
+3. POST api/v1/selections/library
+   - Validates Tab + SelectionId unique
+   - 201 on success, 409 on duplicate
+
+4. PUT api/v1/selections/library/{id}
+   - Updates item, 404 if missing
+
+5. DELETE api/v1/selections/library/{id}
+   - Deletes item, 404 if missing
+
+6. GET api/v1/selections/tabs
+   - Returns distinct Tab values
+
+7. GET api/v1/selections/sections?tab={tab}
+   - Returns distinct Section values 
+     filtered by Tab
+
+After creating FILE 4, stop and confirm 
+full file path. Wait for approval 
+before FILE 5.

@@ -1,128 +1,93 @@
-I am uploading two Excel files:
+Using the existing CAS Findings maintenance tab
+(/maintenance/cas-findings) as the code pattern
+and architecture reference, implement full CRUD
+for the Selections maintenance tab.
  
-File 1 = Source System
-File 2 = Target System
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DATABASE TABLE: [dbo].[03_LIBRARY_09_Selections]
+Columns:
+- Selection_id (int, PK, default 0)
+- Tab (nvarchar 255, nullable)
+- Section (nvarchar 255, nullable)
+- Selection (nvarchar 255, nullable)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  
-Perform a COMPLETE migration readiness assessment.
+BACKEND (.NET Clean Architecture):
+Follow exact same pattern as CAS Findings
+backend files.
  
-Do not limit analysis to column names only.
+- Entity: Selection.cs
+- Repository interface: ISelectionRepository
+- Repository implementation: SelectionRepository
+  (use same ORM/Dapper pattern as existing)
+- Queries: GetAllSelections, GetSelectionById,
+  GetDistinctTabs, GetSectionsByTab
+- Commands: CreateSelection, UpdateSelection,
+  DeleteSelection
+- Controller: SelectionsController
+  GET /api/selections (all, with optional
+    ?tab= filter)
+  GET /api/selections/{id}
+  GET /api/selections/tabs (distinct Tab values)
+  GET /api/selections/sections?tab={tab}
+  POST /api/selections
+  PUT /api/selections/{id}
+  DELETE /api/selections/{id}
+- Add proper exception handling, validation,
+  and error responses matching existing
+  controllers exactly
  
-Analyze every table, column, datatype, relationship, naming convention, duplicate table, hidden field, legacy field, and business impact.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  
-Provide findings in the following sections:
+FRONTEND (Next.js):
+Route: /maintenance/selections
+Page title: "Selections — Library Maintenance"
  
-1. TABLE ANALYSIS
-- Tables present in Source but missing in Target
-- Tables present in Target but missing in Source
-- Duplicate tables in Target representing same Source table
-- Duplicate tables in Source representing same Target table
-- Sheet/Table naming mismatches
-- Plural vs singular naming differences
-- Underscore vs space naming differences
-- Potential table consolidation opportunities
-- Potential migration risks caused by duplicate tables
+Layout matches cas-findings page structure BUT
+with these specific fields:
  
-2. COLUMN ANALYSIS
-For every table provide:
+1. FILTER SECTION (top):
+   - "Filter by Tab" dropdown
+   - Populated from GET /api/selections/tabs
+   - Default: "All Tabs"
  
-| Source Table | Target Table | Source Column | Target Column | Status |
+2. ADD NEW SELECTION FORM:
+   - Tab: dropdown (from distinct Tab values)
+   - Section: dropdown (cascades — filters by
+     selected Tab via GET /api/selections/
+     sections?tab={tab})
+   - Selection_id: number input
+   - Selection: text input
+   - Create button
+   - Validation: Tab + Selection_id must be
+     unique. Show inline error if duplicate.
  
-Status should be:
-- Exact Match
-- Naming Difference
-- Data Type Difference
-- Missing in Source
-- Missing in Target
-- Potential Mapping Candidate
-- Requires Business Validation
+3. SELECTIONS TABLE (below form):
+   Columns:
+   Tab | Section | Selection_id | Selection |
+   Actions
  
-3. DATA TYPE ANALYSIS
-Identify:
-- Data type mismatches
-- Precision differences
-- Integer vs Text conflicts
-- Date vs DateTime conflicts
-- Choice vs Text conflicts
-- Boolean vs Text conflicts
+   Actions per row:
+   - Edit button: makes row fields editable
+     inline (same as cas-findings pattern)
+   - Save button: calls PUT endpoint
+   - Delete button: calls DELETE endpoint with
+     confirmation
  
-Provide migration impact and recommendation.
+4. Add "Selections" link in sidebar navigation
+   under Maintenance section (same position
+   pattern as other maintenance items)
  
-4. DUPLICATE ENTITY ANALYSIS
-Detect:
-- Multiple target tables that appear to represent same source table
-- Versioned tables (_ss, _org, _local, _backup, _copy, _history)
-- Legacy entities
-- Staging entities
-- Archive entities
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  
-Explain migration impact.
- 
-5. LEGACY / HIDDEN FIELD ANALYSIS
-Identify fields like:
-- *_legacy
-- *_hidden
-- *_hist
-- *_hldn
-- audit columns
-- migration columns
-- staging columns
- 
-Explain:
-- Why they exist
-- Whether migration is required
-- Risk if ignored
- 
-6. PRIMARY KEY ANALYSIS
-Identify:
-- Primary keys
-- Candidate keys
-- Missing keys
-- Surrogate keys
-- Auto-generated IDs
- 
-Highlight migration risks.
- 
-7. RELATIONSHIP ANALYSIS
-Identify:
-- Lookup relationships
-- Parent-child relationships
-- Foreign keys
-- Junction tables
-- Missing relationship mappings
- 
-8. DATA QUALITY RISKS
-Identify:
-- Null risks
-- Duplicate risks
-- Orphan record risks
-- Referential integrity risks
-- Missing mandatory fields
- 
-9. MIGRATION COMPLEXITY REPORT
- 
-For each table classify:
- 
-- Low Complexity
-- Medium Complexity
-- High Complexity
-- Critical Risk
- 
-Provide reason.
- 
-10. FINAL EXECUTIVE SUMMARY
- 
-Generate:
- 
-A. Missing Tables Summary
-B. Missing Columns Summary
-C. Duplicate Tables Summary
-D. Hidden/Legacy Fields Summary
-E. Data Type Mismatch Summary
-F. Migration Risks Summary
-G. Recommended Mapping Strategy
- 
-Highlight every issue, even minor naming differences.
- 
-Assume this analysis will be used by Solution Architects and Data Migration Engineers before production migration.
- 
-Be extremely strict and detailed.
+STRICT RULES:
+- DO NOT modify any existing files
+- Only create new files
+- Follow exact naming conventions of existing
+  maintenance tabs
+- Follow exact folder structure of project
+- Match existing API service call patterns
+  (axios/fetch — whichever is used)
+- Match existing TypeScript interfaces pattern
+- Match existing error handling pattern in UI
+- Match existing loading state pattern in UI

@@ -183,4 +183,66 @@ After adding, confirm the line number
 where it was added.
 
 
+FILE 5 confirmed. Now create FILE 6:
+
+Create the frontend API service file 
+following exact same pattern as:
+frontend/src/services/findingsService.ts
+(or whatever the cas-findings service 
+file is named)
+
+FILE 6:
+frontend/src/services/selectionsService.ts
+
+Functions needed:
+
+1. getSelections(tab?: string)
+   GET /api/v1/selections/library
+   optional ?tab= filter
+
+2. getSelectionById(id: number)
+   GET /api/v1/selections/library/{id}
+
+3. createSelection(data: CreateSelectionDto)
+   POST /api/v1/selections/library
+
+4. updateSelection(id: number, 
+   data: UpdateSelectionDto)
+   PUT /api/v1/selections/library/{id}
+
+5. deleteSelection(id: number)
+   DELETE /api/v1/selections/library/{id}
+
+6. getDistinctTabs()
+   GET /api/v1/selections/tabs
+
+7. getSectionsByTab(tab: string)
+   GET /api/v1/selections/sections?tab={tab}
+
+TypeScript interfaces needed:
+- SelectionLibraryItem {
+    selectionId: number
+    tab: string | null
+    section: string | null
+    selection: string | null
+  }
+- CreateSelectionDto {
+    tab: string
+    section: string
+    selectionId: number
+    selection: string
+  }
+- UpdateSelectionDto {
+    tab?: string
+    section?: string
+    selection?: string
+  }
+
+Use exact same axios/fetch pattern as 
+existing service files.
+
+After creating FILE 6, stop and confirm 
+full file path. Wait for approval 
+before FILE 7.
+
 

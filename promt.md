@@ -301,3 +301,18 @@ After creating FILE 7, stop and confirm
 full file path. Wait for approval 
 before FILE 8.
 
+
+FILE 8 confirmed. Now for the final step:
+
+Find the sidebar navigation file where 
+maintenance menu items are listed.
+It likely contains links to:
+- cas-findings
+- cas-users
+- covenants
+- policy-exceptions
+- sample-criteria
+
+First just tell me the exact file path 
+of the sidebar/navigation file.
+Do not edit anything yet.

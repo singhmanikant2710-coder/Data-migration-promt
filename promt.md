@@ -513,3 +513,34 @@ page.tsx
 
 Confirm file path after completion.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fix the Selections Library table in:
+frontend/src/app/maintenance/selections/page.tsx
+
+CURRENT ISSUE:
+All table rows show editable text inputs 
+by default. This is wrong.
+
+CORRECT BEHAVIOR (match CAS Users pattern):
+- All rows should be READ-ONLY by default
+- Tab column: plain text (green pill badge)
+- Section column: plain text (not input)
+- Selection Id: plain text (not input)
+- Selection column: plain text (not textarea)
+- Actions: only "Edit" and "Delete" buttons 
+  visible by default
+  (Save button hidden when not editing)
+
+- When "Edit" clicked on a row:
+  • ONLY that row becomes editable
+  • Section becomes dropdown
+  • Selection Id becomes number input
+  • Selection becomes textarea
+  • Save (green) and Cancel (gray) appear
+  • Edit button hides
+  • Delete button hides while editing
+
+- All other rows remain read-only
+
+This is the standard inline-edit pattern.
+Only modify page.tsx. Confirm after fix.

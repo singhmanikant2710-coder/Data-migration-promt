@@ -133,3 +133,29 @@ ENDPOINTS:
 After creating FILE 4, stop and confirm 
 full file path. Wait for approval 
 before FILE 5.
+
+
+
+FILE 4 confirmed. Now create FILE 5:
+
+Register SelectionRepository in dependency 
+injection following exact same pattern as 
+FindingsRepository registration.
+
+FILE 5:
+Check where IFindingsRepository is registered
+in the project (likely in):
+backend/src/Casrr.Infrastructure/
+DependencyInjection.cs
+OR
+backend/src/Casrr.Api/Extensions/
+StartupExtensions.cs
+
+DO NOT modify existing files.
+Just tell me the exact file path where 
+IFindingsRepository is registered so I 
+can confirm before you add 
+ISelectionRepository registration.
+
+Confirm the file path only. 
+Do not edit anything yet.

@@ -159,3 +159,28 @@ ISelectionRepository registration.
 
 Confirm the file path only. 
 Do not edit anything yet.
+
+FILE 5 confirmed location.
+
+Now add ISelectionRepository registration 
+in StartupExtensions.cs following exact 
+same pattern as IFindingsRepository 
+registration in that file.
+
+This requires modifying existing file:
+backend/src/Casrr.Api/Extensions/
+StartupExtensions.cs
+
+Add ONLY these two lines in the correct 
+place (where other repositories are 
+registered):
+
+services.AddScoped<ISelectionRepository, 
+SqlSelectionRepository>();
+
+Do not change anything else in the file.
+After adding, confirm the line number 
+where it was added.
+
+
+

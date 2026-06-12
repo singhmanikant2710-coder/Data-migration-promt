@@ -316,3 +316,33 @@ It likely contains links to:
 First just tell me the exact file path 
 of the sidebar/navigation file.
 Do not edit anything yet.
+
+
+All files have been created. Now do the 
+final steps to make selections tab live:
+
+STEP 1: Restart backend
+Stop the current running backend and 
+restart it with:
+dotnet run --project backend/src/Casrr.Api/
+Casrr.Api.csproj --launch-profile "Casrr.Api"
+
+Wait for "Now listening on: 
+http://localhost:5200" message.
+
+STEP 2: Verify backend API works
+Test this endpoint returns 200:
+GET http://localhost:5200/api/v1/selections/library
+
+STEP 3: Verify frontend page works
+Check http://localhost:3100/maintenance/selections
+returns 200 (not 404)
+
+STEP 4: Confirm all working
+Tell me:
+✅ Backend restarted successfully
+✅ GET /api/v1/selections/library = 200
+✅ /maintenance/selections = 200
+
+Do not stop until all 3 confirmations 
+are green.

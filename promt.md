@@ -22,3 +22,28 @@ backend/src/Casrr.Domain/Entities/Selection.cs
 After creating FILE 1, stop and confirm
 the full file path. Wait for my approval
 before FILE 2.
+_________________________________________________________________________
+FILE 1 confirmed. Now create FILE 2:
+ 
+Create the repository interface following
+exact same pattern as IFindingsRepository.
+ 
+FILE 2:
+backend/src/Casrr.Application/Interfaces/
+ISelectionRepository.cs
+ 
+Methods needed:
+- GetAllAsync(string? tab = null)
+- GetByIdAsync(int selectionId)
+- GetDistinctTabsAsync()
+- GetSectionsByTabAsync(string tab)
+- CreateAsync(SelectionLibraryItem item)
+- UpdateAsync(SelectionLibraryItem item)
+- DeleteAsync(int selectionId)
+ 
+After creating FILE 2, stop and confirm
+the full file path. Wait for approval
+before FILE 3.
+
+
+------------------------------------------------------------------------------

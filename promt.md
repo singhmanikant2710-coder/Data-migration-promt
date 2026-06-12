@@ -376,3 +376,140 @@ Also add index parameter to the .map():
 
 This will make every row key unique.
 Only change line 486. Nothing else.
+
+
+
+---- Making Best UI Through Below Promt--------
+Redesign the Selections — Library Maintenance 
+page at:
+frontend/src/app/maintenance/selections/page.tsx
+
+Make it look more professional and impressive 
+than the current CAS Users/CAS Findings pages.
+A senior developer should be proud of this UI.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DESIGN INSPIRATION:
+Modern enterprise tools like 
+Bloomberg Terminal, Salesforce Lightning, 
+or Linear.app — clean, data-dense, 
+professional.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. PAGE HEADER SECTION:
+   - Left: Page title "Selections" in bold
+     Subtitle: "Library Maintenance" 
+     in smaller muted text below
+   - Right: 
+     • Search/filter input with search icon
+     • "Filter by Tab" dropdown
+     • "+ Add Selection" button 
+       (filled navy blue, white text,
+       rounded, with + icon)
+   - Thin divider line below header
+
+2. STATS BAR (below header):
+   - Small pill badges showing:
+     "Total: XX records"
+     "Tabs: XX"  
+     "Sections: XX"
+   - Light gray background bar
+   - Auto-calculated from data
+
+3. TABLE DESIGN:
+   - Sticky column headers
+   - Header: dark navy (#1F3864) background,
+     white text, uppercase small font
+   - Columns: 
+     Tab | Section | Selection Id | 
+     Selection | Actions
+   - Tab column: colored badge/pill 
+     (different color per tab name)
+   - Alternating row colors 
+     (white / very light blue #F8FAFF)
+   - Smooth hover effect on rows
+     (light blue highlight)
+   - Subtle bottom border on each row
+   - Actions column: 
+     Edit = outline blue button
+     Save = filled green button  
+     Delete = filled red button
+     All small, compact, rounded
+
+4. INLINE ADD ROW:
+   - Click "+ Add Selection" → 
+     highlighted yellow/amber row 
+     appears at TOP of table
+   - Row has: Tab dropdown, Section 
+     dropdown (cascades), Selection Id 
+     number input, Selection text input
+   - "✓ Save" green button
+   - "✗ Cancel" gray button
+   - Row has distinct background to 
+     stand out from data rows
+
+5. INLINE EDIT ROW:
+   - Click Edit → that specific row 
+     turns light blue/highlighted
+   - Fields become editable inputs
+   - Save = green, Cancel = gray
+   - Smooth transition animation
+
+6. PAGINATION BAR:
+   - Left: "Showing 1-10 of 55 results"
+     in muted gray text
+   - Center: Page number buttons
+     (1, 2, 3... with current highlighted 
+     in navy)
+   - Right: 
+     "Rows per page:" dropdown
+     (10, 25, 50, 100)
+   - Clean minimal style
+
+7. EMPTY STATE:
+   - If no data or filter returns nothing:
+     Show centered icon + 
+     "No selections found" message +
+     "Clear filters" link
+
+8. LOADING STATE:
+   - Skeleton loader rows while fetching
+     (gray animated placeholder rows)
+   - Not just a spinner
+
+9. DELETE CONFIRMATION:
+   - Small modal popup (not browser alert)
+   - "Delete Selection?" title
+   - Shows the Selection text being deleted
+   - "Cancel" outline button
+   - "Delete" red filled button
+
+10. TOAST NOTIFICATIONS:
+    - Success: green toast bottom-right
+      "Selection created successfully"
+      "Selection updated successfully"  
+      "Selection deleted successfully"
+    - Error: red toast
+      "Failed to save. Please try again."
+    - Auto-dismiss after 3 seconds
+
+11. RESPONSIVE:
+    - Table scrolls horizontally on 
+      small screens
+    - Actions column stays sticky right
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TECHNICAL:
+- Use Tailwind CSS classes only
+- Keep all existing API service calls
+- Keep TypeScript interfaces same
+- Add smooth CSS transitions
+- No external UI libraries needed
+- Match existing Next.js patterns
+
+Only modify:
+frontend/src/app/maintenance/selections/
+page.tsx
+
+Confirm file path after completion.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

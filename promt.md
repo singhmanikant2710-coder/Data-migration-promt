@@ -47,3 +47,40 @@ before FILE 3.
 
 
 ------------------------------------------------------------------------------
+FILE 2 confirmed. Now create FILE 3:
+
+Create the repository implementation following 
+exact same pattern as FindingsRepository.
+
+FILE 3:
+backend/src/Casrr.Infrastructure/Repositories/
+SelectionRepository.cs
+
+Requirements:
+- Implement ISelectionRepository
+- Use same Dapper/EF pattern as 
+  FindingsRepository
+- Database table: [dbo].[03_LIBRARY_09_Selections]
+- Column mappings:
+  Selection_id → SelectionId
+  Tab → Tab
+  Section → Section
+  Selection → Selection
+- GetAllAsync: optional tab filter
+  SELECT * FROM [03_LIBRARY_09_Selections]
+  WHERE (@tab IS NULL OR Tab = @tab)
+- GetDistinctTabsAsync:
+  SELECT DISTINCT Tab FROM 
+  [03_LIBRARY_09_Selections]
+  WHERE Tab IS NOT NULL ORDER BY Tab
+- GetSectionsByTabAsync:
+  SELECT DISTINCT Section FROM 
+  [03_LIBRARY_09_Selections]
+  WHERE Tab = @tab AND Section IS NOT NULL
+  ORDER BY Section
+- Inject same DbConnection/DbContext as 
+  existing repositories
+
+After creating FILE 3, stop and confirm 
+full file path. Wait for approval 
+before FILE 4.

@@ -544,3 +544,50 @@ CORRECT BEHAVIOR (match CAS Users pattern):
 
 This is the standard inline-edit pattern.
 Only modify page.tsx. Confirm after fix.
+
+
+Fix the typography and row styling in:
+frontend/src/app/maintenance/selections/page.tsx
+
+ISSUES TO FIX:
+
+1. TEXT SPACING:
+   - Remove any letter-spacing or 
+     word-spacing from table cells
+   - Section column text showing as 
+     "L G D  G r a d e" — fix to 
+     normal "LGD Grade"
+   - Use: tracking-normal (not tracking-wide
+     or tracking-widest)
+
+2. FONT SIZE:
+   - Table body text: text-sm (14px)
+   - Not text-base or text-lg
+   - Match compact style like image reference
+
+3. ROW HEIGHT:
+   - Reduce row padding to py-2 px-3
+   - Rows should be compact not spacious
+   - Similar to a dense data table
+
+4. COLUMN HEADER:
+   - Keep uppercase headers
+   - But font size: text-xs
+   - tracking-wider only on HEADERS
+   - NOT on data cells
+
+5. SELECTION ID column:
+   - Center aligned
+   - text-sm
+
+6. TAB pill/badge:
+   - text-xs font
+   - Compact padding px-2 py-0.5
+
+7. ACTION BUTTONS:
+   - text-xs size
+   - Compact px-2 py-1 padding
+
+Only modify styling/className in page.tsx.
+Do not change any logic or API calls.
+Confirm after fix.

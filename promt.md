@@ -1192,3 +1192,123 @@ page.tsx
 Confirm after completion.
 
 
+
+New Feature Error Resolve 
+
+Update "Add New Category/Section" feature 
+in all 4 maintenance pages.
+
+CORRECT BEHAVIOR:
+When user adds a new category/section:
+1. INSERT a new record in database
+2. Dropdown shows DISTINCT values only
+3. Duplicate category name not allowed
+   (check before insert)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE 1:
+frontend/src/app/maintenance/selections/page.tsx
+
+When user adds new Section:
+- Check if section already exists for 
+  that Tab using getSectionsByTab(tab)
+- If EXISTS → show error:
+  "Section already exists for this tab"
+- If NOT exists → call:
+  POST /api/v1/selections/library
+  body: {
+    tab: selectedTab,
+    section: newSectionName,
+    selectionId: 0,
+    selection: ""
+  }
+- Refresh sections dropdown
+- Show success toast
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE 2:
+frontend/src/app/maintenance/cas-findings/page.tsx
+
+When user adds new Category:
+- Check if category already exists in 
+  current distinct categories list
+  (case-insensitive check)
+- If EXISTS → show error:
+  "Category already exists"
+- If NOT exists → call:
+  POST /api/v1/findings/library
+  body: {
+    component: firstAvailableComponent,
+    findingCode: "CAT-" + Date.now(),
+    category: newCategoryName,
+    description: "",
+    guidance: ""
+  }
+- Refresh categories list (distinct)
+- Show success toast
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE 3:
+frontend/src/app/maintenance/covenants/page.tsx
+
+When user adds new Category:
+- Check if category already exists in 
+  current distinct categories list
+  (case-insensitive check)
+- If EXISTS → show error:
+  "Category already exists"
+- If NOT exists → call:
+  POST /api/v1/covenants/library
+  body: {
+    code: "CAT-" + Date.now(),
+    covenantCategory: newCategoryName,
+    covenantType: "",
+    order: 0
+  }
+- Refresh categories list (distinct)
+- Show success toast
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE 4:
+frontend/src/app/maintenance/policy-exceptions/page.tsx
+
+When user adds new Category:
+- Check if category already exists in 
+  current distinct categories list
+  (case-insensitive check)
+- If EXISTS → show error:
+  "Category already exists"
+- If NOT exists → call:
+  POST /api/v1/policy-exceptions/library
+  body: {
+    code: "CAT-" + Date.now(),
+    category: newCategoryName,
+    description: "",
+    level: "",
+    codeDescription: "",
+    multiple: "",
+    internalPortcat: "",
+    policyReference: ""
+  }
+- Refresh categories list (distinct)
+- Show success toast
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+RULES FOR ALL FILES:
+- Dropdown always shows DISTINCT values
+- DB can have multiple records same category
+- Duplicate check is case-insensitive
+- Error shown inline below input (red text)
+- Success shown as green toast (3 seconds)
+- Use existing API endpoints only
+- No new backend endpoints needed
+
+Do ONE file at a time.
+Start with FILE 1 selections.
+Confirm file path after each.
+Wait for approval before next file.

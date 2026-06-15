@@ -1053,3 +1053,61 @@ page.tsx
 
 Confirm after completion.
 Wait for approval before next file.
+
+
+
+CONVENANTS
+
+Add "Add New Category" option inside the 
+Category dropdown in:
+frontend/src/app/maintenance/covenants/page.tsx
+
+FEATURE:
+In the Category dropdown (both in Add New 
+Covenant form AND in inline edit row),
+add a special last option at the bottom:
+
+"+ Add New Category"
+
+When user selects this option:
+1. Dropdown closes
+2. A small inline input appears below 
+   the dropdown:
+   [ Enter new category name... ] [Add] [Cancel]
+
+3. On "Add" click:
+   - Fetch all existing categories from 
+     current loaded data
+   - Check if entered name already exists
+     in categories list (case-insensitive)
+   
+   - If DUPLICATE found:
+     Show red inline error below input:
+     "Category '[name]' already exists. 
+      Please enter a different name."
+     Input stays open for correction.
+   
+   - If NOT duplicate:
+     Store new category in local state
+     so it appears in dropdown immediately
+     Then:
+     → Auto-select new category in dropdown
+     → Hide the input
+     → Show green toast:
+       "Category '[name]' added successfully"
+
+RULES:
+- No delete option
+- User can only ADD new categories
+- Duplicate check mandatory
+  (case-insensitive comparison)
+- No new backend endpoints needed
+- Category is just a text field in 
+  existing records
+
+Only modify:
+frontend/src/app/maintenance/covenants/
+page.tsx
+
+Confirm after completion.
+Wait for approval before next file.

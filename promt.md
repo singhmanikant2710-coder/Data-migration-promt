@@ -1,77 +1,62 @@
-Create FILE 7:
+Fix the NAICS page header layout in:
 frontend/src/app/maintenance/naics/page.tsx
 
-Follow exact same PREMIUM UI pattern as:
-frontend/src/app/maintenance/selections/
-page.tsx
+PROBLEM:
+When data loads, header breaks:
+- Search bar moves above title
+- "Filter by Sector" label on separate line
+- Layout collapses
 
-Page title: "NAICS"
-Subtitle: "Library Maintenance"
+REQUIRED FIXED LAYOUT:
 
-FILTER SECTION (top right):
-- Search input: "Search NAICS..."
-- "Filter by Sector" dropdown
-  (populated from getDistinctSectors())
-- Default: "All Sectors"
+Header must ALWAYS be this structure:
+┌─────────────────────────────────────────┐
+│ NAICS          [Search] [Sector▼] [+Add]│
+│ Library Maintenance                     │
+└─────────────────────────────────────────┘
 
-STATS BAR:
-- Total: XX records
-- Sectors: XX (distinct count)
-- Divisions: XX (distinct count)
+LEFT SIDE (never moves):
+- "NAICS" bold large title
+- "Library Maintenance" subtitle below
 
-TABLE COLUMNS:
-Industry Key | Division | Sector | 
-Subsector | Industry Group | 
-NAICS Code | Description | Actions
+RIGHT SIDE (always one row, never wraps):
+- Search input (fixed width w-48 
+  flex-shrink-0)
+- Sector dropdown (fixed width w-44 
+  flex-shrink-0, no label above it,
+  placeholder text "All Sectors" inside)
+- "+ Add NAICS" button (flex-shrink-0)
 
-INLINE ADD ROW:
-- "+ Add NAICS" button (navy)
-- Amber highlighted row at TOP
-- Fields:
-  • Industry Key (text input) — REQUIRED
-  • Division (text input)
-  • Sector (text input)
-  • Subsector (text input)
-  • Industry Group (text input)
-  • NAICS Code (text input)
-  • Description (text input)
-- ✓ Save (green) | ✗ Cancel (gray)
-- Validation: 
-  Industry Key must be unique
-  If duplicate → show error:
-  "Industry Key '[key]' already exists."
+FIX USING THESE EXACT CLASSES:
 
-INLINE EDIT ROW:
-- Edit click → row becomes editable
-- All fields editable except Industry Key
-  (PK should not be editable)
-- Save (green) | Cancel (gray)
+Header container:
+className="flex items-start 
+justify-between gap-4 mb-6"
 
-ALL PREMIUM UI FEATURES:
-- Dark navy header (#1F3864)
-- Compact rows text-sm tracking-normal
-- NO letter spacing on data cells
-- Alternating row colors
-- Smooth hover effect
-- Read-only by default
-- Pagination (10, 25, 50, 100)
-- "Showing X-Y of Z results"
-- Page number buttons
-- Skeleton loader rows
-- Delete modal popup (not browser alert)
-  "Delete NAICS item?"
-  Shows Industry Key being deleted
-  Cancel | Delete (red)
-- Toast notifications bottom-right
-  auto-dismiss 3 seconds
-- Empty state with message
-- Responsive horizontal scroll
+Left side:
+className="flex-shrink-0"
 
-Import service from:
-frontend/src/services/api/naics.ts
+Right side:
+className="flex items-center gap-2 
+flex-shrink-0 flex-nowrap"
 
-Keep all TypeScript interfaces.
-Use Tailwind CSS only.
+Search input:
+className="w-48 flex-shrink-0 ..."
 
-Confirm file path after creation.
-Wait for approval before FILE 8.
+Sector dropdown:
+className="w-44 flex-shrink-0 ..."
+
+Add button:
+className="flex-shrink-0 ..."
+
+RULES:
+- NO conditional classes based on data state
+- NO state-dependent layout changes
+- Same layout for 0 rows or 1378 rows
+- Remove any label above Filter dropdown
+- Dropdown placeholder = "All Sectors"
+- Use flex-nowrap on right container
+
+Only modify the header JSX section.
+Do not change any logic or API calls.
+Confirm after fix.

@@ -910,3 +910,25 @@ Keep ALL existing API calls unchanged.
 Only UI/styling changes.
 
 Confirm file path after completion.
+
+
+Bug Resolve -----
+
+Fix a column order bug in:
+frontend/src/app/maintenance/covenants/page.tsx
+
+BUG: Columns are in wrong order.
+Current wrong order: Category | Code | ...
+Correct order should be: Code | Category | 
+Covenant Type | Order | Actions
+
+Fix the table header and data cells to show 
+columns in correct order:
+1. CODE
+2. CATEGORY  
+3. COVENANT TYPE
+4. ORDER
+5. ACTIONS
+
+Only fix column order. Nothing else.
+Confirm after fix.

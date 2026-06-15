@@ -935,64 +935,63 @@ Confirm after fix.
 
 
 
-selection 
+SELECTION 
 
-Add "Manage Sections" feature in:
+Add "Add New Section" option inside the 
+Section dropdown in:
 frontend/src/app/maintenance/selections/page.tsx
 
-FEATURE: Users should be able to add new 
-sections and delete existing sections.
+FEATURE:
+In the Section dropdown (both in Add New 
+Selection form AND in inline edit row),
+add a special last option at the bottom:
 
-ADD THIS ABOVE THE MAIN TABLE:
+"+ Add New Section"
 
-"Manage Sections" collapsible panel:
-- Toggle button "▼ Manage Sections" 
-  (clicking opens/closes the panel)
-- Panel background: light gray (#F8FAFF)
-- Border: 1px solid #E2E8F0
-- Rounded corners
+When user selects this option:
+1. Dropdown closes
+2. A small inline input appears below 
+   the dropdown:
+   [ Enter new section name... ] [Add] [Cancel]
 
-INSIDE THE PANEL:
-
-1. ADD NEW SECTION FORM (top of panel):
-   - Tab dropdown (from existing tabs)
-   - Section text input 
-     (placeholder: "Enter new section...")
-   - "+ Add Section" button (navy)
-   - Validation: 
-     If Tab + Section already exists → 
-     show inline error message:
+3. On "Add" click:
+   - Call GET /api/v1/selections/sections
+     ?tab={selectedTab}
+   - Check if entered name already exists
+     in the response list
+   
+   - If DUPLICATE found:
+     Show red inline error below input:
      "Section '[name]' already exists 
       for tab '[tab]'. 
-      Please enter a different section name."
-   - On success: show green toast
-     "Section added successfully"
+      Please enter a different name."
+     Input stays open for correction.
+   
+   - If NOT duplicate:
+     Call POST /api/v1/selections/library
+     with body:
+     {
+       tab: selectedTab,
+       section: newSectionName,
+       selectionId: 0,
+       selection: ""
+     }
+     Then:
+     → Refresh sections list
+     → Auto-select new section in dropdown
+     → Show green toast:
+       "Section '[name]' added successfully"
 
-2. EXISTING SECTIONS TABLE (below form):
-   Columns: Tab | Section | Actions
-   - Delete button per row (red)
-   - Delete click → confirmation modal:
-     Title: "Delete Section?"
-     Message: "Are you sure you want to 
-     delete section '[section name]' 
-     from tab '[tab name]'? 
-     All selections under this section 
-     may be affected."
-     Buttons: Cancel | Delete (red)
-   - On success: green toast
-     "Section deleted successfully"
+4. On "Cancel" click:
+   → Hide the input
+   → Dropdown resets to "Select section..."
 
-BACKEND CHECK:
-- Before adding section, call existing 
-  getSectionsByTab(tab) to check if 
-  section already exists
-- If exists → show error, do not add
-- If not exists → add via API
+RULES:
+- No delete option anywhere
+- User can only ADD new sections
+- Duplicate check is mandatory
+- Use existing API endpoints only
+- No new backend endpoints needed
 
-API endpoints to use (already exist):
-- getDistinctTabs() for tab dropdown
-- getSectionsByTab(tab) for validation
-
-Only modify page.tsx frontend file.
-Do not create new backend endpoints.
+Only modify page.tsx.
 Confirm after completion.

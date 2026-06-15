@@ -754,3 +754,25 @@ Only UI/styling changes.
 
 Confirm file path after completion.
 Wait for approval before FILE 4.
+
+
+Issue fix 
+Fix duplicate key error in:
+frontend/src/app/maintenance/policy-exceptions/page.tsx
+line 802
+
+Current code:
+<tr key={r.original.code} className={rowClasses}>
+
+Problem: Multiple rows have same Code "E22"
+causing duplicate key errors (8 total).
+
+Fix: Change key to use array index:
+.map((r, index) => (
+<tr key={index} className={rowClasses}>
+
+Only change line 802 and add index 
+parameter to .map() on line above it.
+Nothing else.
+
+Confirm after fix.

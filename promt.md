@@ -591,3 +591,115 @@ ISSUES TO FIX:
 Only modify styling/className in page.tsx.
 Do not change any logic or API calls.
 Confirm after fix.
+
+
+Redesign ALL maintenance pages to match 
+the premium UI of selections page.
+
+Apply the EXACT same design to these files:
+1. frontend/src/app/maintenance/cas-findings/page.tsx
+2. frontend/src/app/maintenance/covenants/page.tsx
+3. frontend/src/app/maintenance/policy-exceptions/page.tsx
+4. frontend/src/app/maintenance/sample-criteria/page.tsx
+5. frontend/src/app/maintenance/cas-users/page.tsx
+
+DESIGN REFERENCE: 
+frontend/src/app/maintenance/selections/page.tsx
+(Read this file first to understand the 
+exact design pattern)
+
+APPLY SAME TO ALL PAGES:
+
+1. PAGE HEADER:
+   - Left: Page title (bold, large)
+     Subtitle: "Library Maintenance" (muted)
+   - Right: Search input + filter dropdown 
+     + primary action button (navy "+ Add...")
+
+2. STATS BAR:
+   - Light gray pill badges showing 
+     total record counts
+   - Auto-calculated from data
+
+3. TABLE:
+   - Dark navy header (#1F3864) 
+     white uppercase text
+   - Alternating rows (white/#F8FAFF)
+   - Smooth hover effect
+   - Compact rows (py-2 px-3)
+   - text-sm for data, text-xs for headers
+   - tracking-normal (NO letter spacing 
+     on data cells)
+
+4. TAB/CATEGORY COLUMN:
+   - Colored pill/badge per unique value
+   - Deterministic color per name
+
+5. ACTIONS:
+   - Read-only by default
+   - Edit click → row becomes editable
+   - Edit = outline blue button
+   - Save = filled green (hidden by default)
+   - Delete = filled red
+   - Cancel = gray (hidden by default)
+   - All buttons: text-xs, compact padding
+
+6. INLINE ADD ROW:
+   - Primary button click → 
+     amber highlighted row at TOP
+   - Save/Cancel buttons on that row
+
+7. PAGINATION:
+   - "Showing X-Y of Z results" left
+   - Page number buttons center
+   - "Rows per page" dropdown right
+   - Options: 10, 25, 50, 100
+
+8. EMPTY STATE:
+   - Centered icon + message + 
+     "Clear filters" link
+
+9. LOADING STATE:
+   - Skeleton loader rows
+   - Not just spinner
+
+10. DELETE CONFIRMATION:
+    - Modal popup (not browser alert)
+    - Shows item being deleted
+    - Cancel + Delete buttons
+
+11. TOAST NOTIFICATIONS:
+    - Success: green, bottom-right
+    - Error: red
+    - Auto-dismiss 3 seconds
+
+IMPORTANT RULES:
+- Keep ALL existing field names, 
+  columns and API calls SAME
+- Only change the UI/styling
+- Each page has different columns — 
+  keep those columns as-is
+- Use Tailwind CSS only
+- text-sm for data cells
+- tracking-normal on data (NOT wide)
+- NO letter spacing on table body text
+
+COLUMN REFERENCE (keep these exact):
+- cas-findings: Component | Finding Code | 
+  Category | Description | Guidance
+- covenants: Code | Category | 
+  Covenant Type | Order
+- policy-exceptions: Code | Description | 
+  Category | Level | Code Description | 
+  Multiple | Internal Portcat | 
+  Policy Reference
+- sample-criteria: Code | Selections
+- cas-users: User Id | Display Name | 
+  First | Last | Title | Email | Manager | 
+  Manager Email | Role | Active | 
+  Admin | Approval
+
+Do ONE file at a time.
+Start with cas-findings/page.tsx first.
+Confirm file path after each completion.
+Wait for my approval before next file.

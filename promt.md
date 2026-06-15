@@ -776,3 +776,46 @@ parameter to .map() on line above it.
 Nothing else.
 
 Confirm after fix.
+
+
+sample criteria ------
+Approved. Now do FILE 4:
+frontend/src/app/maintenance/sample-criteria/page.tsx
+
+Apply exact same design as selections page.
+
+Columns to keep exactly as-is:
+Code | Selections | Actions
+
+Stats bar show:
+- Total records count
+
+Filter: Search input only
+(no category filter needed)
+
+Primary button: "+ Add Sample Criteria"
+
+All other design rules same as selections:
+- Dark navy header (#1F3864)
+- Compact rows text-sm tracking-normal
+- NO letter spacing on data cells
+- Read-only by default
+- Edit click → row editable inline
+- Save = filled green (hidden by default)
+- Delete = filled red
+- Cancel = gray (hidden by default)
+- Inline add row at top (amber highlight)
+- Pagination (10, 25, 50, 100)
+- "Showing X-Y of Z results" left
+- Skeleton loader rows
+- Delete modal popup (not browser alert)
+- Toast notifications bottom-right
+  auto-dismiss 3 seconds
+
+Keep ALL existing API calls unchanged.
+Only UI/styling changes.
+
+Confirm file path after completion.
+Wait for approval before FILE 5.
+
+

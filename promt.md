@@ -995,3 +995,61 @@ RULES:
 
 Only modify page.tsx.
 Confirm after completion.
+
+
+
+cas finding 
+
+Add "Add New Category" option inside the 
+Category dropdown in:
+frontend/src/app/maintenance/cas-findings/page.tsx
+
+FEATURE:
+In the Category dropdown (both in Add New 
+Finding form AND in inline edit row),
+add a special last option at the bottom:
+
+"+ Add New Category"
+
+When user selects this option:
+1. Dropdown closes
+2. A small inline input appears below 
+   the dropdown:
+   [ Enter new category name... ] [Add] [Cancel]
+
+3. On "Add" click:
+   - Fetch all existing categories from 
+     current data already loaded
+   - Check if entered name already exists
+     in the categories list (case-insensitive)
+   
+   - If DUPLICATE found:
+     Show red inline error below input:
+     "Category '[name]' already exists. 
+      Please enter a different name."
+     Input stays open for correction.
+   
+   - If NOT duplicate:
+     Store new category in local state
+     so it appears in dropdown immediately
+     Then:
+     → Auto-select new category in dropdown
+     → Hide the input
+     → Show green toast:
+       "Category '[name]' added successfully"
+
+RULES:
+- No delete option
+- User can only ADD new categories
+- Duplicate check is mandatory
+  (case-insensitive comparison)
+- No new backend endpoints needed
+- Category is just a text field in 
+  existing records
+
+Only modify:
+frontend/src/app/maintenance/cas-findings/
+page.tsx
+
+Confirm after completion.
+Wait for approval before next file.

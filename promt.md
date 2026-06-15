@@ -703,3 +703,16 @@ Do ONE file at a time.
 Start with cas-findings/page.tsx first.
 Confirm file path after each completion.
 Wait for my approval before next file.
+
+
+
+
+Approved. Now do FILE 2:
+frontend/src/app/maintenance/covenants/page.tsx
+
+Apply exact same design as selections page.
+Columns to keep: Code | Category | 
+Covenant Type | Order | Actions
+
+Confirm file path after completion.
+Wait for approval before FILE 3.

@@ -1,74 +1,53 @@
-Create FILE 3:
-backend/src/Casrr.Infrastructure/SqlServer/
-SqlNaicsRepository.cs
+Create FILE 4:
+backend/src/Casrr.Api/Controllers/
+NaicsController.cs
 
 Follow exact same pattern as:
-SqlSelectionRepository.cs
+SelectionsController.cs
 
 Requirements:
-- Implement INaicsRepository
-- Use same Dapper pattern as existing
-- Database table: 
-  [dbo].[03_LIBRARY_08_NAICS]
+- Route: "api/v1/naics"
+- Authorize policy: "RequireActiveUser"
+- Inherit: BaseTemplateController
+- Inject: INaicsRepository, ILogger,
+  TelemetryClient, IGraphUserInfoProvider
+- Same error handling pattern as 
+  SelectionsController
 
-Column mappings:
-NAICS_industry_key → NaicsIndustryKey
-NAICS_division → NaicsDivision
-NAICS_sector → NaicsSector
-NAICS_subsector → NaicsSubsector
-NAICS_industry_group → NaicsIndustryGroup
-NAICS_code → NaicsCode
-NAICS_industry_description → 
-  NaicsIndustryDescription
+ENDPOINTS:
 
-SQL Queries:
-- GetAllAsync: 
-  SELECT * FROM [03_LIBRARY_08_NAICS]
-  WHERE (@sector IS NULL 
-  OR NAICS_sector = @sector)
+1. GET api/v1/naics/library
+   - Optional ?sector= filter
+   - Returns list of Naics items
 
-- GetDistinctSectorsAsync:
-  SELECT DISTINCT NAICS_sector 
-  FROM [03_LIBRARY_08_NAICS]
-  WHERE NAICS_sector IS NOT NULL 
-  ORDER BY NAICS_sector
+2. GET api/v1/naics/library/{key}
+   - Returns single item
+   - 404 if missing
 
-- GetDistinctDivisionsAsync:
-  SELECT DISTINCT NAICS_division 
-  FROM [03_LIBRARY_08_NAICS]
-  WHERE NAICS_division IS NOT NULL 
-  ORDER BY NAICS_division
+3. POST api/v1/naics/library
+   - Validates NaicsIndustryKey unique
+   - 201 on success
+   - 409 on duplicate key
 
-- GetByKeyAsync:
-  SELECT * FROM [03_LIBRARY_08_NAICS]
-  WHERE NAICS_industry_key = @key
+4. PUT api/v1/naics/library/{key}
+   - Updates item
+   - 404 if missing
 
-- CreateAsync:
-  INSERT INTO [03_LIBRARY_08_NAICS]
-  (NAICS_industry_key, NAICS_division,
-  NAICS_sector, NAICS_subsector,
-  NAICS_industry_group, NAICS_code,
-  NAICS_industry_description)
-  VALUES (@NaicsIndustryKey, 
-  @NaicsDivision, @NaicsSector,
-  @NaicsSubsector, @NaicsIndustryGroup,
-  @NaicsCode, @NaicsIndustryDescription)
+5. DELETE api/v1/naics/library/{key}
+   - Deletes item
+   - 404 if missing
 
-- UpdateAsync:
-  UPDATE [03_LIBRARY_08_NAICS]
-  SET NAICS_division = @NaicsDivision,
-  NAICS_sector = @NaicsSector,
-  NAICS_subsector = @NaicsSubsector,
-  NAICS_industry_group = @NaicsIndustryGroup,
-  NAICS_code = @NaicsCode,
-  NAICS_industry_description = 
-    @NaicsIndustryDescription
-  WHERE NAICS_industry_key = 
-    @NaicsIndustryKey
+6. GET api/v1/naics/sectors
+   - Returns distinct NAICS_sector values
 
-- DeleteAsync:
-  DELETE FROM [03_LIBRARY_08_NAICS]
-  WHERE NAICS_industry_key = @key
+7. GET api/v1/naics/divisions
+   - Returns distinct NAICS_division values
+
+Same error codes as SelectionsController:
+INVALID_LIBRARY_INPUT
+LIBRARY_NOT_FOUND
+LIBRARY_DUPLICATE
+UNEXPECTED_ERROR
 
 Confirm file path after creation.
-Wait for approval before FILE 4.
+Wait for approval before FILE 5.

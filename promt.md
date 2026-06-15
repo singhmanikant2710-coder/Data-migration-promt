@@ -1,62 +1,42 @@
-Fix the NAICS page header layout in:
-frontend/src/app/maintenance/naics/page.tsx
+Fix Actions column alignment in:
+frontend/src/app/maintenance/selections/
+page.tsx
 
 PROBLEM:
-When data loads, header breaks:
-- Search bar moves above title
-- "Filter by Sector" label on separate line
-- Layout collapses
+ACTIONS header and Edit/Delete buttons 
+are misaligned — buttons shifted far 
+to the right.
 
-REQUIRED FIXED LAYOUT:
+FIX:
 
-Header must ALWAYS be this structure:
-┌─────────────────────────────────────────┐
-│ NAICS          [Search] [Sector▼] [+Add]│
-│ Library Maintenance                     │
-└─────────────────────────────────────────┘
+1. ACTIONS header <th>:
+className must include:
+"text-center w-40"
+(remove any text-right or text-left)
 
-LEFT SIDE (never moves):
-- "NAICS" bold large title
-- "Library Maintenance" subtitle below
+2. Actions data <td>:
+className must include:
+"text-center w-40"
+(must match th exactly)
 
-RIGHT SIDE (always one row, never wraps):
-- Search input (fixed width w-48 
-  flex-shrink-0)
-- Sector dropdown (fixed width w-44 
-  flex-shrink-0, no label above it,
-  placeholder text "All Sectors" inside)
-- "+ Add NAICS" button (flex-shrink-0)
-
-FIX USING THESE EXACT CLASSES:
-
-Header container:
-className="flex items-start 
-justify-between gap-4 mb-6"
-
-Left side:
-className="flex-shrink-0"
-
-Right side:
-className="flex items-center gap-2 
-flex-shrink-0 flex-nowrap"
-
-Search input:
-className="w-48 flex-shrink-0 ..."
-
-Sector dropdown:
-className="w-44 flex-shrink-0 ..."
-
-Add button:
-className="flex-shrink-0 ..."
+3. Buttons inside <td>:
+Wrap Edit and Delete buttons in:
+<div className="flex items-center 
+justify-center gap-2">
+  <button>Edit</button>
+  <button>Delete</button>
+</div>
 
 RULES:
-- NO conditional classes based on data state
-- NO state-dependent layout changes
-- Same layout for 0 rows or 1378 rows
-- Remove any label above Filter dropdown
-- Dropdown placeholder = "All Sectors"
-- Use flex-nowrap on right container
+- NO text-right anywhere in Actions column
+- NO justify-end anywhere in Actions column
+- th and td must have IDENTICAL 
+  width and alignment classes
+- w-40 on both th and td
+- text-center on both th and td
+- flex justify-center on buttons wrapper
 
-Only modify the header JSX section.
+Only modify Actions column th and td.
+Do not change any other columns.
 Do not change any logic or API calls.
 Confirm after fix.

@@ -819,3 +819,27 @@ Confirm file path after completion.
 Wait for approval before FILE 5.
 
 
+
+Fix Sorting 
+Fix sorting in:
+frontend/src/app/maintenance/sample-criteria/
+page.tsx
+
+ISSUE: Code column is sorting alphabetically 
+instead of numerically.
+Current order: 1, 10, 11, 12, 13, 14, 15, 2, 3, 4
+Expected order: 1, 2, 3, 4, 10, 11, 12, 13, 14, 15
+
+FIX: When sorting/displaying data, 
+sort by Code as NUMBER not string.
+
+Add this sort after data is fetched:
+data.sort((a, b) => 
+  Number(a.code) - Number(b.code))
+
+Apply numeric sort on the fetched data 
+before setting state.
+
+Only change the sort logic.
+Nothing else.
+Confirm after fix.

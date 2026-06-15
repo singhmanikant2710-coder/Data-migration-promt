@@ -843,3 +843,70 @@ before setting state.
 Only change the sort logic.
 Nothing else.
 Confirm after fix.
+
+
+file 5 
+
+Approved. Now do FILE 5:
+frontend/src/app/maintenance/cas-users/page.tsx
+
+Apply exact same design as selections page.
+
+Columns to keep exactly as-is:
+User Id | Display Name | First | Last | 
+Title | Email | Manager | Manager Email | 
+Role | Active | Admin | Approval | Actions
+
+Stats bar show:
+- Total records count
+- Roles count (distinct roles)
+- Active users count
+
+Filter dropdown: "Filter by Role"
+Search input: searches across all columns
+
+Primary button: "+ Add CAS User"
+
+Inline Add Row fields:
+- User Id (text input)
+- Display Name (text input)
+- First Name (text input)
+- Last Name (text input)
+- Title (text input)
+- Email (text input)
+- Manager (text input)
+- Manager Email (text input)
+- Role (dropdown - same values as existing)
+- Active (checkbox)
+- Admin Rights (checkbox)
+- Approval Rights (checkbox)
+
+Special columns:
+- Active column: green "Yes" pill / 
+  gray "No" pill
+- Admin column: green "Yes" / gray "No"
+- Approval column: green "Yes" / gray "No"
+- Role column: colored pill badge
+
+All other design rules same as selections:
+- Dark navy header (#1F3864)
+- Compact rows text-sm tracking-normal
+- NO letter spacing on data cells
+- Read-only by default
+- Edit click → row editable inline
+- Save = filled green (hidden by default)
+- Delete = filled red
+- Cancel = gray (hidden by default)
+- Inline add row at top (amber highlight)
+- Pagination (10, 25, 50, 100)
+- "Showing X-Y of Z results" left
+- Page number buttons center
+- Skeleton loader rows
+- Delete modal popup (not browser alert)
+- Toast notifications bottom-right
+  auto-dismiss 3 seconds
+
+Keep ALL existing API calls unchanged.
+Only UI/styling changes.
+
+Confirm file path after completion.

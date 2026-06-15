@@ -932,3 +932,67 @@ columns in correct order:
 
 Only fix column order. Nothing else.
 Confirm after fix.
+
+
+
+selection 
+
+Add "Manage Sections" feature in:
+frontend/src/app/maintenance/selections/page.tsx
+
+FEATURE: Users should be able to add new 
+sections and delete existing sections.
+
+ADD THIS ABOVE THE MAIN TABLE:
+
+"Manage Sections" collapsible panel:
+- Toggle button "▼ Manage Sections" 
+  (clicking opens/closes the panel)
+- Panel background: light gray (#F8FAFF)
+- Border: 1px solid #E2E8F0
+- Rounded corners
+
+INSIDE THE PANEL:
+
+1. ADD NEW SECTION FORM (top of panel):
+   - Tab dropdown (from existing tabs)
+   - Section text input 
+     (placeholder: "Enter new section...")
+   - "+ Add Section" button (navy)
+   - Validation: 
+     If Tab + Section already exists → 
+     show inline error message:
+     "Section '[name]' already exists 
+      for tab '[tab]'. 
+      Please enter a different section name."
+   - On success: show green toast
+     "Section added successfully"
+
+2. EXISTING SECTIONS TABLE (below form):
+   Columns: Tab | Section | Actions
+   - Delete button per row (red)
+   - Delete click → confirmation modal:
+     Title: "Delete Section?"
+     Message: "Are you sure you want to 
+     delete section '[section name]' 
+     from tab '[tab name]'? 
+     All selections under this section 
+     may be affected."
+     Buttons: Cancel | Delete (red)
+   - On success: green toast
+     "Section deleted successfully"
+
+BACKEND CHECK:
+- Before adding section, call existing 
+  getSectionsByTab(tab) to check if 
+  section already exists
+- If exists → show error, do not add
+- If not exists → add via API
+
+API endpoints to use (already exist):
+- getDistinctTabs() for tab dropdown
+- getSectionsByTab(tab) for validation
+
+Only modify page.tsx frontend file.
+Do not create new backend endpoints.
+Confirm after completion.

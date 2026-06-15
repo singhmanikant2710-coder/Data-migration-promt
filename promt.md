@@ -716,3 +716,41 @@ Covenant Type | Order | Actions
 
 Confirm file path after completion.
 Wait for approval before FILE 3.
+
+
+Approved. Now do FILE 3:
+frontend/src/app/maintenance/policy-exceptions/page.tsx
+
+Apply exact same design as selections page.
+
+Columns to keep exactly as-is:
+Code | Description | Category | Level | 
+Code Description | Multiple | 
+Internal Portcat | Policy Reference | Actions
+
+Stats bar show:
+- Total records count
+- Categories count
+- Levels count
+
+Filter dropdown: "Filter by Category"
+
+Primary button: "+ Add Policy Exception"
+
+All other design rules same as selections:
+- Dark navy header
+- Compact rows text-sm tracking-normal
+- Colored pill badges for Category
+- Read-only by default
+- Edit click → row editable
+- Inline add row at top (amber highlight)
+- Pagination (10,25,50,100)
+- Skeleton loader
+- Delete modal popup
+- Toast notifications
+
+Keep ALL existing API calls unchanged.
+Only UI/styling changes.
+
+Confirm file path after completion.
+Wait for approval before FILE 4.

@@ -1,29 +1,19 @@
-Approved. Now do FILE 4:
+List all files that were modified or 
+created during this session.
 
-frontend/src/app/maintenance/policy-exceptions/page.tsx
+Show complete file paths for:
+1. All NEW files created
+2. All EXISTING files modified
 
-When user adds new Category:
-- Check if category already exists in 
-  current distinct categories list
-  (case-insensitive check)
-- If EXISTS → show inline red error:
-  "Category already exists. 
-   Please enter a different name."
-- If NOT exists → call existing API:
-  POST /api/v1/policy-exceptions/library
-  body: {
-    code: "CAT-" + Date.now(),
-    category: newCategoryName,
-    description: "",
-    level: "",
-    codeDescription: "",
-    multiple: "",
-    internalPortcat: "",
-    policyReference: ""
-  }
-- Refresh categories list (DISTINCT only)
-- Show green toast:
-  "Category '[name]' added successfully"
+Format the output as:
 
-No new backend endpoints needed.
-Confirm file path after completion.
+NEW FILES CREATED:
+- path/to/file1
+- path/to/file2
+
+MODIFIED FILES:
+- path/to/file3
+- path/to/file4
+
+Do not show any other information.
+Just the file paths.

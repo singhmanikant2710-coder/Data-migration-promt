@@ -1,6 +1,6 @@
-Approved. Now do FILE 3:
+Approved. Now do FILE 4:
 
-frontend/src/app/maintenance/covenants/page.tsx
+frontend/src/app/maintenance/policy-exceptions/page.tsx
 
 When user adds new Category:
 - Check if category already exists in 
@@ -10,12 +10,16 @@ When user adds new Category:
   "Category already exists. 
    Please enter a different name."
 - If NOT exists → call existing API:
-  POST /api/v1/covenants/library
+  POST /api/v1/policy-exceptions/library
   body: {
     code: "CAT-" + Date.now(),
-    covenantCategory: newCategoryName,
-    covenantType: "",
-    order: 0
+    category: newCategoryName,
+    description: "",
+    level: "",
+    codeDescription: "",
+    multiple: "",
+    internalPortcat: "",
+    policyReference: ""
   }
 - Refresh categories list (DISTINCT only)
 - Show green toast:
@@ -23,4 +27,3 @@ When user adds new Category:
 
 No new backend endpoints needed.
 Confirm file path after completion.
-Wait for approval before FILE 4.

@@ -1,19 +1,26 @@
-List all files that were modified or 
-created during this session.
+Read this file completely and confirm:
+backend/src/Casrr.Api/Controllers/
+SelectionsController.cs
+Do not create anything yet.
 
-Show complete file paths for:
-1. All NEW files created
-2. All EXISTING files modified
+Create FILE 1:
+backend/src/Casrr.Domain/Entities/Naics.cs
 
-Format the output as:
+Entity class for table: 
+[dbo].[03_LIBRARY_08_NAICS]
 
-NEW FILES CREATED:
-- path/to/file1
-- path/to/file2
+Properties:
+- NaicsIndustryKey (string, PK)
+- NaicsDivision (string?)
+- NaicsSector (string?)
+- NaicsSubsector (string?)
+- NaicsIndustryGroup (string?)
+- NaicsCode (string?)
+- NaicsIndustryDescription (string?)
 
-MODIFIED FILES:
-- path/to/file3
-- path/to/file4
+Follow exact same pattern as:
+backend/src/Casrr.Domain/Entities/
+Selection.cs
 
-Do not show any other information.
-Just the file paths.
+Confirm file path after creation.
+Wait for approval before FILE 2.

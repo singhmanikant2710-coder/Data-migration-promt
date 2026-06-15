@@ -1,7 +1,6 @@
-Approved for selections. 
-Now do FILE 2:
+Approved. Now do FILE 3:
 
-frontend/src/app/maintenance/cas-findings/page.tsx
+frontend/src/app/maintenance/covenants/page.tsx
 
 When user adds new Category:
 - Check if category already exists in 
@@ -11,13 +10,12 @@ When user adds new Category:
   "Category already exists. 
    Please enter a different name."
 - If NOT exists → call existing API:
-  POST /api/v1/findings/library
+  POST /api/v1/covenants/library
   body: {
-    component: firstAvailableComponent,
-    findingCode: "CAT-" + Date.now(),
-    category: newCategoryName,
-    description: "",
-    guidance: ""
+    code: "CAT-" + Date.now(),
+    covenantCategory: newCategoryName,
+    covenantType: "",
+    order: 0
   }
 - Refresh categories list (DISTINCT only)
 - Show green toast:
@@ -25,4 +23,4 @@ When user adds new Category:
 
 No new backend endpoints needed.
 Confirm file path after completion.
-Wait for approval before FILE 3.
+Wait for approval before FILE 4.

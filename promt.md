@@ -1,23 +1,28 @@
-There is a build error in the frontend. Fix it.
+There is a build error in load-samples/page.tsx.
 
-File: frontend/src/app/load-samples/page.tsx
-Line 35: import { getEicNames } from "@/services/api/admin";
+The function getEicNames is imported from "@/services/api/admin" 
+(line 35) and used at line 127, but this function does not exist 
+in admin.ts.
 
-ERROR: Export getEicNames doesn't exist in target module 
-@/services/api/admin
-
-Read these two files:
+Read these files:
 1. frontend/src/app/load-samples/page.tsx
 2. frontend/src/services/api/admin.ts
+3. frontend/src/services/api/cas-users.ts (or any users service file)
 
-Find where getEicNames is actually used in load-samples/page.tsx.
-Then check if getEicNames exists in any other service file under
-frontend/src/services/api/ folder.
+Find where EIC/active user names can be fetched from existing APIs.
+The comment on line 119 says: 
+"EIC lookup options (active users excluding DBA/DAA/CRA)"
 
-Fix the import to point to the correct service file where 
-getEicNames is actually defined.
+Check if there is an existing endpoint or service function that 
+returns CAS users or active users list that can be used instead.
 
-If getEicNames is not used anywhere in load-samples/page.tsx, 
-simply remove that import line.
+Fix options (choose the correct one):
+Option A: If an existing function returns user/EIC names, 
+  replace getEicNames() with that existing function and fix 
+  the import.
+Option B: If no such function exists anywhere, add getEicNames 
+  function to frontend/src/services/api/admin.ts that calls 
+  the correct backend endpoint for EIC user names.
 
-Do not change any other logic. Show me exactly which line changed.
+Do not change any other logic. Show me exactly what you change 
+and in which files.

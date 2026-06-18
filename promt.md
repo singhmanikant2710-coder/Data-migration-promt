@@ -1,28 +1,20 @@
-There is a build error in load-samples/page.tsx.
+There is a TypeScript build error blocking the pipeline.
 
-The function getEicNames is imported from "@/services/api/admin" 
-(line 35) and used at line 127, but this function does not exist 
-in admin.ts.
+File: frontend/src/models/templates.ts
+Line 6: import type { SensitivityDto } from "@app/commercial/types";
+
+ERROR: Cannot find module '@app/commercial/types'
 
 Read these files:
-1. frontend/src/app/load-samples/page.tsx
-2. frontend/src/services/api/admin.ts
-3. frontend/src/services/api/cas-users.ts (or any users service file)
+1. frontend/src/models/templates.ts
+2. Search if SensitivityDto is used anywhere in templates.ts
 
-Find where EIC/active user names can be fetched from existing APIs.
-The comment on line 119 says: 
-"EIC lookup options (active users excluding DBA/DAA/CRA)"
+Fix:
+- If SensitivityDto is NOT used anywhere in templates.ts, 
+  remove that import line only.
+- If SensitivityDto IS used, check if it exists in any other 
+  file under frontend/src/ and fix the import path.
 
-Check if there is an existing endpoint or service function that 
-returns CAS users or active users list that can be used instead.
-
-Fix options (choose the correct one):
-Option A: If an existing function returns user/EIC names, 
-  replace getEicNames() with that existing function and fix 
-  the import.
-Option B: If no such function exists anywhere, add getEicNames 
-  function to frontend/src/services/api/admin.ts that calls 
-  the correct backend endpoint for EIC user names.
-
-Do not change any other logic. Show me exactly what you change 
-and in which files.
+Do NOT modify any other file.
+Do NOT change any logic.
+Show me exactly which line changed.

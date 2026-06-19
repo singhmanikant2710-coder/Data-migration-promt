@@ -1,20 +1,19 @@
-There is a TypeScript build error blocking the pipeline.
+Read these files completely and show me a summary. 
+Do NOT create or modify anything yet.
 
-File: frontend/src/models/templates.ts
-Line 6: import type { SensitivityDto } from "@app/commercial/types";
+1. frontend/src/app/review-queue/page.tsx
+2. List all files inside frontend/src/services/api/ folder
 
-ERROR: Cannot find module '@app/commercial/types'
+For review-queue/page.tsx, tell me specifically:
+- What API endpoint/service function it calls to get data
+- What TypeScript interface/type defines the row data shape
+- How the "Borrower Name / Linesheet" column is rendered 
+  (is there a separate icon button component?)
+- What the linesheet icon does when clicked (opens a link? 
+  modal? navigates somewhere?)
+- What the table header styling classes are (so I can match 
+  the same navy header)
+- Is there a shared Table/Pagination/Skeleton component being 
+  imported from elsewhere?
 
-Read these files:
-1. frontend/src/models/templates.ts
-2. Search if SensitivityDto is used anywhere in templates.ts
-
-Fix:
-- If SensitivityDto is NOT used anywhere in templates.ts, 
-  remove that import line only.
-- If SensitivityDto IS used, check if it exists in any other 
-  file under frontend/src/ and fix the import path.
-
-Do NOT modify any other file.
-Do NOT change any logic.
-Show me exactly which line changed.
+Do not create or modify anything. Just show me the summary.

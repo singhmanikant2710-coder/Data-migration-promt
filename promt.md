@@ -1,11 +1,26 @@
-Add a "Review History" link to the left sidebar navigation menu, 
-positioned right after "Review Status".
 
-Search for where "Review Status" appears in the sidebar/navigation 
-component (likely in CASRRHome.tsx, a Sidebar.tsx, or a layout file 
-— search the codebase for the exact text "Review Status" to find 
-the file).
+Add a new sidebar navigation link. Do NOT modify anything else.
 
-Show me the file and the surrounding code first before making 
-any change. Do not modify yet — just show me.
+Open this file: frontend/src/components/Sidebar.tsx
 
+Find this exact array (the first NavSection's items):
+items: [
+  { label: "Customer CASRR Home", href: "/" },
+  { label: "Load Samples", href: "/load-samples" },
+  { label: "Review Queue", href: "/review-queue" },
+  { label: "Review Status", href: "/review-status" }
+]
+
+ADD a new item right after "Review Status", so it becomes:
+items: [
+  { label: "Customer CASRR Home", href: "/" },
+  { label: "Load Samples", href: "/load-samples" },
+  { label: "Review Queue", href: "/review-queue" },
+  { label: "Review Status", href: "/review-status" },
+  { label: "Review History", href: "/review-history" }
+]
+
+Do not change any other section (Maintenance, Admin) or any 
+other part of this file.
+
+Show me exactly the lines changed.

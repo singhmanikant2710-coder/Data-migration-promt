@@ -14,3 +14,20 @@ Show me:
    (search StartupExtensions.cs for "IReviewService")
 
 Do not modify anything. Just show me this information.
+
+
+sql 
+
+Read this file completely first, do not modify anything:
+backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+
+Show me:
+1. The GetQueuePageAsync method — full implementation
+2. The exact SQL query text used (the Dapper SQL string)
+3. All column names selected from [02_CORE_02_Reviews] or any 
+   joined tables
+4. Is there a WHERE clause filter, and does it check any 
+   status/finalized/completed column?
+5. Does the query check Review_finalized_date anywhere?
+
+Do not modify anything. Just show me this information.

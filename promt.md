@@ -1,12 +1,13 @@
-Read this file completely:
-backend/src/Casrr.Api/Controllers/ReviewsController.cs
+Read this file completely first, do not modify anything:
+backend/src/Casrr.Api/Controllers/ReviewController.cs
 
 Show me:
-1. The GET endpoint that handles /api/v1/reviews/queue
-2. Does it accept any status/filter parameter (like "finalized")?
-3. What repository method does it call?
-4. In that repository method, what SQL/Dapper query is used and 
-   what columns does it select (especially anything related to 
-   "finalized" or "completed" status)?
+1. Its class-level attributes ([ApiController], [Route], [Authorize])
+2. What it inherits from (BaseTemplateController?)
+3. Constructor dependencies (what repository/services are injected)
+4. The GET endpoint for /api/v1/reviews/queue specifically — 
+   full method signature and body
+5. What repository interface and class it calls (e.g. IReviewRepository, 
+   SqlReviewRepository) — give me the exact file path of that repository
 
-Do not modify anything yet. Just show me the content.
+Do not modify anything. Just show me this information.

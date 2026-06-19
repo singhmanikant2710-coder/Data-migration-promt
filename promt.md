@@ -1,32 +1,46 @@
-Register the new Review History service and repository in 
-dependency injection, and verify the build.
+Create a new frontend service file for Review History API calls.
 
-Open this file ONLY:
-backend/src/Casrr.Api/Extensions/StartupExtensions.cs
+Read this file first for the exact pattern to follow:
+frontend/src/services/api/reviews.ts
 
-Find the section where IReviewRepository and IReviewService are 
-registered (search for "IReviewRepository" or "IReviewService").
+CREATE this new file ONLY:
+frontend/src/services/api/reviewHistory.ts
 
-ADD these two lines in the exact same pattern, right after the 
-existing Review registrations:
+It should:
+- Import { get } from "@/lib/api" (same as reviews.ts does)
+- Define a TypeScript interface ReviewHistoryRow matching the 
+  backend DTO exactly:
+  export type ReviewHistoryRow = {
+    reviewId: number;
+    sampleId: number;
+    sampleName: string | null;
+    eCifNumber: string | null;
+    customerName: string | null;
+    reviewerName: string | null;
+    exposure: number | null;
+    bankPD: number | null;
+    casPD: number | null;
+    completedDate: string | null;
+    reviewFinalizedDate: string | null;
+  };
 
-services.AddScoped<IReviewHistoryRepository, SqlReviewHistoryRepository>();
-services.AddScoped<IReviewHistoryService, ReviewHistoryService>();
+- Export one async function:
+  export async function getReviewHistory(
+    sampleName?: string, 
+    borrowerName?: string
+  ): Promise<ReviewHistoryRow[]> {
+    const params = new URLSearchParams();
+    if (sampleName) params.set("sampleName", sampleName);
+    if (borrowerName) params.set("borrowerName", borrowerName);
+    const qs = params.toString();
+    return await get(`/api/v1/review-history${qs ? `?${qs}` : ""}`);
+  }
 
-Make sure to add the correct using statements at the top of 
-StartupExtensions.cs if needed (for the namespaces where 
-IReviewHistoryRepository, SqlReviewHistoryRepository, 
-IReviewHistoryService, and ReviewHistoryService are defined).
+Follow the exact same fetch/get pattern, base URL handling, and 
+error handling style as reviews.ts.
 
-Do not change anything else in this file — do not touch any 
-other existing registration.
+IMPORTANT:
+- Do not modify reviews.ts or any other existing file
+- This is a brand new standalone file
 
-After making this change, run a build check:
-dotnet build backend/src/Casrr.Api/Casrr.Api.csproj
-
-Show me:
-1. Exactly which lines you added (with 5 lines of context before/after)
-2. The full build output — confirm "Build succeeded" with no errors
-
-If the build fails with a file lock error (DLL in use by another 
-process), tell me and I will stop the running process first.
+Show me the complete new file when done.

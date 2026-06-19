@@ -1,51 +1,32 @@
-Create 2 new backend files for Review History. Do NOT modify any 
-existing controller, service, or repository file.
+Register the new Review History service and repository in 
+dependency injection, and verify the build.
 
-CREATE these 2 new files only:
+Open this file ONLY:
+backend/src/Casrr.Api/Extensions/StartupExtensions.cs
 
-1. backend/src/Casrr.Application/Services/ReviewHistoryService.cs
+Find the section where IReviewRepository and IReviewService are 
+registered (search for "IReviewRepository" or "IReviewService").
 
-- Define interface IReviewHistoryService in the same file or a 
-  separate IReviewHistoryService.cs:
-  Task<IReadOnlyList<ReviewHistoryRow>> GetHistoryAsync(
-    string? sampleName, string? borrowerName, CancellationToken ct);
+ADD these two lines in the exact same pattern, right after the 
+existing Review registrations:
 
-- Implementation class ReviewHistoryService : IReviewHistoryService
-  - Constructor injects IReviewHistoryRepository
-  - GetHistoryAsync simply calls 
-    _repository.GetHistoryRowsAsync(sampleName, borrowerName, ct) 
-    and returns the result
-  - Follow the same simple delegation pattern as ReviewService.cs 
-    uses for calling IReviewRepository
+services.AddScoped<IReviewHistoryRepository, SqlReviewHistoryRepository>();
+services.AddScoped<IReviewHistoryService, ReviewHistoryService>();
 
-2. backend/src/Casrr.Api/Controllers/ReviewHistoryController.cs
+Make sure to add the correct using statements at the top of 
+StartupExtensions.cs if needed (for the namespaces where 
+IReviewHistoryRepository, SqlReviewHistoryRepository, 
+IReviewHistoryService, and ReviewHistoryService are defined).
 
-- [ApiController]
-- [Route("api/v1/review-history")]
-- [Authorize(Policy = "RequireActiveUser")]
-- Inherits BaseTemplateController (same as ReviewController.cs)
-- Constructor injects IReviewHistoryService and IGraphUserInfoProvider 
-  (pass graphUserInfoProvider to base, same pattern as ReviewController.cs)
-- One GET endpoint:
-  [HttpGet]
-  [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IReadOnlyList<ReviewHistoryRow>))]
-  [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
-  public async Task<ActionResult<IReadOnlyList<ReviewHistoryRow>>> GetReviewHistory(
-    [FromQuery] string? sampleName, 
-    [FromQuery] string? borrowerName, 
-    CancellationToken ct)
-  {
-      var response = await _svc.GetHistoryAsync(sampleName, borrowerName, ct);
-      return Ok(response);
-  }
+Do not change anything else in this file — do not touch any 
+other existing registration.
 
-Follow the exact same error handling pattern as ReviewController.cs 
-(if it uses try/catch with ProblemDetails, use the same here).
+After making this change, run a build check:
+dotnet build backend/src/Casrr.Api/Casrr.Api.csproj
 
-IMPORTANT RULES:
-- Do not modify ReviewController.cs, ReviewService.cs, 
-  IReviewRepository.cs, SqlReviewRepository.cs, or 
-  IReviewHistoryRepository.cs/SqlReviewHistoryRepository.cs
-- Do not modify StartupExtensions.cs yet (next step)
+Show me:
+1. Exactly which lines you added (with 5 lines of context before/after)
+2. The full build output — confirm "Build succeeded" with no errors
 
-Show me both files when done.
+If the build fails with a file lock error (DLL in use by another 
+process), tell me and I will stop the running process first.

@@ -1,18 +1,11 @@
-Add navigation to the "Review History" tile on the home screen.
+Add a "Review History" link to the left sidebar navigation menu, 
+positioned right after "Review Status".
 
-Read this file first:
-frontend/src/app/CASRRHome.tsx
+Search for where "Review Status" appears in the sidebar/navigation 
+component (likely in CASRRHome.tsx, a Sidebar.tsx, or a layout file 
+— search the codebase for the exact text "Review Status" to find 
+the file).
 
-Find the "Review History" tile (text shows "Review History" / 
-"All prior reviews").
+Show me the file and the surrounding code first before making 
+any change. Do not modify yet — just show me.
 
-Look at how the working tiles next to it are implemented — 
-specifically "Review Queue" and "Review Status" tiles, which 
-already navigate correctly when clicked.
-
-UPDATE only the Review History tile: make it navigate to 
-/review-history using the exact same pattern (Link component or 
-router.push, whichever the working tiles use) as the other tiles.
-
-Do not modify any other tile or any other part of this file.
-Show me exactly which lines changed (before/after).

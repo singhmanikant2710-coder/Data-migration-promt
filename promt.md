@@ -1,13 +1,12 @@
-Show me a diff of exactly what changed in templatesAdapters.ts. 
-Do not approve yet, just show the diff.
-
-
-Read this file completely first:
-frontend/src/services/api/reviews.ts
+Read this file completely:
+backend/src/Casrr.Api/Controllers/ReviewsController.cs
 
 Show me:
-1. The full content of this file
-2. The ReviewQueueRow type/interface definition
-3. The getReviewQueuePage function signature and implementation
+1. The GET endpoint that handles /api/v1/reviews/queue
+2. Does it accept any status/filter parameter (like "finalized")?
+3. What repository method does it call?
+4. In that repository method, what SQL/Dapper query is used and 
+   what columns does it select (especially anything related to 
+   "finalized" or "completed" status)?
 
-Do NOT create or modify anything yet. Just show me the content.
+Do not modify anything yet. Just show me the content.

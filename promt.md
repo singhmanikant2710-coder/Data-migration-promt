@@ -1,18 +1,16 @@
-Good. Now do a thorough audit before I rebuild. Search the ENTIRE 
-backend Infrastructure layer for SQL column references that are 
-missing the '_system' suffix but where the real DB column ends in 
-'_system'.
+The single-review fetch runs multiple section queries 
+(transactions, collateral, covenants, etc.), each with its own SQL. 
+We keep hitting one wrong column at a time. I want to find ALL wrong 
+columns at once.
 
-Specifically, search all .cs files in 
-backend/src/Casrr.Infrastructure/ for these exact wrong column 
-names (without _system) used inside SQL strings on the 
-dbo.[02_CORE_04_Accounts] table:
-- Comp_call_description  (should be Comp_call_description_system)
-- Collateral_description (should be Collateral_description_system)
+Do NOT modify anything. Read all section-query methods in 
+backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs 
+that run during a single review fetch.
 
-Also list ALL columns selected from dbo.[02_CORE_04_Accounts] 
-(alias a) across every method in the Infrastructure layer, so I 
-can cross-check them against the real table schema.
+For EACH method, list:
+- the method name
+- the source table (e.g. dbo.[02_CORE_04_Accounts])
+- every column referenced from that table (the a.[...] / alias.[...] names)
 
-Do NOT modify anything beyond the two confirmed fixes. Just report 
-the full list of a.[...] columns used against 02_CORE_04_Accounts.
+Output it as a plain list grouped by table, so I can cross-check 
+every column name against the real database schema in one pass.

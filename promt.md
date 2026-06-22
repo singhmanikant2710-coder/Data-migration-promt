@@ -1,16 +1,16 @@
-The single-review fetch runs multiple section queries 
-(transactions, collateral, covenants, etc.), each with its own SQL. 
-We keep hitting one wrong column at a time. I want to find ALL wrong 
-columns at once.
-
-Do NOT modify anything. Read all section-query methods in 
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs 
-that run during a single review fetch.
-
-For EACH method, list:
-- the method name
-- the source table (e.g. dbo.[02_CORE_04_Accounts])
-- every column referenced from that table (the a.[...] / alias.[...] names)
-
-Output it as a plain list grouped by table, so I can cross-check 
-every column name against the real database schema in one pass.
+SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME IN (
+    '02_CORE_01_Samples',
+    '02_CORE_02_Reviews',
+    '02_CORE_03_Scorecards',
+    '02_CORE_04_Accounts',
+    '02_CORE_05_Covenants',
+    '02_CORE_06_Policy Exceptions',
+    '02_CORE_07_Findings',
+    '02_CORE_08_Checklists',
+    '03_LIBRARY_01_CAS Findings',
+    '03_LIBRARY_03_Policy Exceptions',
+    '03_LIBRARY_09_Selections'
+)
+ORDER BY TABLE_NAME, ORDINAL_POSITION;

@@ -1,23 +1,24 @@
-Found the root cause. The single-review fetch returns HTTP 500 with:
-"Invalid column name 'Comp_call_description'."
+The fix is confirmed. In dbo.[02_CORE_04_Accounts] the actual column 
+is named 'Comp_call_description_system', but the query uses 
+'Comp_call_description' (missing the '_system' suffix). This is the 
+only cause of the 500 error.
 
-This is a backend SQL bug, NOT a frontend issue. The SQL query used 
-by GetReviewQueueByKeysAsync references a column 'Comp_call_description' 
-that does not exist in the database.
+Modify ONLY this one file:
+backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
 
-Read these files completely. Do NOT modify anything yet:
-1. backend/src/Casrr.Application/Services/ReviewService.cs — find 
-   GetReviewQueueByKeysAsync
-2. backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs 
-   — find the method behind GetReviewQueueByKeysAsync and locate the 
-   exact SQL query that uses 'Comp_call_description'
+In the GetTransactionsSectionAsync method, in the SQL SELECT list, 
+change the single line:
+    a.[Comp_call_description],
+to:
+    a.[Comp_call_description_system],
 
-Report back:
-1. The exact SQL query containing 'Comp_call_description'
-2. Which table/alias that column is being selected from
-3. The exact line and surrounding SELECT columns
+Rules:
+- Change ONLY that one column reference in that one SQL string.
+- Do NOT rename anything else, do NOT touch the C# property mapping 
+  unless the reader maps strictly by column name and would break — 
+  if so, STOP and tell me before changing it.
+- Do NOT modify any other file under any circumstances.
+- If you find the same wrong column name elsewhere in this method's 
+  SQL, fix only within this method and tell me.
 
-Also: does the working review-queue LIST query (GetQueueRowsAsync) 
-use this same column or a different one? Compare the two.
-
-Do NOT edit anything. Just report.
+After the change, show me the diff.

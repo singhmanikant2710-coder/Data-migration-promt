@@ -1,24 +1,18 @@
-The fix is confirmed. In dbo.[02_CORE_04_Accounts] the actual column 
-is named 'Comp_call_description_system', but the query uses 
-'Comp_call_description' (missing the '_system' suffix). This is the 
-only cause of the 500 error.
+Good. Now do a thorough audit before I rebuild. Search the ENTIRE 
+backend Infrastructure layer for SQL column references that are 
+missing the '_system' suffix but where the real DB column ends in 
+'_system'.
 
-Modify ONLY this one file:
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+Specifically, search all .cs files in 
+backend/src/Casrr.Infrastructure/ for these exact wrong column 
+names (without _system) used inside SQL strings on the 
+dbo.[02_CORE_04_Accounts] table:
+- Comp_call_description  (should be Comp_call_description_system)
+- Collateral_description (should be Collateral_description_system)
 
-In the GetTransactionsSectionAsync method, in the SQL SELECT list, 
-change the single line:
-    a.[Comp_call_description],
-to:
-    a.[Comp_call_description_system],
+Also list ALL columns selected from dbo.[02_CORE_04_Accounts] 
+(alias a) across every method in the Infrastructure layer, so I 
+can cross-check them against the real table schema.
 
-Rules:
-- Change ONLY that one column reference in that one SQL string.
-- Do NOT rename anything else, do NOT touch the C# property mapping 
-  unless the reader maps strictly by column name and would break — 
-  if so, STOP and tell me before changing it.
-- Do NOT modify any other file under any circumstances.
-- If you find the same wrong column name elsewhere in this method's 
-  SQL, fix only within this method and tell me.
-
-After the change, show me the diff.
+Do NOT modify anything beyond the two confirmed fixes. Just report 
+the full list of a.[...] columns used against 02_CORE_04_Accounts.

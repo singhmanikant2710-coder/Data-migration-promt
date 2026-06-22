@@ -1,26 +1,22 @@
-There's a runtime error on the Review Queue page when opening a review.
-Backend logs show GET /review-queue returns 200 OK fine — so the list 
-loads. The error happens inside handleOpen when calling getReviewByKeys.
+Good, the frontend guarding is fine. The error is the backend 
+endpoint GET /api/v1/reviews/review returning a non-2xx status, 
+which makes api.ts throw.
 
-Error: [browser] Failed to open review Error: An unexpected error occurred
-- at http (src/lib/api.ts:156:21)
-- at async getReviewByKeys (src/services/api/reviews.ts:449:10)
-- at async handleOpen (src/app/review-queue/page.tsx:221:19)
+I need to see the EXACT request and backend response. Do NOT 
+modify any code.
 
-Read these files completely. Do NOT modify anything yet:
-1. frontend/src/app/review-queue/page.tsx — focus on handleOpen 
-   (around line 221) and the row click handler that calls it
-2. frontend/src/services/api/reviews.ts — focus on getReviewByKeys 
-   (around line 449): what URL/endpoint does it call and what query 
-   params does it build?
+1. In frontend/src/app/review-queue/page.tsx, inside handleOpen 
+   (around line 221), add a temporary console.log RIGHT BEFORE 
+   the getReviewByKeys call that prints the exact reviewId, 
+   sampleId, and ecif values being passed. Use:
+   console.log("OPEN REVIEW PARAMS:", { reviewId, sampleId, ecif });
+   This is the ONLY change. Do not touch anything else.
 
-Report back:
-1. What exact values (reviewId, sampleId, ecif) does handleOpen 
-   read from the clicked row, and does it pass them to getReviewByKeys?
-2. What is the exact endpoint URL getReviewByKeys constructs?
-3. Is there any guard for when reviewId / sampleId / ecif is null, 
-   undefined, or empty string before the call is made?
-4. Around line 247 of page.tsx there's a comment about "duplicate ID" 
-   — what is that code block doing on error?
+2. Then tell me: what is the full backend endpoint signature for 
+   GET /api/v1/reviews/review? Find the controller action in 
+   backend/src/Casrr.Api/Controllers/ReviewController.cs that 
+   handles this route. What [FromQuery] parameters does it expect, 
+   and what does it return / what status codes can it produce 
+   (e.g. NotFound, BadRequest)?
 
-Do NOT edit anything. Just report these findings.
+Report the controller action code and the expected query parameters.

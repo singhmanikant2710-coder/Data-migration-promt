@@ -1,25 +1,36 @@
-DIAGNOSTIC ONLY — DO NOT EDIT ANY FILE. Read the files below and report back. Make zero changes.
+TASK: Make the Borrower Name clickable on the Review History screen so it navigates to the Review Form, exactly like the Review Queue screen does.
 
-Read these files:
-1. frontend/src/app/review-queue/page.tsx
-2. frontend/src/app/review-history/page.tsx
-3. frontend/src/services/api/reviewHistory.ts
+EDIT ONLY THIS FILE: frontend/src/app/review-history/page.tsx
+Do NOT add any npm package. Do NOT touch any other file. If another file seems to need changes, STOP and ask.
 
-Report the following with exact code snippets + line numbers:
+STEP 1 — Ensure router is available (top of the page component):
+- If not already imported, add:  import { useRouter } from "next/navigation";
+- Inside the page component body (where useState/setPdfRow etc. are declared), if not already present, add:  const router = useRouter();
+- Do not duplicate if they already exist.
 
-From review-queue/page.tsx:
-- The exact JSX of the Borrower Name cell (the clickable link).
-- How navigation is done (Link href / router.push / onClick) and the EXACT destination route string with all query params (section, borrower, reviewId, sampleId).
-- The exact JSX of the Linesheet icon/link and how its click works (download vs open) + which field/URL it uses.
-- The row object's type name and which fields it reads (e.g. row.reviewId, row.sampleId, row.borrowerName).
+STEP 2 — Replace ONLY the plain borrower-name span in the "customerName" column render (currently around line 176).
 
-From review-history/page.tsx:
-- The exact JSX of the current Borrower Name cell (currently plain text).
-- The exact JSX of the Linesheet icon if present.
-- The row object type used in the table .map(), and list ALL fields available on each row.
+FIND (exact):
+        <span className="text-slate-800 font-medium" onClick={(e) => { e.stopPropagation(); }}>{r.customerName ?? "-"}</span>
 
-From reviewHistory.ts:
-- The TypeScript interface/type of a single row returned by the API — list EVERY field.
-- Explicitly confirm whether reviewId and sampleId fields exist on that type.
+REPLACE WITH:
+        <button
+          type="button"
+          className="text-slate-800 font-medium hover:underline cursor-pointer bg-transparent border-0 p-0 text-left"
+          onClick={(e) => {
+            e.stopPropagation();
+            const qs = new URLSearchParams({
+              section: "review-info",
+              borrower: r.customerName ?? "",
+              reviewId: String(r.reviewId),
+              sampleId: String(r.sampleId),
+            });
+            router.push(`/review/id-${r.reviewId}/review-info?${qs.toString()}`);
+          }}
+        >
+          {r.customerName ?? "-"}
+        </button>
 
-Do NOT modify any file. If a path is not found, report it and stop.
+STEP 3 — Do NOT modify the existing PDF/linesheet <Button> and its <svg> (lines ~177-193). Leave them exactly as-is.
+
+After the change, confirm the file compiles and report only the edited region.

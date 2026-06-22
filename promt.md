@@ -1,22 +1,23 @@
-Good, the frontend guarding is fine. The error is the backend 
-endpoint GET /api/v1/reviews/review returning a non-2xx status, 
-which makes api.ts throw.
+Found the root cause. The single-review fetch returns HTTP 500 with:
+"Invalid column name 'Comp_call_description'."
 
-I need to see the EXACT request and backend response. Do NOT 
-modify any code.
+This is a backend SQL bug, NOT a frontend issue. The SQL query used 
+by GetReviewQueueByKeysAsync references a column 'Comp_call_description' 
+that does not exist in the database.
 
-1. In frontend/src/app/review-queue/page.tsx, inside handleOpen 
-   (around line 221), add a temporary console.log RIGHT BEFORE 
-   the getReviewByKeys call that prints the exact reviewId, 
-   sampleId, and ecif values being passed. Use:
-   console.log("OPEN REVIEW PARAMS:", { reviewId, sampleId, ecif });
-   This is the ONLY change. Do not touch anything else.
+Read these files completely. Do NOT modify anything yet:
+1. backend/src/Casrr.Application/Services/ReviewService.cs — find 
+   GetReviewQueueByKeysAsync
+2. backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs 
+   — find the method behind GetReviewQueueByKeysAsync and locate the 
+   exact SQL query that uses 'Comp_call_description'
 
-2. Then tell me: what is the full backend endpoint signature for 
-   GET /api/v1/reviews/review? Find the controller action in 
-   backend/src/Casrr.Api/Controllers/ReviewController.cs that 
-   handles this route. What [FromQuery] parameters does it expect, 
-   and what does it return / what status codes can it produce 
-   (e.g. NotFound, BadRequest)?
+Report back:
+1. The exact SQL query containing 'Comp_call_description'
+2. Which table/alias that column is being selected from
+3. The exact line and surrounding SELECT columns
 
-Report the controller action code and the expected query parameters.
+Also: does the working review-queue LIST query (GetQueueRowsAsync) 
+use this same column or a different one? Compare the two.
+
+Do NOT edit anything. Just report.

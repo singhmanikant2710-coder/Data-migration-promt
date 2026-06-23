@@ -1,27 +1,28 @@
-Do NOT edit anything. I'm working on the Review Status screen 
-(frontend route /review-status). I need to fully understand the 
-current implementation first.
+Do NOT edit anything. This is about the REVIEW STATUS screen only 
+(frontend route /review-status). Ignore review-queue and 
+review-history for now.
 
-Report all of the following:
+Report:
 
 A) FRONTEND
-1. Find the page file for /review-status (likely 
-   frontend/src/app/review-status/page.tsx). Show what API/service 
-   functions it calls for:
-   (a) the 7 summary box counts (Borrowers Sampled, Finalized, 
+1. Find the page file for the /review-status route (likely 
+   frontend/src/app/review-status/page.tsx). Confirm the exact path.
+2. Show what data it fetches and from which service/API for:
+   (a) the 7 summary boxes: Borrowers Sampled, Finalized, 
        Distributed, Approved, Draft Completed, In Progress, 
-       Unopened/Cancelled)
-   (b) the "Completed Draft Reviews for Approval" table rows
-2. Show the JSX + CSS/Tailwind classes for the 7 summary boxes 
-   (the container and a single box) so I can see the alignment.
-3. Show the service file(s) it imports from (e.g. 
-   frontend/src/services/api/...).
+       Unopened/Cancelled
+   (b) the "Completed Draft Reviews for Approval" table
+3. Show the JSX + Tailwind classes for the 7 summary boxes — the 
+   outer container (grid/flex) and one box — so I can see the 
+   alignment structure.
+4. Show the service file(s) it imports (frontend/src/services/api/...).
 
 B) BACKEND
-4. Does a backend endpoint already exist for these summary counts 
-   and the draft-reviews list? Search Casrr.Api Controllers and 
-   Casrr.Application Services. 
-   - If yes: show the controller route(s) + the SQL behind them.
-   - If no: state clearly that it's missing.
+5. Search Casrr.Api Controllers and Casrr.Application Services for 
+   any endpoint that returns these summary counts and the 
+   draft-reviews list for a sample. 
+   - If it exists: show the controller route + the SQL behind it.
+   - If it does NOT exist: state that clearly.
 
-Report only. No edits anywhere.
+Report only. No edits anywhere. Do not read review-queue or 
+review-history files.

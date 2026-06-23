@@ -1,19 +1,20 @@
--- 1. Samples table me kitne rows hain (status dropdown isi se bharta hai)
-SELECT COUNT(*) AS total_samples FROM dbo.[02_CORE_01_Samples];
-
--- 2. History dropdown agar finalized-reviews wale samples filter karta hai:
---    Reviews me kitne DISTINCT Sample_id hain jinme finalized data hai
-SELECT COUNT(DISTINCT Sample_id) AS distinct_finalized_samples
-FROM dbo.[02_CORE_02_Reviews]
-WHERE Review_finalized_date IS NOT NULL
-  AND (Cancelled IS NULL OR Cancelled = 0);
-
--- 3. Dono tables ke Sample_id directly match karte hain ya nahi (Bug 1 wala mismatch)
-SELECT TOP 20
-  s.Sample_id   AS samples_id,
-  s.Sample_name,
-  r.Sample_id   AS reviews_id
+-- History dropdown jo "finalized reviews wale samples" maangta hai,
+-- agar wo Samples.Sample_id pe join karta hai, ye 0 dega (= khali dropdown)
+SELECT COUNT(*) AS matched_via_direct_join
 FROM dbo.[02_CORE_01_Samples] s
-LEFT JOIN dbo.[02_CORE_02_Reviews] r
-  ON r.Sample_id = s.Sample_id
-ORDER BY s.Sample_id DESC;
+WHERE EXISTS (
+  SELECT 1 FROM dbo.[02_CORE_02_Reviews] r
+  WHERE r.Sample_id = s.Sample_id
+    AND r.Review_finalized_date IS NOT NULL
+    AND (r.Cancelled IS NULL OR r.Cancelled = 0)
+);
+
+-- Aur ye dikhayega ki name-parse wala mapping kaam karta hai (= dropdown bhar jana chahiye)
+SELECT COUNT(*) AS matched_via_name_parse
+FROM dbo.[02_CORE_01_Samples] s
+WHERE EXISTS (
+  SELECT 1 FROM dbo.[02_CORE_02_Reviews] r
+  WHERE r.Sample_id = TRY_CAST(LEFT(s.Sample_name, CHARINDEX(' -', s.Sample_name + ' -') - 1) AS INT)
+    AND r.Review_finalized_date IS NOT NULL
+    AND (r.Cancelled IS NULL OR r.Cancelled = 0)
+);

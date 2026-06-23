@@ -1,13 +1,19 @@
--- Kuch samples lo aur dekho: naam ka number vs Sample_id vs Reviews count
-SELECT TOP 10
-    s.Sample_id              AS samples_table_id,
-    s.Sample_name,
-    (SELECT COUNT(*) FROM dbo.[02_CORE_02_Reviews] r 
-     WHERE r.Sample_id = s.Sample_id) AS reviews_matching_samplesId
-FROM dbo.[02_CORE_01_Samples] s
-ORDER BY s.Sample_id DESC;
+On the Review Status screen, add an "All Samples" option to the 
+Select Sample / Review Name dropdown. When "All Samples" is 
+selected, call getReviewStatusPage WITHOUT a sampleId (pass 
+undefined/no param), so the backend returns combined data for all 
+samples (the backend already treats null sampleId as "all").
 
--- Reviews table mein jo Sample_id values hain, woh kya range mein hain (357 jaisi badi, ya 136 jaisi choti)?
-SELECT DISTINCT TOP 20 Sample_id 
-FROM dbo.[02_CORE_02_Reviews] 
-ORDER BY Sample_id DESC;
+Modify ONLY frontend/src/app/review-status/page.tsx:
+- Add an "All Samples" entry at the top of the dropdown options 
+  (e.g. value "" or "all").
+- When it's selected, call getReviewStatusPage() with no sampleId 
+  so the query string has no sampleId param.
+- Default the page to "All Samples" on first load so data shows 
+  immediately.
+
+Rules:
+- Do NOT change the backend, the service file, or any other file.
+- Do NOT change how individual samples are passed (that's a separate 
+  fix).
+- Show me the diff.

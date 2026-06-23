@@ -1,17 +1,13 @@
--- Sample 357 mein kitne reviews hain aur unki status dates kya hain
-SELECT 
-    COUNT(*) AS total_reviews,
-    SUM(CASE WHEN Review_finalized_date IS NOT NULL THEN 1 ELSE 0 END) AS finalized,
-    SUM(CASE WHEN Completed_date IS NOT NULL THEN 1 ELSE 0 END) AS completed,
-    SUM(CASE WHEN Start_date IS NOT NULL THEN 1 ELSE 0 END) AS started,
-    SUM(CASE WHEN Cancelled = 1 THEN 1 ELSE 0 END) AS cancelled
-FROM dbo.[02_CORE_02_Reviews]
-WHERE Sample_id = 357;
+-- Kuch samples lo aur dekho: naam ka number vs Sample_id vs Reviews count
+SELECT TOP 10
+    s.Sample_id              AS samples_table_id,
+    s.Sample_name,
+    (SELECT COUNT(*) FROM dbo.[02_CORE_02_Reviews] r 
+     WHERE r.Sample_id = s.Sample_id) AS reviews_matching_samplesId
+FROM dbo.[02_CORE_01_Samples] s
+ORDER BY s.Sample_id DESC;
 
------------
-
-SELECT TOP 20 Sample_id, COUNT(*) AS review_count
-FROM dbo.[02_CORE_02_Reviews]
-WHERE Cancelled IS NULL OR Cancelled = 0
-GROUP BY Sample_id
-ORDER BY review_count DESC;
+-- Reviews table mein jo Sample_id values hain, woh kya range mein hain (357 jaisi badi, ya 136 jaisi choti)?
+SELECT DISTINCT TOP 20 Sample_id 
+FROM dbo.[02_CORE_02_Reviews] 
+ORDER BY Sample_id DESC;

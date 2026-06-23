@@ -1,20 +1,17 @@
--- History dropdown jo "finalized reviews wale samples" maangta hai,
--- agar wo Samples.Sample_id pe join karta hai, ye 0 dega (= khali dropdown)
-SELECT COUNT(*) AS matched_via_direct_join
-FROM dbo.[02_CORE_01_Samples] s
-WHERE EXISTS (
-  SELECT 1 FROM dbo.[02_CORE_02_Reviews] r
-  WHERE r.Sample_id = s.Sample_id
-    AND r.Review_finalized_date IS NOT NULL
-    AND (r.Cancelled IS NULL OR r.Cancelled = 0)
-);
+READ-ONLY DIAGNOSTIC. Do NOT edit any file. Only read and report back.
 
--- Aur ye dikhayega ki name-parse wala mapping kaam karta hai (= dropdown bhar jana chahiye)
-SELECT COUNT(*) AS matched_via_name_parse
-FROM dbo.[02_CORE_01_Samples] s
-WHERE EXISTS (
-  SELECT 1 FROM dbo.[02_CORE_02_Reviews] r
-  WHERE r.Sample_id = TRY_CAST(LEFT(s.Sample_name, CHARINDEX(' -', s.Sample_name + ' -') - 1) AS INT)
-    AND r.Review_finalized_date IS NOT NULL
-    AND (r.Cancelled IS NULL OR r.Cancelled = 0)
-);
+Review History screen ka "Sample / Review Name" dropdown kis backend code se 
+populate hota hai, wo trace karo. Frontend se shuru karo:
+- frontend/src/app/review-history/page.tsx — dropdown kis service call se data leta hai
+- us service call ka API endpoint
+- us endpoint ka Controller + Service + Repository method
+
+Mujhe batao:
+1. Review History dropdown ka samples list banane wali repository method ka 
+   poora SQL/LINQ query (jaisa hai waisa paste karo).
+2. Kya wo 02_CORE_01_Samples ko 02_CORE_02_Reviews se join/filter karta hai? 
+   Agar haan, join condition kya hai (Sample_id pe direct join hai kya)?
+3. Review Status dropdown isi se alag kahan se bharta hai — woh source bhi batao.
+
+Modify ONLY by reading. Do not touch any file. Agar koi file change zaroori 
+lage to STOP karke poochho.

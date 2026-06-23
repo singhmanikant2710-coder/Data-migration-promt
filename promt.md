@@ -1,36 +1,27 @@
-TASK: Make the Borrower Name clickable on the Review History screen so it navigates to the Review Form, exactly like the Review Queue screen does.
+Do NOT edit anything. I'm working on the Review Status screen 
+(frontend route /review-status). I need to fully understand the 
+current implementation first.
 
-EDIT ONLY THIS FILE: frontend/src/app/review-history/page.tsx
-Do NOT add any npm package. Do NOT touch any other file. If another file seems to need changes, STOP and ask.
+Report all of the following:
 
-STEP 1 — Ensure router is available (top of the page component):
-- If not already imported, add:  import { useRouter } from "next/navigation";
-- Inside the page component body (where useState/setPdfRow etc. are declared), if not already present, add:  const router = useRouter();
-- Do not duplicate if they already exist.
+A) FRONTEND
+1. Find the page file for /review-status (likely 
+   frontend/src/app/review-status/page.tsx). Show what API/service 
+   functions it calls for:
+   (a) the 7 summary box counts (Borrowers Sampled, Finalized, 
+       Distributed, Approved, Draft Completed, In Progress, 
+       Unopened/Cancelled)
+   (b) the "Completed Draft Reviews for Approval" table rows
+2. Show the JSX + CSS/Tailwind classes for the 7 summary boxes 
+   (the container and a single box) so I can see the alignment.
+3. Show the service file(s) it imports from (e.g. 
+   frontend/src/services/api/...).
 
-STEP 2 — Replace ONLY the plain borrower-name span in the "customerName" column render (currently around line 176).
+B) BACKEND
+4. Does a backend endpoint already exist for these summary counts 
+   and the draft-reviews list? Search Casrr.Api Controllers and 
+   Casrr.Application Services. 
+   - If yes: show the controller route(s) + the SQL behind them.
+   - If no: state clearly that it's missing.
 
-FIND (exact):
-        <span className="text-slate-800 font-medium" onClick={(e) => { e.stopPropagation(); }}>{r.customerName ?? "-"}</span>
-
-REPLACE WITH:
-        <button
-          type="button"
-          className="text-slate-800 font-medium hover:underline cursor-pointer bg-transparent border-0 p-0 text-left"
-          onClick={(e) => {
-            e.stopPropagation();
-            const qs = new URLSearchParams({
-              section: "review-info",
-              borrower: r.customerName ?? "",
-              reviewId: String(r.reviewId),
-              sampleId: String(r.sampleId),
-            });
-            router.push(`/review/id-${r.reviewId}/review-info?${qs.toString()}`);
-          }}
-        >
-          {r.customerName ?? "-"}
-        </button>
-
-STEP 3 — Do NOT modify the existing PDF/linesheet <Button> and its <svg> (lines ~177-193). Leave them exactly as-is.
-
-After the change, confirm the file compiles and report only the edited region.
+Report only. No edits anywhere.

@@ -1,19 +1,8 @@
-On the Review Status screen, add an "All Samples" option to the 
-Select Sample / Review Name dropdown. When "All Samples" is 
-selected, call getReviewStatusPage WITHOUT a sampleId (pass 
-undefined/no param), so the backend returns combined data for all 
-samples (the backend already treats null sampleId as "all").
-
-Modify ONLY frontend/src/app/review-status/page.tsx:
-- Add an "All Samples" entry at the top of the dropdown options 
-  (e.g. value "" or "all").
-- When it's selected, call getReviewStatusPage() with no sampleId 
-  so the query string has no sampleId param.
-- Default the page to "All Samples" on first load so data shows 
-  immediately.
-
-Rules:
-- Do NOT change the backend, the service file, or any other file.
-- Do NOT change how individual samples are passed (that's a separate 
-  fix).
-- Show me the diff.
+SELECT
+  SUM(CASE WHEN Review_finalized_date IS NOT NULL AND Review_approval_date IS NULL THEN 1 ELSE 0 END) AS finalized_bucket,
+  SUM(CASE WHEN Review_finalized_date IS NOT NULL THEN 1 ELSE 0 END) AS any_finalized,
+  SUM(CASE WHEN Review_distributed_date IS NOT NULL AND Completed_date IS NULL AND Review_finalized_date IS NULL AND Review_approval_date IS NULL THEN 1 ELSE 0 END) AS distributed_bucket,
+  SUM(CASE WHEN Review_distributed_date IS NOT NULL THEN 1 ELSE 0 END) AS any_distributed,
+  SUM(CASE WHEN Review_approval_date IS NOT NULL THEN 1 ELSE 0 END) AS any_approved
+FROM dbo.[02_CORE_02_Reviews]
+WHERE Cancelled IS NULL OR Cancelled = 0;

@@ -1,53 +1,6 @@
-File to modify: frontend/src/app/review-history/page.tsx
-
-STEP 1 — First READ the entire page.tsx file. Understand the table rendering 
-(rows, columns), the eCIF# cell, the Borrower Name / Linesheet cell with its 
-document/pdf icon, and the pagination component. Do NOT edit until you understand 
-the current structure.
-
-STEP 2 — Apply these 4 UI changes to ONLY this file:
-
-CHANGE 1 — Remove the radio/circle in each row:
-There is a radio button (circle "○") rendered at the start of every table row. 
-Remove that radio input/element and its containing cell entirely, so rows no 
-longer show a selection circle. Keep all other columns intact and keep column 
-alignment correct after removal.
-
-CHANGE 2 — eCIF# column placeholder:
-Currently the eCIF# cell renders "-" when there is no value. Change it so that:
-- If eCIF value exists (not null, not empty string), show the actual value.
-- If it is null or empty, render an empty cell (no "-", no dash). 
-Do not change any other column's placeholder behavior.
-
-CHANGE 3 — Align the document/pdf icon in the Borrower Name / Linesheet column:
-Currently the pdf/document icon appears right after the borrower text, so its 
-position shifts depending on borrower name length (looks misaligned, "jumping" 
-left/right per row). Fix it so the icon sits in a consistent fixed position 
-within the column for every row — e.g. borrower name on the left and the icon 
-aligned in a fixed spot (use a flex layout with justify-between, or a fixed-width 
-icon container), so all icons line up vertically down the column regardless of 
-name length. Use only existing Tailwind utility classes already used in the project.
-
-CHANGE 4 — Premium pagination (max 10 page buttons + Previous/Next):
-Currently all page numbers (1..30+) render at once. Change the pagination to a 
-premium style:
-- Show a maximum of 10 numbered page buttons at a time (a sliding window around 
-  the current page).
-- Add "Previous" and "Next" buttons on either side.
-- Previous is disabled on page 1; Next is disabled on the last page.
-- Keep the existing "Showing 1-10 of 4974 results" text.
-- Keep the existing page-change handler / state logic; only change how the page 
-  buttons are rendered (the window + prev/next), do not change the data fetching 
-  or page size.
-
-CONSTRAINTS:
-- Modify ONLY this one file: frontend/src/app/review-history/page.tsx
-- Do NOT touch any other file. If another file seems to need changes, STOP and 
-  ask me first.
-- Do NOT add any new npm package.
-- Do NOT change backend calls, API params, or data logic — these are pure UI changes.
-- Keep all existing functionality (sample dropdown filter, borrower search, 
-  sorting) working.
-
-After editing, give me a short summary of exactly what changed in each of the 
-4 areas.
+"On the Checklist tab — which fields should the reviewer be able to edit? Is it only the Answer dropdown and the Comments box, and should the Review Guidance and Review Question text always stay read-only?"
+"For the Answer field — is it always Yes / No / N/A, or do some questions have a different set of options? And is a comment mandatory when someone answers 'No'?"
+"We see a 'Re-Opened' status on the form. Could you confirm in which statuses the checklist stays editable, and when it should get locked — say, once the review is Completed or Approved?"
+"Now on the Risk Rating Justification tab — those reference cards on top, like Committed Exposure, Collateral Rating, PSOR, SSOR, Max PD ratings — are these all read-only reference values, or is any of them editable on this screen?"
+"And the Risk Rating Justification text box — who is allowed to edit it? Is it CRO-only, or can the Analyst edit it too? Also, should it follow the same role and status locking as the checklist?"
+"Last one — is the justification text mandatory before the review can be completed?"

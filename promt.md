@@ -1,25 +1,23 @@
-File: frontend/src/app/review-history/page.tsx
-READ-ONLY DIAGNOSTIC. Do NOT edit anything. Only read and report back.
+File to modify: frontend/src/app/review-history/page.tsx
 
-Two earlier fixes did not work. Investigate and report exactly:
+In the "customerName" column's render function, the borrower name + pdf icon 
+cell currently looks like:
 
-1. RADIO CIRCLE: Each table row still shows a circle (radio button) at the far 
-   left, before the "Sample / Review Name" column. Find the exact JSX/element 
-   that renders this circle in each row. Report:
-   - The exact line(s) and the element (is it an <input type="radio">, a styled 
-     <div>, an icon, a CSS pseudo-element, or part of a shared component?)
-   - Why a previous attempt to remove it may have failed (e.g. it's rendered in 
-     a child component, or via a CSS class).
+<div className="flex items-center justify-between gap-2 min-w-0">
+  <button ... className="text-slate-800 font-medium hover:underline cursor-pointer bg-transparent border-0 p-0 text-left truncate">
+    {r.customerName ?? "-"}
+  </button>
+  <div className="shrink-0 w-6 flex justify-end">
+    <Button ...>...</Button>
+  </div>
+</div>
 
-2. DOCUMENT/PDF ICON ALIGNMENT: In the "Borrower Name / Linesheet" column, the 
-   pdf/document icon still sits immediately after the borrower text, so its 
-   horizontal position changes with each borrower name length (not aligned in a 
-   fixed column position). Report:
-   - The exact JSX that renders the borrower name + icon together in the cell.
-   - The current layout/classes used (is it inline? flex? what container?).
-   - What change would make the icon sit at a fixed position so all icons align 
-     vertically (e.g. flex justify-between on the cell, or a fixed-width name 
-     container with the icon after).
+Make this single change only:
+1. Add "w-full" to the outer container's className, so it becomes:
+   "flex items-center justify-between gap-2 min-w-0 w-full"
+2. Wrap the name <button> in a new div with className="flex-1 min-w-0", 
+   keeping the button's existing className and truncate behavior unchanged.
 
-Report findings only. Do NOT make any edits. After you report, I will tell you 
-what to change.
+Do not change anything else — not the icon button, not the SVG, not any other 
+column or cell. Modify ONLY this file (page.tsx). Do NOT touch any other file. 
+If this requires touching DataTable or any other component, STOP and ask me first.

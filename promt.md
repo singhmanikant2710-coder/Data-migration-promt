@@ -1,52 +1,65 @@
 File to modify: SqlReviewStatusRepository.cs (ONLY this file)
 
-The Review Status counts don't match the database. The Review Queue screen 
-(SqlReviewRepository.cs / GetQueuePageAsync) computes the same counts CORRECTLY. 
-Make Review Status match Review Queue's approach.
+CONTEXT: The "Unopened/Cancelled" tile must show BOTH genuinely-unopened reviews 
+AND cancelled reviews (the tile name is literally "Unopened/Cancelled"). 
+Currently qAll filters out cancelled (.Where(r => r.Cancelled != true)), so the 
+tile only shows unopened (~48) and cancelled count is missing.
 
-Reference — how Review Queue does it correctly:
-- Its base query filters out cancelled BEFORE any counting:
-    var q = _db.Reviews.AsNoTracking().Where(r => r.Cancelled != true);
-- So NO bucket ever counts cancelled reviews.
-- Its "Not Open" bucket counts only genuinely-unopened reviews (all 5 dates 
-  null), and since cancelled is already filtered out, it never includes cancelled.
+REQUIRED BEHAVIOR:
+- Keep qAll filtering out cancelled (so the OTHER buckets — In Progress, Draft 
+  Completed, Approved, Finalized, Distributed — stay correct and never include 
+  cancelled). DO NOT remove that filter.
+- The "Unopened/Cancelled" tile count = (genuinely-unopened count from the 
+  cancelled-filtered qAll) + (separate count of cancelled reviews from the full 
+  Reviews table). These two sets never overlap (cancelled rows aren't in qAll), 
+  so simple addition is safe — no double-counting.
+- borrowersSampled must REMAIN the sum of the active buckets = 5173 (matching 
+  Review Queue). The cancelled count must NOT be added into borrowersSampled. 
+  Only the Unopened/Cancelled TILE shows the combined number; the grand total 
+  (borrowersSampled) stays 5173.
 
-CURRENT PROBLEM in Review Status:
-- Its base queryable (qAll) does NOT pre-filter cancelled, so cancelled reviews 
-  leak into buckets.
-- Its "UnopenedOrCancelled" bucket counts cancelled reviews and adds them into 
-  the bucket sum, inflating borrowersSampled (showing 6006 instead of 5173).
+IMPLEMENTATION:
+1. Keep the UnopenedOrCancelled bucket (computed over the cancelled-filtered 
+   qAll) as the genuinely-unopened count only:
+   UnopenedOrCancelled = g.Sum(r =>
+     (r.Start_date == null && r.Review_distributed_date == null &&
+      r.Completed_date == null && r.Review_finalized_date == null &&
+      r.Review_approval_date == null) ? 1 : 0)
 
-FIX (two changes):
+2. Compute a SEPARATE cancelled count from the FULL Reviews table (not qAll), 
+   respecting the same sampleId filter if one is applied:
+   - cancelledCount = count of Reviews where Cancelled == true (AND Sample_id == 
+     sampleId if sampleId.HasValue). Use the same parsed-sampleId logic the rest 
+     of this method already uses for filtering by sample.
 
-CHANGE 1 — Add the cancelled filter to the base queryable, exactly like Queue:
-Find where qAll is defined (the base Reviews queryable used for the buckets) and 
-add .Where(r => r.Cancelled != true) so cancelled reviews are excluded before 
-all bucketing — matching Review Queue.
+3. When building the statusCounts list, set the "Unopened/Cancelled" item's 
+   Count = unopenedCount + cancelledCount (the combined display number).
 
-CHANGE 2 — Fix the UnopenedOrCancelled bucket so it only counts genuinely 
-unopened (all 5 dates null), NOT cancelled (cancelled is now already filtered 
-out by Change 1). Match Queue's "Not Open" condition:
-UnopenedOrCancelled = g.Sum(r =>
-    (r.Start_date == null &&
-     r.Review_distributed_date == null &&
-     r.Completed_date == null &&
-     r.Review_finalized_date == null &&
-     r.Review_approval_date == null) ? 1 : 0)
-(Remove the "+ (r.Cancelled == true ? 1 : 0)" part entirely.)
+4. borrowersSampled: keep it as the sum of the ACTIVE buckets only 
+   (Approved + Finalized + Distributed + DraftCompleted + InProgress + 
+   genuinely-unopened), WITHOUT the cancelled count. So borrowersSampled stays 
+   5173. 
+   IMPORTANT: if borrowersSampled is currently computed as statusCounts.Sum(...), 
+   and the Unopened/Cancelled item now includes cancelled, then summing 
+   statusCounts would wrongly re-add cancelled into the total. Prevent this: 
+   compute borrowersSampled from the active-bucket counts only (exclude the 
+   cancelled portion), OR sum the buckets before adding cancelled to the tile. 
+   Make sure borrowersSampled = 5173, not 5173 + cancelled.
 
-After these two changes, with cancelled excluded at the source and the unopened 
-bucket counting only genuinely-unopened:
-- borrowersSampled (sum of buckets) should become 5173 (matching Queue's total)
-- In Progress stays 33, Draft Completed stays 118, Approved 4974, Finalized 0, 
-  Distributed 0 — all already correct.
+CONSTRAINTS:
+- Modify ONLY SqlReviewStatusRepository.cs.
+- Do NOT change the other bucket conditions (Approved/Finalized/Distributed/
+  DraftCompleted/InProgress).
+- Do NOT touch the frontend or Review Queue.
+- Keep the sampleId filtering behavior consistent (cancelled count must also 
+  respect the selected sample).
 
-NOTE: After this, the "Unopened/Cancelled" tile will show only genuinely-unopened 
-count (around 48), no longer including cancelled. If the business wants cancelled 
-shown somewhere, that's a separate decision — for now match Queue's behavior 
-(cancelled excluded entirely).
+After editing, paste back:
+1. The cancelledCount computation,
+2. The Unopened/Cancelled item's Count assignment,
+3. The borrowersSampled computation,
+so I can verify it shows combined on the tile but keeps total at 5173.
 
-Modify ONLY SqlReviewStatusRepository.cs. Do NOT change other buckets' 
-conditions (Approved/Finalized/Distributed/DraftCompleted/InProgress). Do NOT 
-touch the frontend or Queue. After editing, paste back: the qAll definition 
-line and the changed UnopenedOrCancelled condition.
+verify in sql cancel count 
+
+SELECT COUNT(*) AS cancelled_total FROM dbo.[02_CORE_02_Reviews] WHERE Cancelled = 1;

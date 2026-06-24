@@ -1,24 +1,34 @@
-Files (READ-ONLY, do NOT edit): 
-- backend ReviewStatusController / ReviewStatusService / SqlReviewStatusRepository.cs
-- frontend/src/app/review-status/page.tsx
+File to modify: backend SqlReviewStatusRepository.cs (ONLY this file)
 
-Report in plain text only:
+ROOT CAUSE (confirmed): The review-status sample dropdown sends 
+Samples.Sample_id (e.g. 136), but both the count-bucket query and the 
+"Completed Draft Reviews" query filter Reviews.Sample_id = @sampleId, where 
+Reviews.Sample_id stores the leading number from Sample_name (e.g. 357). So 
+136 never matches 357 → "No records" for individual samples, while "All 
+Samples" works (no filter).
 
-1. When a sample is selected in review-status, what exact value does the frontend 
-   send as sampleId to GET /api/v1/reviews/status? Is it the Samples.Sample_id 
-   (small internal id like 136) or the leading number from Sample_name (like 357)?
+FIX: Where the samples dropdown list is built in this repository, change each 
+sample's Id so it equals the leading number parsed from Sample_name (the part 
+before the first " - "), instead of Samples.Sample_id. Keep Name = full 
+Sample_name unchanged.
 
-2. In SqlReviewStatusRepository.cs, show how sampleId is used to filter:
-   a) the count buckets (the EF Core/LINQ over Reviews), and
-   b) the "Completed Draft Reviews" ADO.NET query.
-   Specifically: does it filter by Reviews.Sample_id = @sampleId (numeric match), 
-   and is @sampleId the small id (136) that won't match Reviews (which store 357)?
+Current code (approx):
+.Select(s => new LookupItem { Id = s.Sample_id.ToString(), Name = s.Sample_name ... })
 
-3. Does the review-status sample dropdown get its id from Samples.Sample_id, or 
-   does it (or could it) use the leading number parsed from Sample_name?
+Change the Id to the parsed leading number:
+- Take Sample_name, take the substring before the first " - " (or first "-"), 
+  trim it, and use that as the Id (as a string).
+- If parsing fails or there's no separator, fall back to s.Sample_id.ToString() 
+  so nothing breaks.
+- Do this in a null-safe way (Sample_name could theoretically be null — fall 
+  back to Sample_id then).
 
-4. Does 02_CORE_02_Reviews have a Sample_name column usable for filtering (like 
-   review-history now uses), so we could filter by parsed sample number or by 
-   Sample_name instead of the mismatched Sample_id?
+Do NOT change the count-bucket query or the "Completed Draft Reviews" query — 
+they already filter Reviews.Sample_id = @sampleId, which will now match because 
+the dropdown sends the parsed number (357) that exists in Reviews.Sample_id.
 
-Report only. No edits.
+Modify ONLY SqlReviewStatusRepository.cs, only the part that builds the samples 
+dropdown list. Do NOT touch the frontend, the controller, the service, or any 
+query logic. If anything else seems to need changing, STOP and ask me first.
+
+After editing, paste back the changed Select/mapping code so I can verify.

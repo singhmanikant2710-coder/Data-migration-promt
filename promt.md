@@ -1,41 +1,22 @@
-URGENT — REVERT the last change.
-
-File: frontend/src/app/review-history/page.tsx
-
-The last edit added "table-fixed" to the className passed to <DataTable ...> 
-on this page. This broke the entire table layout — columns are now overlapping 
-text, the eCIF# column disappeared, and horizontal scroll stopped working.
-
-Please REMOVE "table-fixed" from that className string, reverting it back to 
-exactly what it was before this change (e.g. back to 
-className="w-full [&_td]:px-4 [&_td]:py-3" without table-fixed).
-
-Do NOT make any other changes. Modify ONLY this one file. After reverting, 
-show me the className string as it now stands so I can confirm it matches 
-the pre-change state.
-
-
-next year daalna hai
-
 File to modify: frontend/src/app/review-history/page.tsx
 
-In the customerName column definition, the cellClassName currently has 
-"w-[320px] max-w-[320px]" but the cell still overflows for long borrower names 
-because the table uses table-layout: auto (table-fixed was tried and reverted 
-as it broke other columns).
+The customerName column's long text (e.g. "HOWARD MIDSTREAM ENERGY PARTNERS") 
+still overlaps the pdf icon. Two previous attempts (column className width, 
+and table-fixed) did not fix it — table-fixed broke other columns and was 
+reverted.
 
-FIX: Instead of relying on className for width, add an inline style directly 
-on the outer cell wrapper div inside the render function (the div with 
-className="flex items-center justify-between gap-2 min-w-0 w-full"). Add:
-style={{ maxWidth: 280 }}
-to that same div, in addition to its existing className. Keep the className 
-exactly as is. Also keep cellClassName/className on the column definition as 
-they are (don't remove them).
+FIX THIS TIME: In the render function for the customerName column, find the 
+outer container div (className="flex items-center justify-between gap-2 
+min-w-0 w-full"). Add an inline style directly to it:
+style={{ maxWidth: '280px' }}
 
-This forces the flex container itself to a hard pixel cap regardless of the 
-table's layout algorithm, so truncate inside it will work correctly without 
-needing table-fixed.
+Then find the inner wrapper div around the name button (the one with 
+className="flex-1 min-w-0"). Add an inline style to it too:
+style={{ overflow: 'hidden' }}
 
-Do not touch table-layout, do not add table-fixed anywhere, do not touch any 
-other column. Modify ONLY the customerName render JSX's outer div by adding 
-the style attribute. Modify ONLY this file.
+Do not remove or change any existing className. Only ADD these two style 
+attributes to these two specific divs. Do not touch table-layout, do not add 
+table-fixed, do not touch any other column, do not touch DataTable.tsx.
+
+Modify ONLY this file: frontend/src/app/review-history/page.tsx. After editing, 
+paste back the exact JSX block you changed so I can verify before testing.

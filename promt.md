@@ -1,26 +1,26 @@
 File to modify: frontend/src/app/review-history/page.tsx
 
-In the "customerName" column definition (inside the columns array, the one 
-whose render function returns the borrower name + pdf icon), add a maxWidth 
-(or equivalent width constraint) to the column definition itself — NOT inside 
-the render JSX, but on the column config object (same level as "key" and 
-"render" for this column).
+The customerName column was given className="w-[320px] max-w-[320px]" and 
+cellClassName="w-[320px] max-w-[320px]" on the column definition, but the long 
+borrower name "HOWARD MIDSTREAM ENERGY PARTNERS" still overflows and overlaps 
+the pdf icon instead of truncating with "...". This is happening because the 
+table currently uses the browser default table-layout: auto, where column 
+width hints can be ignored if content is wider.
 
-Set it to a reasonable fixed cap, e.g.:
-  maxWidth: "320px" 
-(use whatever property name the DataTable component's column type already 
-supports — check the column type/interface for DataTable first; it may be 
-"width", "maxWidth", or a className-based option. Use whichever one DataTable 
-actually respects).
+FIX: Add the Tailwind class "table-fixed" to the actual <table> element 
+rendered by the DataTable component (or, if DataTable accepts a className/
+tableClassName prop for the outer <table> tag, pass "table-fixed" through that 
+prop from this page — do NOT hardcode it inside DataTable.tsx itself, find 
+where this page already passes className="w-full [&_td]:px-4 [&_td]:py-3" to 
+the DataTable component and add "table-fixed" to that same className string).
 
-After setting this constraint, the existing inner JSX (the flex container with 
-w-full, the flex-1 min-w-0 wrapper around the name button with truncate, and 
-the shrink-0 icon wrapper) should now correctly truncate long names with "..." 
-and keep the icon aligned, since the cell will no longer stretch to fit the 
-full text.
+After this change, the existing w-[320px] max-w-[320px] constraint on the 
+customerName column combined with table-fixed should force the cell to a 
+fixed width, allowing truncate to correctly cut long names with "..." and 
+keep the icon aligned.
 
-Do not change any other column's width. Do not touch the render JSX further — 
-only add the width constraint to the column definition. Modify ONLY this file 
-(page.tsx). If DataTable's column type doesn't support a width/maxWidth prop, 
-STOP and tell me what options the column type interface actually offers, 
-rather than guessing.
+Only add the "table-fixed" class to the existing className prop passed to 
+<DataTable ...> from this page. Do not change anything else, do not touch 
+DataTable.tsx. Modify ONLY frontend/src/app/review-history/page.tsx. If adding 
+table-fixed requires touching DataTable.tsx itself, STOP and tell me exactly 
+what would need to change there, without editing it.

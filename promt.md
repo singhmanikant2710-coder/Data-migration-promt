@@ -1,26 +1,41 @@
+URGENT — REVERT the last change.
+
+File: frontend/src/app/review-history/page.tsx
+
+The last edit added "table-fixed" to the className passed to <DataTable ...> 
+on this page. This broke the entire table layout — columns are now overlapping 
+text, the eCIF# column disappeared, and horizontal scroll stopped working.
+
+Please REMOVE "table-fixed" from that className string, reverting it back to 
+exactly what it was before this change (e.g. back to 
+className="w-full [&_td]:px-4 [&_td]:py-3" without table-fixed).
+
+Do NOT make any other changes. Modify ONLY this one file. After reverting, 
+show me the className string as it now stands so I can confirm it matches 
+the pre-change state.
+
+
+next year daalna hai
+
 File to modify: frontend/src/app/review-history/page.tsx
 
-The customerName column was given className="w-[320px] max-w-[320px]" and 
-cellClassName="w-[320px] max-w-[320px]" on the column definition, but the long 
-borrower name "HOWARD MIDSTREAM ENERGY PARTNERS" still overflows and overlaps 
-the pdf icon instead of truncating with "...". This is happening because the 
-table currently uses the browser default table-layout: auto, where column 
-width hints can be ignored if content is wider.
+In the customerName column definition, the cellClassName currently has 
+"w-[320px] max-w-[320px]" but the cell still overflows for long borrower names 
+because the table uses table-layout: auto (table-fixed was tried and reverted 
+as it broke other columns).
 
-FIX: Add the Tailwind class "table-fixed" to the actual <table> element 
-rendered by the DataTable component (or, if DataTable accepts a className/
-tableClassName prop for the outer <table> tag, pass "table-fixed" through that 
-prop from this page — do NOT hardcode it inside DataTable.tsx itself, find 
-where this page already passes className="w-full [&_td]:px-4 [&_td]:py-3" to 
-the DataTable component and add "table-fixed" to that same className string).
+FIX: Instead of relying on className for width, add an inline style directly 
+on the outer cell wrapper div inside the render function (the div with 
+className="flex items-center justify-between gap-2 min-w-0 w-full"). Add:
+style={{ maxWidth: 280 }}
+to that same div, in addition to its existing className. Keep the className 
+exactly as is. Also keep cellClassName/className on the column definition as 
+they are (don't remove them).
 
-After this change, the existing w-[320px] max-w-[320px] constraint on the 
-customerName column combined with table-fixed should force the cell to a 
-fixed width, allowing truncate to correctly cut long names with "..." and 
-keep the icon aligned.
+This forces the flex container itself to a hard pixel cap regardless of the 
+table's layout algorithm, so truncate inside it will work correctly without 
+needing table-fixed.
 
-Only add the "table-fixed" class to the existing className prop passed to 
-<DataTable ...> from this page. Do not change anything else, do not touch 
-DataTable.tsx. Modify ONLY frontend/src/app/review-history/page.tsx. If adding 
-table-fixed requires touching DataTable.tsx itself, STOP and tell me exactly 
-what would need to change there, without editing it.
+Do not touch table-layout, do not add table-fixed anywhere, do not touch any 
+other column. Modify ONLY the customerName render JSX's outer div by adding 
+the style attribute. Modify ONLY this file.

@@ -63,3 +63,6 @@ CONSTRAINTS:
 - Keep dropdown filter, borrower search, and sorting working.
 
 After editing, summarize what changed in each of the 4 areas.
+
+
+Strict Only modify the Review History screen. Do not change any existing code on any other tab or page.

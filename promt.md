@@ -1,8 +1,21 @@
-1. Finalized basis:
-The Review History screen currently displays all reviews that have a finalized date (titled "All Finalized Reviews"). Please confirm this is the correct basis — should it show reviews by finalized date, or by approval date? (In the current data, finalized and approval dates are always identical, so we want to confirm the intended criteria.)
-2. Sample / Review Name dropdown:
-The "Sample / Review Name" dropdown on Review History lists samples. Should it show all samples, or only samples that have finalized reviews? Also, the label says "Sample / Review Name" — should this filter by sample only, or is a separate review-level filter expected?
-3. eCIF# column:
-The eCIF# column is currently empty for all rows in Review History. Should this column display the eCIF number, and if so, from which source? (Right now no eCIF value is coming through for finalized reviews.)
-4. Sample column data:
-Should each row show the full Sample/Review name (e.g. "357 - 5/1/2026 - Examination - Franchise Finance")? We currently derive this from the Reviews table's Sample_name. Please confirm the expected source.
+File to modify: backend/src/Casrr.Infrastructure/SqlServer/SqlReviewHistoryRepository.cs
+Method: GetHistoryRowsAsync
+
+The Review History sample dropdown is empty and the "Sample / Review Name" 
+column shows no value. Root cause: the query LEFT JOINs 02_CORE_01_Samples (s) 
+to 02_CORE_02_Reviews (r) ON r.Sample_id = s.Sample_id, but these two tables 
+use different Sample_id schemes so the join never matches and s.Sample_name 
+comes back NULL. The Reviews table (02_CORE_02_Reviews) already has its own 
+Sample_name column.
+
+FIX (3 changes):
+1. Remove the line: 
+   LEFT JOIN dbo.[02_CORE_01_Samples] AS s WITH (NOLOCK) ON r.[Sample_id] = s.[Sample_id]
+2. In the SELECT list, replace "s.[Sample_name] AS SampleName" with 
+   "r.[Sample_name] AS SampleName".
+3. In the WHERE clause, change "s.[Sample_name] LIKE '%' + @sampleName + '%'" 
+   to "r.[Sample_name] LIKE '%' + @sampleName + '%'".
+
+Keep everything else identical (all r.* columns, finalized filter, cancelled 
+filter, borrowerName filter, ORDER BY). Modify ONLY this file. Do not touch any 
+other file. After editing, paste back the full changed query.

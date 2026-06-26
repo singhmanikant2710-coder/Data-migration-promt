@@ -1,46 +1,25 @@
-Implement UI improvements ONLY for the Review History screen. Do NOT modify any other screen, component, shared styles, utility, or business logic. The Review Status screen should be used ONLY as the visual reference.
+File to modify: frontend/src/app/review-history/page.tsx
 
-Requirements:
+Two changes per client confirmation:
 
-1. Match the overall premium look and feel of the Review Status screen while keeping all existing Review History functionality unchanged.
+CHANGE 1 — Re-label the sample dropdown:
+The dropdown label currently reads "Sample / Review Name". Change the label 
+text to "Sample Name". (Only the visible label/heading text for this dropdown — 
+do not change the dropdown's data, options, or behavior.)
 
-2. Improve the table layout:
-   - Maintain consistent column spacing and alignment.
-   - Increase readability with proper row height and padding.
-   - Ensure header styling matches Review Status (background, typography, spacing, borders, and sticky header if already supported).
+CHANGE 2 — Verify the dropdown only lists samples that have finalized reviews:
+The dropdown options are built from the fetched review history rows' SampleName 
+values. Since the Review History data is already filtered to finalized reviews 
+(Review_finalized_date IS NOT NULL), the dropdown should already only contain 
+samples that have finalized reviews. 
+- Confirm this is the case by reading the code: are the dropdown options derived 
+  ONLY from the finalized rows returned by getReviewHistory(), or from a separate 
+  unfiltered samples source?
+- If derived from the finalized rows: report "already correct, no change needed".
+- If derived from a separate/unfiltered source: STOP and tell me before changing 
+  anything — do not modify the data source without confirming with me first.
 
-3. Borrower Name column:
-   - Allow long borrower names to wrap onto the next line instead of being truncated or overflowing.
-   - Keep the text left-aligned with proper vertical alignment.
-   - Preserve consistent row spacing when text wraps.
-
-4. Pagination section:
-   - Redesign to match the premium Review Status layout.
-   - Align "Showing X–Y of Z results", page navigation buttons, and "Rows per page" dropdown on a single horizontal line.
-   - Ensure proper spacing between First, Previous, Next, and Last buttons.
-   - Right-align the "Rows per page" dropdown.
-   - Maintain responsive alignment on different screen sizes.
-
-5. Rows Per Page dropdown:
-   - Match the styling of the Bucket dropdown used in Review Status.
-   - Keep consistent height, width, border, padding, font, and icon alignment.
-
-6. Improve overall spacing:
-   - Uniform margins around the table.
-   - Consistent padding inside the card/container.
-   - Proper alignment of filter/search area and pagination controls.
-
-7. Responsive behavior:
-   - No overlapping, clipping, or unnecessary horizontal scrolling.
-   - Wrapped borrower names should not break the table layout.
-
-8. Keep all existing functionality intact:
-   - No changes to APIs.
-   - No changes to data binding.
-   - No changes to sorting, filtering, pagination logic, or business logic.
-
-STRICT INSTRUCTION:
-- Modify ONLY the Review History screen.
-- Do NOT change Review Status or any other page.
-- Do NOT modify shared/global components or styles.
-- Keep the changes isolated to Review History UI only.
+Modify ONLY this file. For Change 1, only the label text. Do NOT touch backend, 
+data fetching, columns, pagination, or anything else. After editing, tell me: 
+(a) the new label text, (b) whether the dropdown is already finalized-only or 
+needs a change.

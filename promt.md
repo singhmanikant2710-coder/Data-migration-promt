@@ -1,35 +1,39 @@
 Modify ONLY this file:
-backend/src/Casrr.Application/IReviewRepository.cs
+backend/src/Casrr.Application/Services/ReviewService.cs
 
-Add a declaration for the new SaveCrmFindingsAsync method, matching the style 
-of the existing SaveKeyRisksAsync / UpsertChecklistAsync declarations. 
-The implementation in SqlReviewRepository.cs has this signature:
+In SaveAsync, add a new CRM Findings block immediately AFTER the Checklist block 
+and BEFORE the "var response = new ReviewFormSaveResponse" line.
 
-    Task SaveCrmFindingsAsync(
-        int reviewId,
-        IEnumerable<CrmFindingRow>? findings,
-        CancellationToken ct);
+The block must:
+1. Check the section was posted:
+   if (dto.CrmFindingsAndRatings is not null && 
+       dto.CrmFindingsAndRatings.Change != SectionChangeKind.None)
+   {
+       ...
+   }
 
-Add a matching declaration with a short comment like the others 
-(e.g. "// Persist CRM Findings into dbo.[02_CORE_07_Findings] (replace-all)").
-Ensure CrmFindingRow is imported/available in this file (use the same namespace 
-the implementation uses).
+2. Inside, read dto.CrmFindingsAndRatings.Data (a JsonElement?). The Data is a 
+   single object that contains a "findings" array. Each finding object has 
+   properties: component, findingCode, severity, comments, followUp.
 
-Modify ONLY IReviewRepository.cs. If CrmFindingRow is not accessible here and 
-needs a using/namespace change in ANOTHER file, STOP and tell me first.
+3. Use a LOCAL static TryGetPropertyIgnoreCase helper (same style as the other 
+   blocks in this method, e.g. the Covenants/PolicyExceptions blocks) to:
+   - get the "findings" array from Data
+   - for each element in that array, read component, findingCode, severity, 
+     comments (strings), and followUp (boolean; treat true/"true"/1 as true)
+   - build a List<CrmFindingRow> where each row sets 
+     Component, FindingCode, Severity, Comments, FollowUp
 
-READ-ONLY. Do NOT edit. Report only.
+4. Skip elements where findingCode is null/empty.
 
-In ReviewService.SaveAsync, I need to add a CRM Findings block after the Checklist 
-block. Report ONLY:
+5. Call:
+   await _repo.SaveCrmFindingsAsync(resolvedReviewId, findingRows, ct);
 
-1. Show the lines immediately AFTER the Checklist block 
-   (if (dto.Checklist?.Length > 0) { ... UpsertChecklistAsync ... }) 
-   so I know exactly where to insert the new block.
+6. Wrap parsing in a try/catch consistent with the other blocks; on parse failure 
+   log/ignore gracefully (but a successful parse must call SaveCrmFindingsAsync).
 
-2. Is there a local TryGetPropertyIgnoreCase helper already in scope in this method 
-   that I can reuse, or is it redefined inside each block?
+Use the existing resolvedReviewId variable. Match the coding/using style already 
+in this file. Do NOT redefine CrmFindingRow — it's already imported via 
+Casrr.Application.Reviews.Contracts.
 
-3. Show how resolvedReviewId is obtained earlier in the method.
-
-Report only. No edits.
+Modify ONLY ReviewService.cs. If any other file needs changing, STOP and tell me first.

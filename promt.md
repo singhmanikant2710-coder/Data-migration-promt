@@ -1,19 +1,35 @@
+Modify ONLY this file:
+backend/src/Casrr.Application/IReviewRepository.cs
+
+Add a declaration for the new SaveCrmFindingsAsync method, matching the style 
+of the existing SaveKeyRisksAsync / UpsertChecklistAsync declarations. 
+The implementation in SqlReviewRepository.cs has this signature:
+
+    Task SaveCrmFindingsAsync(
+        int reviewId,
+        IEnumerable<CrmFindingRow>? findings,
+        CancellationToken ct);
+
+Add a matching declaration with a short comment like the others 
+(e.g. "// Persist CRM Findings into dbo.[02_CORE_07_Findings] (replace-all)").
+Ensure CrmFindingRow is imported/available in this file (use the same namespace 
+the implementation uses).
+
+Modify ONLY IReviewRepository.cs. If CrmFindingRow is not accessible here and 
+needs a using/namespace change in ANOTHER file, STOP and tell me first.
+
 READ-ONLY. Do NOT edit. Report only.
 
-I need to wire SaveCrmFindingsAsync into the save flow. Report ONLY:
+In ReviewService.SaveAsync, I need to add a CRM Findings block after the Checklist 
+block. Report ONLY:
 
-1. In IReviewRepository (the interface for SqlReviewRepository), show how 
-   UpsertChecklistAsync or SaveKeyRisksAsync is declared. I'll add a matching 
-   declaration for SaveCrmFindingsAsync. Show the exact file path and the 
-   existing method signatures style.
+1. Show the lines immediately AFTER the Checklist block 
+   (if (dto.Checklist?.Length > 0) { ... UpsertChecklistAsync ... }) 
+   so I know exactly where to insert the new block.
 
-2. In ReviewService.SaveAsync, show the FULL existing block for ONE array-based 
-   section that calls a repo method (e.g. how Checklist items are extracted from 
-   the payload and passed to UpsertChecklistAsync). I want to mirror it for 
-   CRM Findings.
+2. Is there a local TryGetPropertyIgnoreCase helper already in scope in this method 
+   that I can reuse, or is it redefined inside each block?
 
-3. Confirm the exact type of dto.CrmFindingsAndRatings.Data and how to read the 
-   "findings" array out of it into a list of CrmFindingRow (Component, FindingCode, 
-   Severity, Comments, FollowUp). Show how other sections parse their JSON arrays.
+3. Show how resolvedReviewId is obtained earlier in the method.
 
-Report only with exact code. No edits.
+Report only. No edits.

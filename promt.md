@@ -1,37 +1,23 @@
-Modify ONLY this file:
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+READ-ONLY. Do NOT edit. Report only.
 
-In the SaveCrmFindingsAsync method, change the behavior from "replace-all" to 
-"upsert only". Specifically:
+When saving CRM Findings, the POST /api/v1/reviews/save payload sends:
+  crmFindingsAndRatings: { change: "Upsert", data: { findings: { row-123: {followUp: true} } } }
 
-1. REMOVE the "DELETE FROM dbo.[02_CORE_07_Findings] WHERE [Review_id] = @reviewId" 
-   statement entirely. Save must NEVER delete findings.
+But the backend expects findings to be an ARRAY of full finding objects:
+  findings: [ {component, findingCode, severity, comments, followUp}, ... ]
 
-2. For each finding in the list, instead of plain INSERT, do an upsert keyed on 
-   the composite key (Review_id + Finding_code), exactly like UpsertChecklistAsync does:
+The frontend is sending findings as an OBJECT keyed by row-id, and only the 
+changed field per row (not the full finding). Report ONLY:
 
-   IF EXISTS (SELECT 1 FROM dbo.[02_CORE_07_Findings]
-              WHERE [Review_id] = @reviewId AND [Finding_code] = @code)
-       UPDATE dbo.[02_CORE_07_Findings]
-       SET [Finding_CRM_component] = @component,
-           [Finding_category]      = (SELECT TOP(1) [Finding_category] FROM dbo.[03_LIBRARY_01_CAS Findings] WHERE [Finding_code] = @code),
-           [Finding_description]    = (SELECT TOP(1) [Finding_description] FROM dbo.[03_LIBRARY_01_CAS Findings] WHERE [Finding_code] = @code),
-           [Finding_level]          = @level,
-           [Finding_comments]       = @comments,
-           [Finding_follow_up]      = @followUp
-       WHERE [Review_id] = @reviewId AND [Finding_code] = @code;
-   ELSE
-       INSERT INTO dbo.[02_CORE_07_Findings]
-           ([Review_id],[Finding_CRM_component],[Finding_code],[Finding_category],
-            [Finding_description],[Finding_level],[Finding_comments],[Finding_follow_up])
-       VALUES
-           (@reviewId, @component, @code,
-            (SELECT TOP(1) [Finding_category] FROM dbo.[03_LIBRARY_01_CAS Findings] WHERE [Finding_code] = @code),
-            (SELECT TOP(1) [Finding_description] FROM dbo.[03_LIBRARY_01_CAS Findings] WHERE [Finding_code] = @code),
-            @level, @comments, @followUp);
+1. Which file/function builds the crmFindingsAndRatings payload on save? 
+   (likely in the FormChangesContext, the save handler in page.tsx, or 
+   useCrmFindings hook)
 
-3. Keep everything else the same: skip findings with null/empty FindingCode, 
-   do NOT insert [SSMA_TimeStamp], keep the transaction (BeginTransaction/Commit), 
-   keep parameterized commands, keep the existing error logging.
+2. Show the exact code that constructs the "findings" value in the payload. 
+   Why is it an object keyed by row-id instead of an array? Why only changed fields?
 
-Modify ONLY SqlReviewRepository.cs. If any other file needs changing, STOP and tell me first.
+3. Where is the full current list of findings (all rows with all fields: 
+   component, findingCode, severity, comments, followUp) available in state, 
+   so it could be sent as a complete array instead?
+
+Report only with exact code and file paths. No edits.

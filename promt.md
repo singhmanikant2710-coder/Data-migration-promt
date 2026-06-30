@@ -1,5 +1,3 @@
-The vertical gap between the TopChromeBar header and the content below it is a bit too large now. Reduce it slightly.
+Reduce the gap a bit more. In page.tsx, change the content container's marginTop from Math.max(0, toolbarH - 8) to Math.max(0, toolbarH - 16).
 
-In page.tsx, the content container currently uses style={{ marginTop: toolbarH }}. Reduce this by a small fixed amount so the gap tightens but content still doesn't overlap the header on scroll. Use something like style={{ marginTop: Math.max(0, toolbarH - 8) }} (try -8px first; if still too much we can go to -12 or -16).
-
-RULES: layout-only, page.tsx only, no business logic / API / TopChromeBar changes, no packages. Show me the diff. The header must still NOT overlap content when scrolling — only the resting gap should shrink.
+RULES: layout-only, page.tsx only, no business logic / API / TopChromeBar changes, no packages. Show me the diff. Header must still NOT overlap content on scroll.

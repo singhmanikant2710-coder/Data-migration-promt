@@ -1,23 +1,20 @@
 READ-ONLY. Do NOT edit. Report only.
 
-When saving CRM Findings, the POST /api/v1/reviews/save payload sends:
-  crmFindingsAndRatings: { change: "Upsert", data: { findings: { row-123: {followUp: true} } } }
+In CrmFindingsAndRatingsSection.tsx and useCrmFindings.ts, I want each field 
+change to stage the FULL findings array (not a partial row-keyed object) into 
+FormChangesContext, so the save payload sends findings as a complete array.
 
-But the backend expects findings to be an ARRAY of full finding objects:
-  findings: [ {component, findingCode, severity, comments, followUp}, ... ]
+Report ONLY:
+1. Does useCrmFindings expose the full findings array (state.findings) and the 
+   updateRow function to the section component? Show exactly what the hook returns.
 
-The frontend is sending findings as an OBJECT keyed by row-id, and only the 
-changed field per row (not the full finding). Report ONLY:
+2. When a field changes in the section, updateRow is called to update hook state. 
+   Is the updated full array available synchronously in the same handler, or only 
+   after re-render? (i.e. if I call setSection right after updateRow, will I have 
+   the new array or the stale one?)
 
-1. Which file/function builds the crmFindingsAndRatings payload on save? 
-   (likely in the FormChangesContext, the save handler in page.tsx, or 
-   useCrmFindings hook)
+3. Show ONE complete field-change handler in the section (e.g. the followUp/comments 
+   handler) start to finish, including the updateRow call and the setSection call, 
+   so I can see how to change it to stage the full array.
 
-2. Show the exact code that constructs the "findings" value in the payload. 
-   Why is it an object keyed by row-id instead of an array? Why only changed fields?
-
-3. Where is the full current list of findings (all rows with all fields: 
-   component, findingCode, severity, comments, followUp) available in state, 
-   so it could be sent as a complete array instead?
-
-Report only with exact code and file paths. No edits.
+Report only with exact code. No edits.

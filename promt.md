@@ -1,41 +1,24 @@
-Modify ONLY this file:
-frontend/src/app/review/[ecif]/review-info/components/sections/CrmFindingsAndRatingsSection.tsx
+READ-ONLY. Do NOT edit. Report only.
 
-PROBLEM: Each field-change handler stages a PARTIAL, row-id-keyed object into 
-FormChangesContext, e.g.:
-    changes.setSection("crmFindingsAndRatings", { findings: { [row.id]: { followUp: val } } });
-This makes the save payload send "findings" as an object with only changed fields. 
-The backend expects "findings" as a COMPLETE ARRAY of full finding objects.
+The save response says success:true and postedSections includes crmFindingsAndRatings, 
+but nothing is written to dbo.[02_CORE_07_Findings]. There is likely a silent 
+exception swallowed by an empty catch.
 
-FIX: In EVERY field-change handler (component, findingCode, info, severity, 
-comments, followUp), change the setSection call so it stages the FULL findings 
-array with all fields, computed inline from the current s.findings (do NOT rely 
-on hook state after updateRow, since that is stale).
+Report ONLY:
 
-For each handler, build the updated array inline like this pattern, then stage it:
+1. Show the COMPLETE CRM Findings block in ReviewService.SaveAsync exactly as it 
+   is now, including the try/catch. Does the catch swallow exceptions with no logging?
 
-    const updatedFindings = s.findings.map((r) =>
-        r.id === row.id ? { ...r, <changedKey>: <newValue> } : r
-    );
-    updateRow(row.id, "<changedKey>", <newValue>);   // keep existing UI update
-    if (changes) {
-        changes.setSection("crmFindingsAndRatings", {
-            findings: updatedFindings.map((f) => ({
-                id: f.id,
-                component: f.component,
-                findingCode: f.findingCode,
-                info: f.info ?? null,
-                severity: f.severity,
-                comments: f.comments,
-                followUp: f.followUp,
-            })),
-        });
-    }
+2. Inside the block: what is the exact type of dto.CrmFindingsAndRatings.Data, and 
+   how is it passed to TryGetPropertyIgnoreCase? If Data is JsonElement?, is .Value 
+   used? A wrong access here would throw and be swallowed.
 
-Apply this to ALL field-change handlers in this file. The key change is: 
-"findings" must be an ARRAY of complete finding objects (every row, every field), 
-NOT a row-id-keyed partial object.
+3. Show the SaveCrmFindingsAsync implementation in SqlReviewRepository.cs again - 
+   could the INSERT/UPDATE throw (e.g. parameter size, null handling, the library 
+   subquery returning null for Finding_category/Finding_description)?
 
-Do NOT change useCrmFindings.ts, FormChangesContext.tsx, or page.tsx. 
-Modify ONLY CrmFindingsAndRatingsSection.tsx. If a change is needed in another 
-file, STOP and tell me first.
+4. Specifically: in SaveCrmFindingsAsync, are SqlParameter values for component, 
+   comments etc. handled for null (DBNull.Value), and is there a size limit on 
+   NVarChar params that could truncate/throw?
+
+Report only with exact code. No edits.

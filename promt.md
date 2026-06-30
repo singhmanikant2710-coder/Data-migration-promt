@@ -1,20 +1,22 @@
-Modify ONLY this file:
-backend/src/Casrr.Application/Services/ReviewService.cs
+READ-ONLY. Do NOT edit. Report only.
 
-In the CRM Findings block inside SaveAsync, make TWO changes:
+Review Queue shows a real Exposure computed from the Accounts table, but Review 
+History and Review Status show TTBA_exposure (often 0). I want History and Status 
+to compute exposure the SAME way as Queue.
 
-1. REMOVE the test line I added earlier:
-   throw new Exception("CRM_BLOCK_REACHED_TEST");
+Report ONLY:
 
-2. Find the catch at the END of the CRM Findings block (currently it either 
-   swallows silently or was changed). Make sure it RE-THROWS the real error so 
-   we can see it. The catch must be exactly:
+1. In SqlReviewRepository.cs (GetQueuePageAsync), show the EXACT SQL that computes 
+   the Accounts-based exposure: the subquery/join to the Accounts table, the SUM 
+   column, and how it links by Review_id. Show the full SELECT for the exposure field.
 
-   catch (Exception crmEx)
-   {
-       throw new Exception("CRM_FINDINGS_REAL_ERROR: " + crmEx.ToString(), crmEx);
-   }
+2. In SqlReviewHistoryRepository.cs (GetHistoryRowsAsync), show the current SELECT 
+   and exactly which column/expression provides Exposure (TTBA_exposure).
 
-This will surface the actual exception happening inside the block.
+3. In SqlReviewStatusRepository.cs, show the current SELECT and which column/expression 
+   provides Exposure.
 
-Modify ONLY ReviewService.cs.
+4. Confirm the exact Accounts table name and the column summed for exposure 
+   (e.g. dbo.[02_CORE_04_Accounts] and its Commitment column).
+
+Report only with exact SQL. No edits.

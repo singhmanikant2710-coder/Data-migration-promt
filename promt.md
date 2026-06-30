@@ -1,10 +1,20 @@
 Modify ONLY this file:
 backend/src/Casrr.Application/Services/ReviewService.cs
 
-In SaveAsync, find the CRM Findings block that starts with:
-    if (dto.CrmFindingsAndRatings is not null && dto.CrmFindingsAndRatings.Change != SectionChangeKind.None)
+In the CRM Findings block inside SaveAsync, make TWO changes:
 
-Right after the opening brace { of that if, BEFORE the try, add this line:
-    throw new Exception("CRM_BLOCK_REACHED_TEST");
+1. REMOVE the test line I added earlier:
+   throw new Exception("CRM_BLOCK_REACHED_TEST");
 
-Modify ONLY ReviewService.cs. Nothing else.
+2. Find the catch at the END of the CRM Findings block (currently it either 
+   swallows silently or was changed). Make sure it RE-THROWS the real error so 
+   we can see it. The catch must be exactly:
+
+   catch (Exception crmEx)
+   {
+       throw new Exception("CRM_FINDINGS_REAL_ERROR: " + crmEx.ToString(), crmEx);
+   }
+
+This will surface the actual exception happening inside the block.
+
+Modify ONLY ReviewService.cs.

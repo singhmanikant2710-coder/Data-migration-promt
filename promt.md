@@ -1,19 +1,23 @@
 READ-ONLY. Do NOT edit. Report only.
 
-To write CRM Findings save, report ONLY:
+Review Queue shows a real Exposure value computed from the Accounts table, 
+but Review History and Review Status show TTBA_exposure (often 0). 
+I need to make History and Status compute exposure the same way as Queue.
 
-1. Show the FULL source of UpsertChecklistAsync in SqlReviewRepository.cs 
-   (complete method — connection, BeginTransaction, the per-item loop, 
-   DELETE/UPDATE/INSERT SQL, cmd.Transaction assignment, Commit). 
-   I will mirror this exact structure for CRM Findings.
+Report ONLY:
 
-2. What exact JSON does dto.CrmFindingsAndRatings.Data contain? 
-   Show the property names per finding row (component, findingCode, category, 
-   description, severity/level, comments, followUp) and whether each row has a 
-   per-row change flag (Insert/Update/Delete) or clientKey.
+1. In SqlReviewRepository.cs (GetQueuePageAsync), show the EXACT SQL/subquery 
+   that computes the Accounts-based exposure (AccountsCommittedExposure or similar). 
+   Show the join/subquery to the Accounts table, the SUM column, and how it links 
+   by Review_id.
 
-3. How does ReviewService.SaveAsync currently handle dto.CrmFindingsAndRatings 
-   after the hasChanges check — is there any block for it at all, or is it 
-   completely absent (so I need to add a new block)?
+2. In SqlReviewHistoryRepository.cs (GetHistoryRowsAsync) — show the current SELECT 
+   and exactly where/how Exposure is currently pulled (TTBA_exposure).
 
-Report only with exact code. No edits.
+3. In SqlReviewStatusRepository.cs — same: show the current SELECT and how Exposure 
+   is currently pulled.
+
+4. What is the exact Accounts table name and the commitment/exposure column it sums? 
+   (e.g. dbo.[02_CORE_04_Accounts].Commitment)
+
+Report only with exact SQL. No edits.

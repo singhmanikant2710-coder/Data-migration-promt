@@ -1,24 +1,24 @@
-READ-ONLY. Do NOT edit. Report only.
+Modify ONLY this file:
+backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
 
-The save response says success:true and postedSections includes crmFindingsAndRatings, 
-but nothing is written to dbo.[02_CORE_07_Findings]. There is likely a silent 
-exception swallowed by an empty catch.
+In SaveCrmFindingsAsync there is a bug: the SQL is defined as a const string named 
+"upSql" (the IF EXISTS UPDATE ELSE INSERT upsert), but inside the loop the 
+SqlCommand is created using a variable named "insSql":
 
-Report ONLY:
+    using var cmdIns = new SqlCommand(insSql, conn)
 
-1. Show the COMPLETE CRM Findings block in ReviewService.SaveAsync exactly as it 
-   is now, including the try/catch. Does the catch swallow exceptions with no logging?
+This uses the wrong SQL. 
 
-2. Inside the block: what is the exact type of dto.CrmFindingsAndRatings.Data, and 
-   how is it passed to TryGetPropertyIgnoreCase? If Data is JsonElement?, is .Value 
-   used? A wrong access here would throw and be swallowed.
+FIX:
+1. Change "new SqlCommand(insSql, conn)" to "new SqlCommand(upSql, conn)" so it 
+   uses the correct upsert SQL.
+2. If a separate "insSql" variable is still defined anywhere in this method (a 
+   leftover plain INSERT from the previous version), REMOVE it so only "upSql" remains.
 
-3. Show the SaveCrmFindingsAsync implementation in SqlReviewRepository.cs again - 
-   could the INSERT/UPDATE throw (e.g. parameter size, null handling, the library 
-   subquery returning null for Finding_category/Finding_description)?
+After the change, the loop must execute the upSql (IF EXISTS UPDATE ELSE INSERT) 
+for each finding.
 
-4. Specifically: in SaveCrmFindingsAsync, are SqlParameter values for component, 
-   comments etc. handled for null (DBNull.Value), and is there a size limit on 
-   NVarChar params that could truncate/throw?
+Also: temporarily make the swallowed exception visible — in the per-row catch, 
+keep the _logger.LogError as is (good). 
 
-Report only with exact code. No edits.
+Modify ONLY SqlReviewRepository.cs. If any other file needs changing, STOP and tell me first.

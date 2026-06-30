@@ -1,22 +1,30 @@
-READ-ONLY. Do NOT edit. Report only.
+Modify ONLY this file:
+backend/src/Casrr.Infrastructure/SqlServer/SqlReviewHistoryRepository.cs
 
-Review Queue shows a real Exposure computed from the Accounts table, but Review 
-History and Review Status show TTBA_exposure (often 0). I want History and Status 
-to compute exposure the SAME way as Queue.
+In GetHistoryRowsAsync, the SQL currently returns r.[TTBA_exposure] for Exposure, 
+which is often 0. Change it to compute exposure the SAME way as the Review Queue 
+(GetQueueRowsAsync) does — summing Commitment from the Accounts table by Review_id.
 
-Report ONLY:
+Make these changes to the SQL:
 
-1. In SqlReviewRepository.cs (GetQueuePageAsync), show the EXACT SQL that computes 
-   the Accounts-based exposure: the subquery/join to the Accounts table, the SUM 
-   column, and how it links by Review_id. Show the full SELECT for the exposure field.
+1. Add this LEFT JOIN right after "FROM dbo.[02_CORE_02_Reviews] AS r WITH (NOLOCK)":
 
-2. In SqlReviewHistoryRepository.cs (GetHistoryRowsAsync), show the current SELECT 
-   and exactly which column/expression provides Exposure (TTBA_exposure).
+    LEFT JOIN (
+        SELECT a.[Review_id], SUM(COALESCE(a.[Commitment], 0)) AS [CommittedExposure]
+        FROM dbo.[02_CORE_04_Accounts] AS a WITH (NOLOCK)
+        GROUP BY a.[Review_id]
+    ) AS agg ON agg.[Review_id] = r.[Review_id]
 
-3. In SqlReviewStatusRepository.cs, show the current SELECT and which column/expression 
-   provides Exposure.
+2. In the SELECT list, ADD this column (keep r.[TTBA_exposure] as-is, just add the new one):
 
-4. Confirm the exact Accounts table name and the column summed for exposure 
-   (e.g. dbo.[02_CORE_04_Accounts] and its Commitment column).
+    agg.[CommittedExposure] AS [AccountsCommittedExposure]
 
-Report only with exact SQL. No edits.
+3. Then update the C# mapping/reader code that builds the history row so that the 
+   Exposure field is populated from [AccountsCommittedExposure] instead of 
+   [TTBA_exposure]. Show me where the reader maps the exposure column and switch it 
+   to read AccountsCommittedExposure (treat null as 0).
+
+Match the exact JOIN/column style used in GetQueueRowsAsync in SqlReviewRepository.cs.
+
+Modify ONLY SqlReviewHistoryRepository.cs. If the C# row model or mapping lives in 
+another file and must change, STOP and tell me first.

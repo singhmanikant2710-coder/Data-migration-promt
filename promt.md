@@ -1,17 +1,19 @@
 READ-ONLY. Do NOT edit. Report only.
 
-For the CRM Findings tab, report ONLY the SAVE path:
+There is one central save method that handles saving for all review sections. 
+Report ONLY:
 
-1. When the user clicks Save on the review form, which frontend function/handler 
-   fires for the CRM Findings section? Show the file and function.
+1. Name and file of that central save method, and show its FULL source.
 
-2. Does it call a backend API endpoint to persist CRM findings? Which endpoint/route?
+2. Inside it, show how ONE existing section (e.g. Checklist or Covenants) is 
+   handled end to end: how it reads its piece from the payload, and how it 
+   writes/upserts to its DB table (the exact INSERT/UPDATE/DELETE SQL, 
+   transaction handling, parameters).
 
-3. On the backend, is there a method that WRITES (INSERT/UPDATE/DELETE) findings to 
-   dbo.[02_CORE_07_Findings]? Or does only a READ method (GetCrmFindingsSectionAsync) 
-   exist with no write counterpart?
+3. For dbo.[02_CORE_07_Findings]: list ALL columns, types, nullability, 
+   primary key, and any IDENTITY/auto-increment column.
 
-4. If a write method exists, show its SQL. If NOT, state clearly that no save/write 
-   path exists for CRM findings.
+4. Confirm whether the payload section "crmFindingsAndRatings" already arrives 
+   into this method but is currently ignored (no write), or not passed at all.
 
-Report only. List exact files, endpoints, and SQL. No edits.
+Report only with exact code/schema. No edits.

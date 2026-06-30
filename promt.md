@@ -1,29 +1,15 @@
-The current implementation is incorrect. Please revert the broken layout and apply the following corrections ONLY for the CRM Findings screen.
+Fix the CRM Findings header alignment issue on the Review Form screen (/review/id-{id}/review-info?section=crm-findings-and-ratings).
 
-Issues to Fix:
+PROBLEM: The "REVIEW FORM — CRM FINDINGS" top bar (Edit/Save/Cancel/Email + borrower info) is aligned correctly when the page is at the top, but on scroll the header detaches/offsets from the content below it. On the static Share page the same bar works fine — so the issue is scroll-specific to this screen only.
 
-1. Do NOT collapse the Finding Comments column.
-2. Do NOT allow text to render vertically (letter-by-letter).
-3. Maintain a proper responsive table layout where all columns remain horizontally aligned.
-4. Remove unnecessary horizontal scrolling caused by incorrect column widths.
-5. The table should occupy the available width and distribute column widths proportionally.
-6. Finding Comments should wrap words normally within the cell (word-wrap), not character-wrap.
-7. Header and body columns must remain perfectly aligned.
-8. Preserve the existing scrollbar behavior only for long content inside the comments area if required, but never because of incorrect column sizing.
+RULES (Agent Assist — strict):
+1. Read-only diagnostics first. Tell me the root cause before changing anything.
+2. Single-file edit only, scoped to the CRM Findings screen's own component/CSS.
+3. Do NOT touch the shared top-bar component — it works on other screens.
+4. No new npm/NuGet packages.
+5. STOP and ask me if the fix needs the shared component or any second file.
+6. Wait for my manual approval before applying the edit.
 
-Edit Mode Requirements:
-- By default, show all values as read-only text.
-- Only when the existing TOP Edit button is clicked should the fields become editable.
-- Show dropdowns and textareas only in Edit mode.
-- Pre-populate all controls with existing values.
-- Save and Cancel should continue using the existing functionality.
+INVESTIGATE LIKELY CAUSES: a scroll container on this page with its own overflow/height that the sticky header isn't anchored to, a transform/overflow ancestor breaking position: sticky, or the findings table scroll area not sharing the same scroll context as the header.
 
-UI Requirements:
-- Match the approved PPT.
-- Use the Light Sky Blue for the Finding Description section and column headers (not green).
-- Keep spacing, typography, and borders consistent with the PPT.
-
-Restrictions:
-- Do NOT modify business logic, APIs, backend, validation, models, or existing functionality.
-- Do NOT modify any other screen or shared component.
-- Only fix the CRM Findings UI and edit-mode behavior.
+Diagnose first, propose the single-file fix, then wait for my approval.

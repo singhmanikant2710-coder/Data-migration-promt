@@ -1,10 +1,6 @@
-SELECT COUNT(*) 
-FROM dbo.[02_CORE_07_Findings] WITH (NOLOCK)
-WHERE [Review_id] = 21541;
-
-SELECT TOP 20 [Review_id], COUNT(*) AS finding_count
-FROM dbo.[02_CORE_07_Findings] WITH (NOLOCK)
-GROUP BY [Review_id]
-ORDER BY finding_count DESC;
-
-SELECT COUNT(*) FROM dbo.[02_CORE_07_Findings] WITH (NOLOCK);
+-- Form pe Component/Code blank dikhe wale codes library me hain ya nahi?
+SELECT [Finding_CRM_component], [Finding_code], [Active]
+FROM dbo.[03_LIBRARY_01_CAS Findings] WITH (NOLOCK)
+WHERE [Finding_code] IN ('CS-101','CS-103','LA-101','SM-101','SM-103','SM-104',
+                         'SS-101','SS-102','SS-103','UW-103','UW-109','UW-110','UW-112')
+ORDER BY [Finding_code];

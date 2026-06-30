@@ -1,11 +1,5 @@
+The vertical gap between the TopChromeBar header and the content below it is a bit too large now. Reduce it slightly.
 
-In frontend/src/app/review/[ecif]/review-info/page.tsx, apply a layout-only fix so the sticky TopChromeBar header no longer overlaps tab content on scroll. This affects all tabs via the shared wrapper.
+In page.tsx, the content container currently uses style={{ marginTop: toolbarH }}. Reduce this by a small fixed amount so the gap tightens but content still doesn't overlap the header on scroll. Use something like style={{ marginTop: Math.max(0, toolbarH - 8) }} (try -8px first; if still too much we can go to -12 or -16).
 
-Changes (page.tsx ONLY, layout/spacing only — no business logic, no API, no backend, no TopChromeBar edits, no packages):
-1. Add: const toolbarHostRef = useRef<HTMLDivElement | null>(null); const [toolbarH, setToolbarH] = useState(0);
-2. Ensure useLayoutEffect/useRef/useState are imported from react.
-3. useLayoutEffect: measure the host via ResizeObserver, guard for SSR (if (!host || typeof ResizeObserver === "undefined") return;), setToolbarH from contentRect.height, ro.observe(host), cleanup with ro.disconnect().
-4. Wrap TopChromeBar in <div ref={toolbarHostRef}><TopChromeBar ... /></div>.
-5. On the content container below it (the rounded-b-lg ... bg-slate-50 div), add style={{ marginTop: toolbarH }}.
-
-Show me the diff before finalizing. Single file, layout-only.
+RULES: layout-only, page.tsx only, no business logic / API / TopChromeBar changes, no packages. Show me the diff. The header must still NOT overlap content when scrolling — only the resting gap should shrink.

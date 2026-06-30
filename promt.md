@@ -1,7 +1,9 @@
-Before implementing, two things:
+Don't rely on me guessing a selector. You have repo access — read the code and find the actual header element yourself:
 
-1. First check (read-only) whether the sticky header has a known/fixed CSS height. If it does, prefer a pure-CSS fix on this screen's content container (padding-top equal to the header height, or scroll-margin-top) instead of JS measurement — it's more reliable than querySelector + resize listeners. Report what you find.
+1. Open CrmFindingsAndRatingsSection.tsx and trace where the "REVIEW FORM — CRM FINDINGS" toolbar (Edit/Save/Cancel/Email) is rendered. Find its real id/class/data-attribute, or identify the shared component that renders it.
 
-2. If the height is genuinely dynamic and JS measurement is needed, do NOT use a guessed selector. The header element on this screen is the "REVIEW FORM — CRM FINDINGS" black bar containing Edit/Save/Cancel/Email. Inspect the actual rendered DOM/component for this screen and use the real selector or, better, a React ref to the actual header element if it's rendered within this same component — not a global document.querySelector that can silently return null.
+2. Preferred approach: if that header is rendered within reach of this screen's component tree, attach a React ref to the actual header element and measure from the ref — no document.querySelector, no guessed selector that can silently return null.
 
-Either way: single-file, scoped to CrmFindingsAndRatingsSection.tsx, no shared component edits, no new packages. Report your finding from step 1 before writing any code, and wait for my approval on the chosen approach.
+3. For the height: inspect the toolbar's styling in code. If it has a fixed height (single row, fixed px/rem), use a CSS-only padding-top on this screen's root container equal to that height — no JS at all. Only use ResizeObserver if the height is genuinely dynamic.
+
+Report what you find (the real selector/ref + whether height is fixed) BEFORE writing code. Single-file scoped to CrmFindingsAndRatingsSection.tsx, no shared component edits, no packages. Wait for my approval on the diff.

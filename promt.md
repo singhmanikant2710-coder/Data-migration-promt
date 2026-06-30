@@ -1,39 +1,46 @@
-Implement inline edit functionality for the CRM Findings screen exactly like the CAS Findings screen.
+Update ONLY the CRM Findings screen.
 
 Requirements:
 
-1. When the user clicks the Edit button for a row:
-   - Convert ONLY the selected row into edit mode.
-   - Do not open any popup or modal.
-   - Replace read-only controls with editable controls within the same row.
+1. Use the existing TOP Edit button to control edit mode.
 
-2. Pre-populate all editable controls with the existing row values:
-   - CRM Component -> Dropdown (selected value should be current value)
-   - Finding Code -> Dropdown (selected value should be current value)
-   - Severity -> Dropdown (selected value should be current value)
-   - Finding Comments -> Textarea with existing comment loaded
-   - Any other editable field should display its current value.
+2. Default (Read-Only Mode)
+- When the page loads or Edit has not been clicked:
+  - Display all values as plain text.
+  - Do NOT show dropdowns.
+  - Do NOT show textareas.
+  - Do NOT show editable controls.
+  - The screen should look exactly like the CAS Findings screen in read-only mode.
 
-3. While editing:
-   - Display Save and Cancel buttons exactly like the CAS Findings screen.
-   - Hide the Edit button for the row being edited.
-   - Only one row should be editable at a time.
+3. Edit Mode
+- When the existing top Edit button is clicked:
+  - Switch the CRM Findings section into edit mode.
+  - Replace text with editable controls:
+      • CRM Component → Dropdown
+      • Finding Code → Dropdown
+      • Severity → Dropdown
+      • Finding Comments → Textarea
+      • Info → Existing editable control
+  - Pre-populate all controls with the current values.
+  - Keep using the existing Save and Cancel functionality.
+  - No new Edit buttons should be added.
 
-4. On Save:
-   - Persist the updated values using the existing save functionality.
-   - Return the row to read-only mode.
+4. UI Styling
+- Match the approved PPT.
+- Remove the current green header styling.
+- Use a Light Sky Blue background for:
+   • Finding Description header
+   • Column headers
+- Match the PPT's colors, spacing, typography, borders, and padding.
 
-5. On Cancel:
-   - Discard all unsaved changes.
-   - Restore the original values.
-   - Return the row to read-only mode.
+5. Layout
+- No horizontal scrolling.
+- Entire grid should fit within a single desktop screen.
+- Wrap long comments instead of increasing the page width.
+- Maintain proper alignment of all controls.
 
-6. UI
-   - Match the inline editing experience of the CAS Findings screen.
-   - Maintain existing spacing, alignment, and responsive layout.
-
-Important:
-- Do NOT modify any business logic, API, validation, backend, database, or existing functionality.
-- Do NOT change any other screen, shared component, or reusable control.
-- Implement this ONLY for the CRM Findings screen.
-- Existing behavior outside this screen must remain completely unchanged.
+6. Restrictions
+- DO NOT modify any business logic.
+- DO NOT modify APIs, backend, validation, models, or database.
+- DO NOT change any other screen, shared component, or existing functionality.
+- Apply changes ONLY to the CRM Findings screen.

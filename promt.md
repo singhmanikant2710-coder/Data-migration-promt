@@ -1,28 +1,24 @@
-Modify ONLY this file:
-backend/src/Casrr.Application/Services/ReviewService.cs
+READ-ONLY. Do NOT edit. Report only.
 
-BUG FOUND: The frontend sends "findings" as a JSON OBJECT with numeric string keys 
-({"0":{...},"1":{...},"2":{...}}), NOT as a JSON array. The current code only handles 
-JsonValueKind.Array, so the loop is skipped and nothing saves.
+I want the Delete (trash) icon on a CRM finding row to delete that specific finding 
+from dbo.[02_CORE_07_Findings] immediately via an API call, using Review_id + 
+Finding_code (which are unique together).
 
-FIX the CRM Findings block to handle BOTH shapes:
+Report ONLY:
 
-1. Remove the debug throw ("CRM_DBG: ...") I added.
+1. In CrmFindingsAndRatingsSection.tsx, show the current trash/delete icon handler. 
+   Does it call deleteRow (local state only) or any API? In that handler's scope, 
+   are BOTH the reviewId and the row's findingCode available?
 
-2. Change the findings extraction so it iterates whether vFindings is an Array OR 
-   an Object:
-   - If vFindings.ValueKind == JsonValueKind.Array: iterate vFindings.EnumerateArray() 
-     as before.
-   - If vFindings.ValueKind == JsonValueKind.Object: iterate vFindings.EnumerateObject() 
-     and use each property's .Value as the finding element.
-   
-   Build a single list of finding elements from either shape, then run the SAME 
-   per-element parsing (component, findingCode, severity, comments, followUp) and 
-   SaveCrmFindingsAsync call that already exists.
+2. In the frontend API service (e.g. reviews.ts), show how an existing call like 
+   saveReview is defined, so I can add a deleteCrmFinding(reviewId, findingCode) 
+   in the same style.
 
-3. Keep the call to _repo.SaveCrmFindingsAsync(resolvedReviewId, findingRows, ct) 
-   AFTER the loop (once, with the full list) — not inside the loop.
+3. In backend ReviewController.cs, show one existing endpoint definition (route + 
+   method signature) so I can add a delete endpoint in the same style.
 
-Restore a normal try/catch that logs (not swallows) but does not crash.
+4. Show how IReviewRepository declares a method and how SqlReviewRepository 
+   implements a simple write, so I can add DeleteCrmFindingAsync(reviewId, findingCode) 
+   matching the pattern.
 
-Modify ONLY ReviewService.cs.
+Report only with exact code and file paths. No edits.

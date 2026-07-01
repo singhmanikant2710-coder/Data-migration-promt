@@ -1,24 +1,67 @@
-READ-ONLY. Do NOT edit. Report only.
+Modify ONLY this file:
+backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
 
-I want the Delete (trash) icon on a CRM finding row to delete that specific finding 
-from dbo.[02_CORE_07_Findings] immediately via an API call, using Review_id + 
-Finding_code (which are unique together).
+Add a new method DeleteCrmFindingAsync that deletes ONE finding from 
+dbo.[02_CORE_07_Findings] by composite key (Review_id + Finding_code), following 
+the same simple-write ADO.NET pattern as SaveKeyRisksAsync:
 
-Report ONLY:
+public async Task DeleteCrmFindingAsync(
+    int reviewId,
+    string findingCode,
+    CancellationToken ct)
+{
+    const string sql = @"
+DELETE FROM dbo.[02_CORE_07_Findings]
+WHERE [Review_id] = @id AND [Finding_code] = @code;";
 
-1. In CrmFindingsAndRatingsSection.tsx, show the current trash/delete icon handler. 
-   Does it call deleteRow (local state only) or any API? In that handler's scope, 
-   are BOTH the reviewId and the row's findingCode available?
+    using var conn = _connFactory.Create();
+    await conn.OpenAsync(ct).ConfigureAwait(false);
+    using var cmd = new SqlCommand(sql, conn) { CommandType = CommandType.Text };
+    cmd.Parameters.Add(new SqlParameter("@id", SqlDbType.Int) { Value = reviewId });
+    cmd.Parameters.Add(new SqlParameter("@code", SqlDbType.NVarChar, 50) { Value = findingCode });
+    await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+}
 
-2. In the frontend API service (e.g. reviews.ts), show how an existing call like 
-   saveReview is defined, so I can add a deleteCrmFinding(reviewId, findingCode) 
-   in the same style.
+Modify ONLY SqlReviewRepository.cs.
 
-3. In backend ReviewController.cs, show one existing endpoint definition (route + 
-   method signature) so I can add a delete endpoint in the same style.
+------‐--------------
+Modify ONLY this file:
+backend/src/Casrr.Application/IReviewRepository.cs
 
-4. Show how IReviewRepository declares a method and how SqlReviewRepository 
-   implements a simple write, so I can add DeleteCrmFindingAsync(reviewId, findingCode) 
-   matching the pattern.
+Add a declaration matching SaveKeyRisksAsync style:
 
-Report only with exact code and file paths. No edits.
+// Delete a single CRM finding from dbo.[02_CORE_07_Findings] by Review_id + Finding_code
+Task DeleteCrmFindingAsync(
+    int reviewId,
+    string findingCode,
+    CancellationToken ct);
+
+Modify ONLY IReviewRepository.cs.
+
+--------------------
+Modify ONLY this file:
+backend/src/Casrr.Api/Controllers/ReviewController.cs
+
+Add a new endpoint to delete one CRM finding, matching the style of the Save endpoint. 
+The controller base route is [Route("api/v1/reviews")]. Add:
+
+[HttpDelete("crm-finding")]
+[ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+public async Task<ActionResult> DeleteCrmFinding(
+    [FromQuery] int reviewId,
+    [FromQuery] string findingCode,
+    CancellationToken ct)
+{
+    if (reviewId <= 0 || string.IsNullOrWhiteSpace(findingCode))
+        return BadRequest();
+
+    await _svc.DeleteCrmFindingAsync(reviewId, findingCode, ct);
+    return Ok();
+}
+
+If _svc (the review service) does not yet expose DeleteCrmFindingAsync, you will 
+need to add it to the service and its interface too — if that requires editing 
+another file, STOP and tell me first so I can guide the service-layer wiring.
+
+Modify ONLY ReviewController.cs

@@ -1,27 +1,19 @@
-Modify ONLY this file:
-frontend/src/app/review/[ecif]/review-info/components/sections/CrmFindingsAndRatingsSection.tsx
+READ-ONLY. Do NOT edit. Report only.
 
-After a successful CRM finding delete, trigger the same data refresh that Save uses 
-(cache-busting router.replace), so the UI updates like it does after Save.
+I want the CRM Findings table header to match the Transactions table header style: 
+dark navy background with white column-name text (currently CRM Findings has a light 
+sky-blue header with black text).
 
-Currently the delete handler calls deleteCrmFinding then deleteRow, but does no refresh.
+Report ONLY:
 
-Changes:
-1. Import useRouter and usePathname from "next/navigation" (useSearchParams is 
-   already imported). Get: const router = useRouter(); const pathname = usePathname(); 
-   const sp = useSearchParams();  (reuse existing sp if already present).
+1. In the Transactions section component (Transaction Details table), show the exact 
+   JSX/className used for the table header row and header cells (the dark navy 
+   background + white text classes). Give the file path.
 
-2. In the trash onClick handler, AFTER "deleteRow(row.id);" on successful delete, add 
-   the same refresh Save uses:
+2. In CrmFindingsAndRatingsSection.tsx, show the current table header row and header 
+   cell JSX/className (the light sky-blue + black text).
 
-     try {
-       for (let i = sessionStorage.length - 1; i >= 0; i--) {
-         const k = sessionStorage.key(i);
-         if (k && k.startsWith("reviewQueue:")) sessionStorage.removeItem(k);
-       }
-     } catch {}
-     const nextParams = new URLSearchParams(sp?.toString() ?? "");
-     nextParams.set("t", String(Date.now()));
-     router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+3. List the exact Tailwind classes (or styles) that differ between the two headers, 
+   so I can apply the Transactions header style to CRM Findings.
 
-Modify ONLY CrmFindingsAndRatingsSection.tsx. Do not touch page.tsx or any other file.
+Report only with exact code and class names. No edits.

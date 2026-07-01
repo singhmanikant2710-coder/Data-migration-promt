@@ -1,67 +1,24 @@
 Modify ONLY this file:
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+frontend/src/services/api/reviews.ts
 
-Add a new method DeleteCrmFindingAsync that deletes ONE finding from 
-dbo.[02_CORE_07_Findings] by composite key (Review_id + Finding_code), following 
-the same simple-write ADO.NET pattern as SaveKeyRisksAsync:
+Add a new API function to delete one CRM finding, matching the style of saveReview. 
+The backend endpoint is:
+   DELETE /api/v1/reviews/crm-finding?reviewId={id}&findingCode={code}
 
-public async Task DeleteCrmFindingAsync(
-    int reviewId,
-    string findingCode,
-    CancellationToken ct)
-{
-    const string sql = @"
-DELETE FROM dbo.[02_CORE_07_Findings]
-WHERE [Review_id] = @id AND [Finding_code] = @code;";
+Add:
 
-    using var conn = _connFactory.Create();
-    await conn.OpenAsync(ct).ConfigureAwait(false);
-    using var cmd = new SqlCommand(sql, conn) { CommandType = CommandType.Text };
-    cmd.Parameters.Add(new SqlParameter("@id", SqlDbType.Int) { Value = reviewId });
-    cmd.Parameters.Add(new SqlParameter("@code", SqlDbType.NVarChar, 50) { Value = findingCode });
-    await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+export async function deleteCrmFinding(
+  reviewId: number,
+  findingCode: string
+): Promise<void> {
+  await del(
+    `/api/v1/reviews/crm-finding?reviewId=${reviewId}&findingCode=${encodeURIComponent(findingCode)}`
+  );
 }
 
-Modify ONLY SqlReviewRepository.cs.
+If the api lib (@/lib/api) does not export a "del" (DELETE) helper, use whatever 
+DELETE method it exposes (show me what's available). If only get/post exist and 
+there is no delete helper, STOP and tell me what the api lib exports so I can 
+choose the right approach.
 
-------‐--------------
-Modify ONLY this file:
-backend/src/Casrr.Application/IReviewRepository.cs
-
-Add a declaration matching SaveKeyRisksAsync style:
-
-// Delete a single CRM finding from dbo.[02_CORE_07_Findings] by Review_id + Finding_code
-Task DeleteCrmFindingAsync(
-    int reviewId,
-    string findingCode,
-    CancellationToken ct);
-
-Modify ONLY IReviewRepository.cs.
-
---------------------
-Modify ONLY this file:
-backend/src/Casrr.Api/Controllers/ReviewController.cs
-
-Add a new endpoint to delete one CRM finding, matching the style of the Save endpoint. 
-The controller base route is [Route("api/v1/reviews")]. Add:
-
-[HttpDelete("crm-finding")]
-[ProducesResponseType(StatusCodes.Status200OK)]
-[ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
-public async Task<ActionResult> DeleteCrmFinding(
-    [FromQuery] int reviewId,
-    [FromQuery] string findingCode,
-    CancellationToken ct)
-{
-    if (reviewId <= 0 || string.IsNullOrWhiteSpace(findingCode))
-        return BadRequest();
-
-    await _svc.DeleteCrmFindingAsync(reviewId, findingCode, ct);
-    return Ok();
-}
-
-If _svc (the review service) does not yet expose DeleteCrmFindingAsync, you will 
-need to add it to the service and its interface too — if that requires editing 
-another file, STOP and tell me first so I can guide the service-layer wiring.
-
-Modify ONLY ReviewController.cs
+Modify ONLY reviews.ts.

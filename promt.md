@@ -1,16 +1,27 @@
+Modify ONLY this file:
+frontend/src/app/review/[ecif]/review-info/components/sections/CrmFindingsAndRatingsSection.tsx
 
-READ-ONLY. Do NOT edit. Report only.
+After a successful CRM finding delete, trigger the same data refresh that Save uses 
+(cache-busting router.replace), so the UI updates like it does after Save.
 
-After a successful Save on the review form, the page reloads/refreshes to show 
-updated data. I want the same refresh to happen after a successful CRM finding delete.
+Currently the delete handler calls deleteCrmFinding then deleteRow, but does no refresh.
 
-Report ONLY:
-1. After saveReview succeeds (in handleSave, page.tsx), what exactly happens — 
-   a full window.location.reload(), a router.refresh(), or a re-fetch of the 
-   review data? Show the exact code that runs on save success.
+Changes:
+1. Import useRouter and usePathname from "next/navigation" (useSearchParams is 
+   already imported). Get: const router = useRouter(); const pathname = usePathname(); 
+   const sp = useSearchParams();  (reuse existing sp if already present).
 
-2. In CrmFindingsAndRatingsSection.tsx, after the deleteCrmFinding call succeeds 
-   and deleteRow runs, is there any way to trigger that same refresh? Is the save/
-   refresh function accessible from this component, or would it need a prop/context?
+2. In the trash onClick handler, AFTER "deleteRow(row.id);" on successful delete, add 
+   the same refresh Save uses:
 
-Report only. No edits.
+     try {
+       for (let i = sessionStorage.length - 1; i >= 0; i--) {
+         const k = sessionStorage.key(i);
+         if (k && k.startsWith("reviewQueue:")) sessionStorage.removeItem(k);
+       }
+     } catch {}
+     const nextParams = new URLSearchParams(sp?.toString() ?? "");
+     nextParams.set("t", String(Date.now()));
+     router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+
+Modify ONLY CrmFindingsAndRatingsSection.tsx. Do not touch page.tsx or any other file.

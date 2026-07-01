@@ -1,19 +1,20 @@
-READ-ONLY. Do NOT edit. Report only.
+Modify ONLY this file:
+frontend/src/app/review/[ecif]/review-info/components/sections/CrmFindingsAndRatingsSection.tsx
 
-I want the CRM Findings table header to match the Transactions table header style: 
-dark navy background with white column-name text (currently CRM Findings has a light 
-sky-blue header with black text).
+Make the CRM Findings table header match the Transactions table header style 
+(dark navy background with white uppercase text). Two changes:
 
-Report ONLY:
+1. Change the <thead> className FROM:
+     bg-sky-200 text-slate-800
+   TO:
+     sticky top-0 z-20 bg-[#1F3864] text-white
 
-1. In the Transactions section component (Transaction Details table), show the exact 
-   JSX/className used for the table header row and header cells (the dark navy 
-   background + white text classes). Give the file path.
+2. In the local Th component in THIS file, change its className FROM:
+     "box-border px-3 h-10 text-left font-semibold align-middle whitespace-nowrap "
+   TO:
+     "box-border px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide align-middle whitespace-nowrap border-b border-[#1F3864] "
 
-2. In CrmFindingsAndRatingsSection.tsx, show the current table header row and header 
-   cell JSX/className (the light sky-blue + black text).
+Keep everything else (the column names, the per-cell className overrides like 
+text-center) exactly as-is.
 
-3. List the exact Tailwind classes (or styles) that differ between the two headers, 
-   so I can apply the Transactions header style to CRM Findings.
-
-Report only with exact code and class names. No edits.
+Modify ONLY CrmFindingsAndRatingsSection.tsx. This is a styling-only change.

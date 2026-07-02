@@ -1,26 +1,24 @@
 READ-ONLY. Do NOT edit. Report only.
 
-Checklist tab currently shows no data. I need to understand its current state.
+The transactional table dbo.[02_CORE_08_Checklists] is empty. I need to find where 
+the standard checklist questions come from.
 
 Report ONLY:
 
-1. In the backend, how is Checklist data read? Show the method (e.g. 
-   GetChecklistSectionAsync in SqlReviewRepository.cs) — which table it reads 
-   (dbo.[02_CORE_08_Checklists]?), the SELECT, and how it filters by Review_id.
+1. Is there a LIBRARY/master table for checklist questions (similar to how 
+   03_LIBRARY_01_CAS Findings holds finding codes)? Search table names like 
+   03_LIBRARY%Checklist%, %Checklist%, or similar. List any table that holds 
+   standard/master checklist questions with their guidance.
 
-2. Which frontend component renders the Checklist tab? Show how it fetches/receives 
-   the checklist rows and how it maps them.
+2. If such a library exists, show its columns and a sample of its rows 
+   (the read query so I can run it in SSMS).
 
-3. Is there checklist data in the table for a test review? (Just show the read query 
-   so I can run it in SSMS.)
+3. In the backend, how does GetChecklistSectionAsync build the checklist for a 
+   review — does it read only from 02_CORE_08_Checklists (empty), or does it also 
+   pull questions from a library/master? Show the exact SELECT.
 
-4. Save: is UpsertChecklistAsync (already exists in SqlReviewRepository) wired into 
-   ReviewService.SaveAsync? Show the Checklist block in SaveAsync — does it call 
-   UpsertChecklistAsync? (This confirms whether Checklist save is implemented.)
+4. In the maintenance section, is there a Checklist library management screen 
+   (like the CAS Findings one at /maintenance/cas-findings)? Check the maintenance 
+   routes/menu.
 
-5. For the client requirements — report current state ONLY (no changes):
-   - Is the answer field limited to Yes/No/N/A anywhere?
-   - Is comment mandatory-on-No implemented?
-   - Is there any lock/unlock logic on tabs after Manager approval?
-
-Report only with exact code, file paths, and SQL. No edits.
+Report only with exact table names, columns, and SQL. No edits.

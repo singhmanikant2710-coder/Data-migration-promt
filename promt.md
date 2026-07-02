@@ -1,23 +1,24 @@
-READ-ONLY code inspection. Do NOT report on database tables or data. Report ONLY 
-on TypeScript/C# code that exists in the repo. For each of these 6 items, open the 
-relevant file, and answer "IMPLEMENTED" or "NOT IMPLEMENTED" with the code snippet:
+READ-ONLY. Do NOT edit. Report only.
 
-1. In backend ReviewService.SaveAsync — is there a line calling 
-   _repo.UpsertChecklistAsync(...) with dto.Checklist? Paste it or say NOT IMPLEMENTED.
+I need to add validation to the Checklist tab: the comment field must be mandatory 
+when answer = "No", and should be empty otherwise.
 
-2. In the frontend Checklist tab component — is the answer field a select limited to 
-   Yes / No / N/A? Paste it or say NOT IMPLEMENTED.
+Report ONLY:
 
-3. In the frontend Checklist tab component — is the comment required when answer is 
-   "No"? Paste the validation or say NOT IMPLEMENTED.
+1. In ChecklistSection.tsx, show the full render for a single checklist question row 
+   (the answer Select + the comments RichTextEditor together), so I can see where to 
+   add validation/error display.
 
-4. In the frontend Checklist tab component — are only answer and comment editable 
-   while other fields are locked? Paste it or say NOT IMPLEMENTED.
+2. Is there any existing validation pattern in the review form (e.g. required-field 
+   errors shown inline, or a validation check in handleSave in page.tsx that blocks 
+   save and shows a message)? Show one example of how other required-field validation 
+   is done in this codebase, if any exists.
 
-5. Anywhere in the review form — is there a lock-after-approval + Manager/Director 
-   "Unlock" button? Paste it or say NOT IMPLEMENTED.
+3. When Save is clicked (handleSave in page.tsx), is there a place where section-level 
+   validation runs before calling saveReview? Show it, so I know whether to add the 
+   "No requires comment" check there or inline in the component.
 
-6. In any review tab — are the (i) help icons wired to the help-tips feature? 
-   Paste it or say NOT IMPLEMENTED.
+4. How is a checklist question's answer and comment currently stored in state 
+   (the q.answer and q.comments) so I can check "answer===No && empty comment"?
 
-Answer all 6. Code only, not data/tables.
+Report only with exact code and file paths. No edits.

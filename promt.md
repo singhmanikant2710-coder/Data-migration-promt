@@ -28,3 +28,31 @@ Report ONLY, from the frontend CRM Ratings tab component:
 3. The exact state field names for each of the 5 components (the UNSAT bool + comment).
 
 Report only with exact code. No edits.
+
+
+-------------CPAT ----------
+
+
+ 
+Analyze this entire codebase and give me a structured summary with these sections:
+
+1. PROJECT STRUCTURE: List all projects/folders in this solution and their 
+   responsibilities (API, Application, Domain, Infrastructure, etc.)
+
+2. ARCHITECTURE FLOW: Explain how a typical request flows through the layers 
+   (Controller → Service → Repository → Database), with actual file/class names.
+
+3. ENTITIES & DATABASE: List all entity models, their key properties, and 
+   relationships between them (one-to-many, many-to-many, etc.)
+
+4. API ENDPOINTS: List all controller endpoints with HTTP method, route, and a 
+   one-line description of what each does.
+
+5. BUSINESS LOGIC: For each major service/module, summarize in plain English what 
+   business rules or validations it enforces.
+
+6. DESIGN PATTERNS & DEPENDENCIES: Identify design patterns used (Repository, Unit 
+   of Work, CQRS, etc.) and list key NuGet packages.
+
+Do not modify any code. Just read and summarize everything clearly under these 
+headings so I can explain this application to a client.

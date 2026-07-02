@@ -1,28 +1,17 @@
-Modify these files to enforce the client's Checklist rule: comment is mandatory 
-when answer = "No", and comment must be empty when answer = "Yes" or "N/A".
-Two files. Manual approve.
+-- Test data: 12533 ke liye checklist questions insert (PPT se)
+INSERT INTO dbo.[02_CORE_08_Checklists]
+    ([Review_id], [Checklist_category], [Checklist_question], [Checklist_guidance])
+VALUES
+(12533, 'Field Exams', 
+ 'Does the frequency of the required Field Exams align with the Borrower''s risk profile and are they obtained in accordance with the credit approval and Loan/Credit Agreement?',
+ 'Per policy, the frequency of Field Exams are based on the assessment of the PSOR. Answer Yes, No, or N/A if Field Exam not required. If answered No include further comments.'),
+(12533, 'Field Exams',
+ 'Is the Field Exam of appropriate quality and completed per policy requirements in terms of required content, including a collateral discussion, evaluation of reporting & controls, and summary of any noted observations or material issues?',
+ 'Review the field exam quality per policy requirements.'),
+(12533, 'Field Exams',
+ 'When required, did the RM/PM provide a timely and adequate response to any material issues/recommendations/observations noted in the most recently completed Field Exam?',
+ 'Check RM/PM response timeliness and adequacy.');
 
-FILE 1: frontend/src/app/review/[ecif]/review-info/components/sections/ChecklistSection.tsx
-- Add a helper to detect empty comment (strip HTML, trim):
-    const isCommentEmpty = (html: string) => (html ?? "").replace(/<[^>]*>/g, "").trim().length === 0;
-- For each question row, show an inline red error:
-    - If q.answer === "No" AND isCommentEmpty(q.comments):
-        "Comment is required when the answer is \"No\"."
-    - If (q.answer === "Yes" || q.answer === "N/A") AND NOT isCommentEmpty(q.comments):
-        "Comment must be empty unless the answer is \"No\"."
-  Render it as: <div className="text-sm text-red-600 mt-1">{message}</div> under the comments editor.
-
-FILE 2: frontend/src/app/review/[ecif]/review-info/page.tsx
-- In handleSave, BEFORE calling saveReview (same place covenants validation blocks 
-  with toast.showError), add Checklist validation over the checklist questions:
-    - If ANY question has answer === "No" and empty comment (strip HTML + trim):
-        toast.showError("Please add a comment for every checklist item answered \"No\".", { title: "Comment required" });
-        block save (return + reset isSaving like other early returns).
-    - Else if ANY question has answer "Yes" or "N/A" with a non-empty comment:
-        toast.showError("Comments are only allowed when the answer is \"No\". Please clear comments on Yes/N/A items.", { title: "Invalid comment" });
-        block save (return + reset isSaving).
-- Match the existing covenants validation/toast pattern. Show how checklist data is 
-  accessed in handleSave.
-
-Modify ONLY these two files. If checklist data isn't accessible in handleSave and 
-needs another file, STOP and tell me first.
+-- Confirm insert hua
+SELECT [Review_id], [Checklist_question], [Checklist_answer], [Checklist_comments]
+FROM dbo.[02_CORE_08_Checklists] WHERE Review_id = 12533;

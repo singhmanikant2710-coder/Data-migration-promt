@@ -1,20 +1,26 @@
-Modify ONLY this file:
-frontend/src/app/review/[ecif]/review-info/components/sections/CrmFindingsAndRatingsSection.tsx
+READ-ONLY. Do NOT edit. Report only.
 
-Make the CRM Findings table header match the Transactions table header style 
-(dark navy background with white uppercase text). Two changes:
+Checklist tab currently shows no data. I need to understand its current state.
 
-1. Change the <thead> className FROM:
-     bg-sky-200 text-slate-800
-   TO:
-     sticky top-0 z-20 bg-[#1F3864] text-white
+Report ONLY:
 
-2. In the local Th component in THIS file, change its className FROM:
-     "box-border px-3 h-10 text-left font-semibold align-middle whitespace-nowrap "
-   TO:
-     "box-border px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide align-middle whitespace-nowrap border-b border-[#1F3864] "
+1. In the backend, how is Checklist data read? Show the method (e.g. 
+   GetChecklistSectionAsync in SqlReviewRepository.cs) — which table it reads 
+   (dbo.[02_CORE_08_Checklists]?), the SELECT, and how it filters by Review_id.
 
-Keep everything else (the column names, the per-cell className overrides like 
-text-center) exactly as-is.
+2. Which frontend component renders the Checklist tab? Show how it fetches/receives 
+   the checklist rows and how it maps them.
 
-Modify ONLY CrmFindingsAndRatingsSection.tsx. This is a styling-only change.
+3. Is there checklist data in the table for a test review? (Just show the read query 
+   so I can run it in SSMS.)
+
+4. Save: is UpsertChecklistAsync (already exists in SqlReviewRepository) wired into 
+   ReviewService.SaveAsync? Show the Checklist block in SaveAsync — does it call 
+   UpsertChecklistAsync? (This confirms whether Checklist save is implemented.)
+
+5. For the client requirements — report current state ONLY (no changes):
+   - Is the answer field limited to Yes/No/N/A anywhere?
+   - Is comment mandatory-on-No implemented?
+   - Is there any lock/unlock logic on tabs after Manager approval?
+
+Report only with exact code, file paths, and SQL. No edits.

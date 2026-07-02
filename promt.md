@@ -1,24 +1,30 @@
 READ-ONLY. Do NOT edit. Report only.
 
-The transactional table dbo.[02_CORE_08_Checklists] is empty. I need to find where 
-the standard checklist questions come from.
+For the Checklist tab, report the CURRENT implementation state (no changes). 
+Answer each precisely with file paths and code:
 
-Report ONLY:
+SAVE:
+1. Is UpsertChecklistAsync (in SqlReviewRepository.cs) actually wired into 
+   ReviewService.SaveAsync? Show the Checklist block in SaveAsync — does it call 
+   _repo.UpsertChecklistAsync with dto.Checklist? So is Checklist save fully 
+   implemented end-to-end (frontend payload → service → repo → DB)?
 
-1. Is there a LIBRARY/master table for checklist questions (similar to how 
-   03_LIBRARY_01_CAS Findings holds finding codes)? Search table names like 
-   03_LIBRARY%Checklist%, %Checklist%, or similar. List any table that holds 
-   standard/master checklist questions with their guidance.
+CLIENT BUSINESS LOGIC (report if each is implemented or NOT):
+2. Answer field limited to Yes / No / N/A only — is there a dropdown/select 
+   restricting the answer to these 3 values in the Checklist component? Show it.
+3. Comment field mandatory when answer = "No" (and empty otherwise) — is there any 
+   validation enforcing this? Show it or confirm absent.
+4. Only answer + comment fields editable; all other checklist fields locked at all 
+   times — is this enforced in the Checklist component? Show how fields are 
+   editable/locked.
+5. When review is locked, Checklist (and other tabs) locked unless unlocked by 
+   Manager/Director via an Unlock button — does any lock/unlock or Unlock-button 
+   feature exist? Show it or confirm absent.
 
-2. If such a library exists, show its columns and a sample of its rows 
-   (the read query so I can run it in SSMS).
+HELP TIPS:
+6. Is the Help Tips feature integrated into the Checklist tab (or any review tab) 
+   yet — i.e., are the (i)/help icons connected to the maintenance help-tips library 
+   (Form + Topic + HelpTip)? Show current state or confirm not integrated.
 
-3. In the backend, how does GetChecklistSectionAsync build the checklist for a 
-   review — does it read only from 02_CORE_08_Checklists (empty), or does it also 
-   pull questions from a library/master? Show the exact SELECT.
-
-4. In the maintenance section, is there a Checklist library management screen 
-   (like the CAS Findings one at /maintenance/cas-findings)? Check the maintenance 
-   routes/menu.
-
-Report only with exact table names, columns, and SQL. No edits.
+Report only with exact code and file paths. State clearly for each item: 
+IMPLEMENTED or NOT IMPLEMENTED. No edits.

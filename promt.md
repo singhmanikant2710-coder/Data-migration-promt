@@ -1,30 +1,31 @@
-READ-ONLY. Do NOT edit. Report only.
+READ-ONLY. Do NOT edit. Report only. This is about CODE that exists, NOT about data 
+or tables.
 
-For the Checklist tab, report the CURRENT implementation state (no changes). 
-Answer each precisely with file paths and code:
+For the Checklist tab, check the actual code and report each item as 
+"IMPLEMENTED" or "NOT IMPLEMENTED" with the file path and code snippet:
 
-SAVE:
-1. Is UpsertChecklistAsync (in SqlReviewRepository.cs) actually wired into 
-   ReviewService.SaveAsync? Show the Checklist block in SaveAsync — does it call 
-   _repo.UpsertChecklistAsync with dto.Checklist? So is Checklist save fully 
-   implemented end-to-end (frontend payload → service → repo → DB)?
+1. SAVE WIRING: Open ReviewService.SaveAsync. Is there a block that calls 
+   _repo.UpsertChecklistAsync(...) using dto.Checklist? Paste that block. 
+   (IMPLEMENTED if the call exists, NOT IMPLEMENTED if absent.)
 
-CLIENT BUSINESS LOGIC (report if each is implemented or NOT):
-2. Answer field limited to Yes / No / N/A only — is there a dropdown/select 
-   restricting the answer to these 3 values in the Checklist component? Show it.
-3. Comment field mandatory when answer = "No" (and empty otherwise) — is there any 
-   validation enforcing this? Show it or confirm absent.
-4. Only answer + comment fields editable; all other checklist fields locked at all 
-   times — is this enforced in the Checklist component? Show how fields are 
-   editable/locked.
-5. When review is locked, Checklist (and other tabs) locked unless unlocked by 
-   Manager/Director via an Unlock button — does any lock/unlock or Unlock-button 
-   feature exist? Show it or confirm absent.
+2. ANSWER = Yes/No/N/A ONLY: In the Checklist frontend component, is the answer 
+   field a dropdown/select restricted to exactly Yes, No, N/A? Paste it. 
+   (IMPLEMENTED or NOT.)
 
-HELP TIPS:
-6. Is the Help Tips feature integrated into the Checklist tab (or any review tab) 
-   yet — i.e., are the (i)/help icons connected to the maintenance help-tips library 
-   (Form + Topic + HelpTip)? Show current state or confirm not integrated.
+3. COMMENT MANDATORY ON "No": In the Checklist component, is there validation that 
+   requires the comment when answer is "No" and keeps it empty otherwise? Paste it. 
+   (IMPLEMENTED or NOT.)
 
-Report only with exact code and file paths. State clearly for each item: 
-IMPLEMENTED or NOT IMPLEMENTED. No edits.
+4. FIELD LOCKING: In the Checklist component, are only the answer and comment fields 
+   editable while other fields stay locked? Paste how editability is controlled. 
+   (IMPLEMENTED or NOT.)
+
+5. REVIEW LOCK/UNLOCK: Anywhere in the review form, is there a lock-after-approval 
+   plus a Manager/Director "Unlock" button feature? Paste it. (IMPLEMENTED or NOT.)
+
+6. HELP TIPS: Are the (i)/help icons in any review tab connected to the help-tips 
+   library (dbo.[03_LIBRARY_06_Help Tips] via the maintenance help-tips feature)? 
+   Paste the connection or state NOT IMPLEMENTED.
+
+Do NOT report on table existence or data. Report ONLY on code implementation. 
+File paths + code + IMPLEMENTED/NOT for each of the 6 items.

@@ -1,44 +1,39 @@
 Modify ONLY this file:
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+backend/src/Casrr.Application/IReviewRepository.cs
 
-Add a new method SaveCrmRatingsAsync that saves the 5 per-component CRM UNSAT flags 
-and their comments into dbo.[02_CORE_02_Reviews], following the same simple-write 
-ADO.NET pattern as SaveKeyRisksAsync. (Use the LIVE database column names below; 
-ignore any columns.csv.)
+Add a declaration for SaveCrmRatingsAsync matching the style of the existing 
+declarations (like SaveKeyRisksAsync):
 
-public async Task SaveCrmRatingsAsync(
+// Persist CRM Ratings (5 per-component UNSAT flags + comments) into dbo.[02_CORE_02_Reviews]
+Task SaveCrmRatingsAsync(
     int reviewId,
     bool riskRecognitionUnsat, string? riskRecognitionComments,
     bool scorecardMgmtUnsat, string? scorecardMgmtComments,
     bool underwritingUnsat, string? underwritingComments,
     bool creditServicingUnsat, string? creditServicingComments,
     bool loanAdminUnsat, string? loanAdminComments,
-    CancellationToken ct)
-{
-    const string sql = @"
-UPDATE dbo.[02_CORE_02_Reviews] SET
-    [Risk_recognition_UNSAT] = @rr,  [Risk_recognition_comments] = @rrc,
-    [Scorecard_mgmt_UNSAT]   = @sm,  [Scorecard_mgmt_comments]   = @smc,
-    [Underwriting_UNSAT]     = @uw,  [Underwriting_comments]     = @uwc,
-    [Credit_servicing_UNSAT] = @cs,  [Credit_servicing_comments] = @csc,
-    [Loan_admin_UNSAT]       = @la,  [Loan_admin_comments]       = @lac
-WHERE [Review_id] = @id;";
+    CancellationToken ct);
 
-    using var conn = _connFactory.Create();
-    await conn.OpenAsync(ct).ConfigureAwait(false);
-    using var cmd = new SqlCommand(sql, conn) { CommandType = CommandType.Text };
-    cmd.Parameters.Add(new SqlParameter("@id", SqlDbType.Int) { Value = reviewId });
-    cmd.Parameters.Add(new SqlParameter("@rr", SqlDbType.Bit) { Value = riskRecognitionUnsat });
-    cmd.Parameters.Add(new SqlParameter("@rrc", SqlDbType.NVarChar, -1) { Value = (object?)riskRecognitionComments ?? DBNull.Value });
-    cmd.Parameters.Add(new SqlParameter("@sm", SqlDbType.Bit) { Value = scorecardMgmtUnsat });
-    cmd.Parameters.Add(new SqlParameter("@smc", SqlDbType.NVarChar, -1) { Value = (object?)scorecardMgmtComments ?? DBNull.Value });
-    cmd.Parameters.Add(new SqlParameter("@uw", SqlDbType.Bit) { Value = underwritingUnsat });
-    cmd.Parameters.Add(new SqlParameter("@uwc", SqlDbType.NVarChar, -1) { Value = (object?)underwritingComments ?? DBNull.Value });
-    cmd.Parameters.Add(new SqlParameter("@cs", SqlDbType.Bit) { Value = creditServicingUnsat });
-    cmd.Parameters.Add(new SqlParameter("@csc", SqlDbType.NVarChar, -1) { Value = (object?)creditServicingComments ?? DBNull.Value });
-    cmd.Parameters.Add(new SqlParameter("@la", SqlDbType.Bit) { Value = loanAdminUnsat });
-    cmd.Parameters.Add(new SqlParameter("@lac", SqlDbType.NVarChar, -1) { Value = (object?)loanAdminComments ?? DBNull.Value });
-    await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-}
+Modify ONLY IReviewRepository.cs.
 
-Modify ONLY SqlReviewRepository.cs.
+
+read only after build 
+READ-ONLY. Do NOT edit. Report only.
+
+In ReviewService.SaveAsync, I need to add CRM Ratings saving inside the existing 
+CRM Findings block (section key crmFindingsAndRatings). The frontend sends, in 
+dto.CrmFindingsAndRatings.Data:
+  - ratings: { riskRecognition, scorecardManagement, underwriting, creditServicing, 
+    loanAdministration } as strings ("Unsatisfactory"/"Satisfactory")
+  - rationales: { general, riskRecognition, scorecardManagement, underwriting, 
+    creditServicing, loanAdministration } as HTML strings
+
+Report ONLY:
+1. Show the current CRM Findings block in SaveAsync exactly (where findings are parsed 
+   and SaveCrmFindingsAsync is called), so I know where to add the ratings parsing 
+   and the SaveCrmRatingsAsync call.
+2. Confirm how to read nested objects "ratings" and "rationales" from the same 
+   dto.CrmFindingsAndRatings.Data JsonElement (the block already has a 
+   TryGetPropertyIgnoreCase helper — show it).
+
+Report only. No edits.

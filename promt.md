@@ -1,19 +1,23 @@
-Modify ONLY this file:
-frontend/src/app/review/[ecif]/review-info/components/sections/CrmRatingsSection.tsx
+READ-ONLY. Do NOT edit. Report only. Live DB, ignore columns.csv.
 
-The client design has NO "general" rationale box. It only has per-component UNSAT 
-checkboxes, each with its own rationale editor that appears when checked. 
+CRM Ratings save works (data is in DB: Risk_recognition_UNSAT=1, comments saved), 
+but after reload the CRM Ratings tab shows unchecked boxes and empty comments — 
+the READ is not returning the saved values.
 
-Remove the standalone "general" rationale editor (the one at the top with 
-placeholder "Discuss rationale for UNSAT rating" that is NOT tied to a specific 
-UNSAT checkbox). 
+Report ONLY:
+1. In GetCrmFindingsSectionAsync (SqlReviewRepository.cs), show the CURRENT code 
+   around the ratings — is the interim "rr = sm = uw = cs = la = null;" still there, 
+   or was it replaced with an actual SELECT of the *_UNSAT and *_comments columns? 
+   Show the exact current code.
 
-Specifically:
-- Remove the general RichTextEditor and its label/container.
-- Remove the "general" entry from the local rationales state and any 
-  setSection("crmFindingsAndRatings", { rationales: { general: ... } }) call.
-- Keep ALL 5 per-component UNSAT checkboxes and their per-component rationale editors 
-  exactly as they are (riskRecognition, scorecardManagement, underwriting, 
-  creditServicing, loanAdministration).
+2. Does the read now SELECT Risk_recognition_UNSAT, Risk_recognition_comments, etc. 
+   from 02_CORE_02_Reviews and map them into the returned ratings? Show it.
 
-Modify ONLY CrmRatingsSection.tsx. Do not touch backend or other files.
+3. Does the returned CrmRatings/section include the per-component comments so the 
+   frontend rationale editors can display them? Or only the UNSAT rating strings?
+
+4. On the frontend (useCrmFindings.ts / CrmRatingsSection.tsx), how does it read the 
+   ratings + comments from the response to set the checkboxes (Unsatisfactory) and 
+   the rationale editors? Does it expect comment fields that the backend isn't sending?
+
+Report only with exact code. No edits.

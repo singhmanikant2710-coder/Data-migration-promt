@@ -1,39 +1,74 @@
 Modify ONLY this file:
-backend/src/Casrr.Application/IReviewRepository.cs
+backend/src/Casrr.Application/Services/ReviewService.cs
 
-Add a declaration for SaveCrmRatingsAsync matching the style of the existing 
-declarations (like SaveKeyRisksAsync):
+In the CRM Findings block inside SaveAsync, AFTER the line 
+"await _repo.SaveCrmFindingsAsync(resolvedReviewId, findingRows, ct);" 
+and still INSIDE the try block, add CRM Ratings persistence.
 
-// Persist CRM Ratings (5 per-component UNSAT flags + comments) into dbo.[02_CORE_02_Reviews]
-Task SaveCrmRatingsAsync(
-    int reviewId,
-    bool riskRecognitionUnsat, string? riskRecognitionComments,
-    bool scorecardMgmtUnsat, string? scorecardMgmtComments,
-    bool underwritingUnsat, string? underwritingComments,
-    bool creditServicingUnsat, string? creditServicingComments,
-    bool loanAdminUnsat, string? loanAdminComments,
-    CancellationToken ct);
-
-Modify ONLY IReviewRepository.cs.
-
-
-read only after build 
-READ-ONLY. Do NOT edit. Report only.
-
-In ReviewService.SaveAsync, I need to add CRM Ratings saving inside the existing 
-CRM Findings block (section key crmFindingsAndRatings). The frontend sends, in 
-dto.CrmFindingsAndRatings.Data:
-  - ratings: { riskRecognition, scorecardManagement, underwriting, creditServicing, 
-    loanAdministration } as strings ("Unsatisfactory"/"Satisfactory")
-  - rationales: { general, riskRecognition, scorecardManagement, underwriting, 
+The same "data" JsonElement contains:
+  - "ratings": { riskRecognition, scorecardManagement, underwriting, creditServicing, 
+    loanAdministration } as strings ("Unsatisfactory" or "Satisfactory")
+  - "rationales": { general, riskRecognition, scorecardManagement, underwriting, 
     creditServicing, loanAdministration } as HTML strings
 
-Report ONLY:
-1. Show the current CRM Findings block in SaveAsync exactly (where findings are parsed 
-   and SaveCrmFindingsAsync is called), so I know where to add the ratings parsing 
-   and the SaveCrmRatingsAsync call.
-2. Confirm how to read nested objects "ratings" and "rationales" from the same 
-   dto.CrmFindingsAndRatings.Data JsonElement (the block already has a 
-   TryGetPropertyIgnoreCase helper — show it).
+Add this logic (reuse the existing local TryGetPropertyIgnoreCase helper):
 
-Report only. No edits.
+1. Read the "ratings" object. For each of the 5 components, compute a bool UNSAT:
+   true if the string value (trimmed, case-insensitive) equals "unsatisfactory", else false.
+
+2. Read the "rationales" object. For each of the 5 components, get the comment string 
+   (per-component: riskRecognition, scorecardManagement, underwriting, creditServicing, 
+   loanAdministration). Ignore "general" for now (no DB column).
+
+3. Call:
+   await _repo.SaveCrmRatingsAsync(
+       resolvedReviewId,
+       rrUnsat, rrComments,
+       smUnsat, smComments,
+       uwUnsat, uwComments,
+       csUnsat, csComments,
+       laUnsat, laComments,
+       ct);
+
+Helper to read a nested string safely: if the property exists and is a String, use 
+GetString(); otherwise null. For UNSAT bool: string.Equals(val?.Trim(), "Unsatisfactory", 
+StringComparison.OrdinalIgnoreCase).
+
+Only add this after the findings save; do not change the findings logic. Keep it 
+inside the same try/catch.
+
+Modify ONLY ReviewService.cs.
+
+
+edit 4 ------ 
+
+Modify ONLY this file:
+backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+
+In GetCrmFindingsSectionAsync, the 5 ratings are currently set to null (interim). 
+Fix the read to load the actual UNSAT flags and comments from dbo.[02_CORE_02_Reviews], 
+and return them so the CRM Ratings tab shows saved state.
+
+1. Remove the interim line: rr = sm = uw = cs = la = null;
+
+2. Add a query to read the 10 columns for this review (LIVE DB column names):
+   SELECT [Risk_recognition_UNSAT], [Risk_recognition_comments],
+          [Scorecard_mgmt_UNSAT], [Scorecard_mgmt_comments],
+          [Underwriting_UNSAT], [Underwriting_comments],
+          [Credit_servicing_UNSAT], [Credit_servicing_comments],
+          [Loan_admin_UNSAT], [Loan_admin_comments]
+   FROM dbo.[02_CORE_02_Reviews] WITH (NOLOCK)
+   WHERE [Review_id] = @reviewId;
+
+3. Convert each UNSAT bit to the rating string the frontend expects: 
+   if UNSAT bit is true → "Unsatisfactory", else → "Satisfactory". 
+   Set rr, sm, uw, cs, la accordingly (these feed NormalizeRatingSimple).
+
+4. Also read the per-component comments and include them in the returned CrmRatings / 
+   section so the rationale editors can show saved text. If the CrmRatings model 
+   doesn't have comment fields, show me the model — if adding fields requires editing 
+   another file (DTO), STOP and tell me first.
+
+Match the existing ADO.NET read style in this file (connection, reader). 
+Modify ONLY SqlReviewRepository.cs; if the CrmRatings DTO needs new comment fields 
+in another file, STOP and ask.

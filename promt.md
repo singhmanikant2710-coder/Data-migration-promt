@@ -1,23 +1,27 @@
-Modify frontend files to add a reusable Help Tip component and use it in the CRM 
-Ratings tab. The backend API GET /api/v1/help-tips?form=&topic= exists, and 
-frontend/src/services/api/helpTips.ts has listLibrary(form, topic). 
-Help tips are HTML content.
+Help Tips are already working via a reusable HelpTipIcon component (or similar) — 
+check how the Collateral tab integrates dynamic help tips from the help-tips library 
+(API by form/topic), and replicate the EXACT same pattern on these review tabs:
 
-STEP 1 — Create a reusable component:
-frontend/src/app/review/[ecif]/review-info/components/HelpTipIcon.tsx (new file)
-- Props: { form: string; topic: string }
-- On mount (or on first open), call listLibrary(form, topic) to fetch the tip.
-- Render an (i) info icon. On hover/click, show a popover/tooltip displaying the 
-  tip's HTML content (use dangerouslySetInnerHTML for the HTML, since tips are HTML).
-- Handle loading/empty (if no tip found, show the icon but a simple "No help available" 
-  or just the icon with nothing).
-- Keep it small and self-contained.
+- Key Risks
+- CRM Findings
+- CRM Ratings
+- Risk Rating Justification
+- Checklist
 
-STEP 2 — Use it in the CRM Ratings tab:
-In CrmRatingsSection.tsx, replace the static InfoIconSquare (title="CRM Ratings...") 
-in the section actions with:
-  <HelpTipIcon form="04_REVIEW FORM_04" topic="Unsatisfactory Ratings" />
+For each tab, use form "04_REVIEW FORM_04" and the correct topic that exists in the 
+help-tips library. The topics available in the library are:
+- Key Risks
+- Risk Rating Justification
+- Unsatisfactory Ratings  (use this for the CRM Ratings tab)
+- Scorecard, Collateral, Covenants, Customer Info, Policy Exceptions, Regulatory Flags, 
+  Repayment, Transactions, Sample Loading
 
-Modify ONLY: the new HelpTipIcon.tsx and CrmRatingsSection.tsx. 
-If listLibrary or the API contract differs from what I described, adapt to the actual 
-code in helpTips.ts. If something needs another file, STOP and tell me first.
+Note: there is NO "CRM Findings" or "Checklist" topic in the library. For those two 
+tabs, if no matching topic exists, either skip the help icon or leave the existing 
+static one — do NOT invent a topic. Tell me which topic (if any) you used for CRM 
+Findings and Checklist.
+
+Replace any static tooltip on these tabs with the dynamic HelpTipIcon, matching the 
+Collateral tab's usage exactly. Show me each file changed and the form/topic used per tab.
+
+Modify only the relevant section components. If a shared file needs changing, STOP and ask.

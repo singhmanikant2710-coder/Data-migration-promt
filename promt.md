@@ -1,83 +1,26 @@
-Modify ONLY this file:
-backend/src/Casrr.Domain/ReviewQueue.cs
+READ-ONLY. Do NOT edit. Report only.
 
-In the CrmRatings class, ADD 5 per-component comment fields (keep the existing 5 
-rating string fields). New class:
+I need to integrate Help Tips into 5 review tabs (Key Risks, CRM Findings, CRM Ratings, 
+Risk Rating Justification, Checklist). Help tips live in the maintenance help-tips 
+feature backed by dbo.[03_LIBRARY_06_Help Tips].
 
-public sealed class CrmRatings
-{
-    public string RiskRecognition { get; init; } = "Satisfactory";
-    public string ScorecardManagement { get; init; } = "Satisfactory";
-    public string Underwriting { get; init; } = "Satisfactory";
-    public string CreditServicing { get; init; } = "Satisfactory";
-    public string LoanAdministration { get; init; } = "Satisfactory";
+Report ONLY:
 
-    public string? RiskRecognitionComments { get; init; }
-    public string? ScorecardManagementComments { get; init; }
-    public string? UnderwritingComments { get; init; }
-    public string? CreditServicingComments { get; init; }
-    public string? LoanAdministrationComments { get; init; }
-}
+1. Show the schema of dbo.[03_LIBRARY_06_Help Tips] — its columns (e.g. Form, Topic, 
+   HelpTip). Give a read query to see sample rows in SSMS.
 
-Modify ONLY ReviewQueue.cs.
+2. How does the existing /maintenance/help-tips screen read this data? Show the backend 
+   read method and the frontend component that lists help tips. What identifies a tip — 
+   is it keyed by Form + Topic?
 
+3. Is there ANY existing help-tip display in the review form (e.g. an (i) icon that 
+   already fetches a tip by Form/Topic)? Or are the (i) icons currently just static 
+   tooltips with hardcoded text? Show one example from a review tab.
 
-EDit 2 
+4. Is there a backend API endpoint to fetch a help tip by Form/Topic (for the review 
+   form to call), or only the maintenance CRUD? Show the controller/route.
 
-Modify ONLY this file:
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+5. For the 5 target tabs, what would the "Form" and "Topic" values be? Are there rows 
+   in the library for these tabs' tips? (Show the query to check.)
 
-In GetCrmFindingsSectionAsync, the ratings read has the *_comments reads commented out. 
-Fix it:
-
-1. UNCOMMENT and activate the 5 comment reads (rrComments, smComments, uwComments, 
-   csComments, laComments) from the reader — read them as string? (IsDBNull check).
-   Declare them OUTSIDE the if-block (like rr/sm/uw/cs/la) so they're in scope for the return.
-
-2. In the returned CrmRatings, populate the new comment fields:
-   Ratings = new CrmRatings
-   {
-       RiskRecognition = NormalizeRatingSimple(rr),
-       ScorecardManagement = NormalizeRatingSimple(sm),
-       Underwriting = NormalizeRatingSimple(uw),
-       CreditServicing = NormalizeRatingSimple(cs),
-       LoanAdministration = NormalizeRatingSimple(la),
-       RiskRecognitionComments = rrComments,
-       ScorecardManagementComments = smComments,
-       UnderwritingComments = uwComments,
-       CreditServicingComments = csComments,
-       LoanAdministrationComments = laComments
-   }
-
-Modify ONLY SqlReviewRepository.cs.
-
-EDIT 3 
-Modify ONLY these files (frontend CRM Ratings):
-1. frontend/src/app/review/[ecif]/review-info/components/sections/hooks/useCrmFindings.ts
-2. frontend/src/app/review/[ecif]/review-info/components/sections/CrmRatingsSection.tsx
-
-The backend now returns per-component rating comments in the response at 
-form.crmFindings.ratings.{riskRecognitionComments, scorecardManagementComments, 
-underwritingComments, creditServicingComments, loanAdministrationComments} 
-(camelCase; confirm the exact JSON casing from the response and use it).
-
-FILE 1 (useCrmFindings.ts): In the ratings mapping, also surface the 5 comment values 
-so the component can read them. Add them to the ratings object (or a parallel field), e.g.:
-  ratings: {
-    riskRecognition: normalizeRating(crmFind?.ratings?.riskRecognition),
-    ... (existing 5) ...,
-    riskRecognitionComments: crmFind?.ratings?.riskRecognitionComments ?? "",
-    scorecardManagementComments: crmFind?.ratings?.scorecardManagementComments ?? "",
-    underwritingComments: crmFind?.ratings?.underwritingComments ?? "",
-    creditServicingComments: crmFind?.ratings?.creditServicingComments ?? "",
-    loanAdministrationComments: crmFind?.ratings?.loanAdministrationComments ?? "",
-  }
-Update the CrmRatings type accordingly.
-
-FILE 2 (CrmRatingsSection.tsx): Initialize the local "rationales" state from the 
-backend comments when data loads (e.g. a useEffect that sets rationales from 
-state.ratings.*Comments when the section state becomes available), so the rationale 
-editors show saved text on reload. Do not break the existing onChange behavior.
-
-Modify ONLY these two files. If the response JSON casing differs, adapt. If the 
-CrmRatings frontend type is defined elsewhere and needs editing, STOP and tell me first.
+Report only with exact schema, code, file paths, and SQL. No edits.

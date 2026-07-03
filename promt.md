@@ -1,38 +1,21 @@
-Modify ONLY this file:
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+READ-ONLY. Do NOT edit. Report only. Live DB, ignore columns.csv.
 
-IMPORTANT: Use the LIVE database. IGNORE discovery/backend-schema/columns.csv — it is 
-outdated. The live DB HAS these bit columns (confirmed, and SaveCrmRatingsAsync already 
-writes to them successfully): Risk_recognition_UNSAT, Scorecard_mgmt_UNSAT, 
-Underwriting_UNSAT, Credit_servicing_UNSAT, Loan_admin_UNSAT — plus the *_comments columns.
+CRM Ratings UNSAT checkboxes now save AND restore correctly. But the per-component 
+rationale COMMENTS save to DB yet do NOT show on reload (the rationale editors are empty).
 
-In GetCrmFindingsSectionAsync, fix the ratings READ:
+Report ONLY:
 
-1. REMOVE the interim line: rr = sm = uw = cs = la = null;
+1. In GetCrmFindingsSectionAsync, does the read now capture the 5 *_comments values 
+   from 02_CORE_02_Reviews, and are they included in the returned CrmRatings/CrmFindingsSection? 
+   Show the CrmRatings model definition — does it have comment fields per component, 
+   or only the 5 rating strings?
 
-2. Add a query to read the 10 columns for this review:
-   SELECT [Risk_recognition_UNSAT], [Risk_recognition_comments],
-          [Scorecard_mgmt_UNSAT], [Scorecard_mgmt_comments],
-          [Underwriting_UNSAT], [Underwriting_comments],
-          [Credit_servicing_UNSAT], [Credit_servicing_comments],
-          [Loan_admin_UNSAT], [Loan_admin_comments]
-   FROM dbo.[02_CORE_02_Reviews] WITH (NOLOCK)
-   WHERE [Review_id] = @reviewId;
+2. On the frontend, the CRM Ratings tab (useCrmFindings.ts / CrmRatingsSection.tsx) — 
+   the per-component rationale editors use local state "rationales" (general, 
+   riskRecognition, ...). How is this local rationales state initialized on load? 
+   Does it read comments from the backend response, or does it always start empty?
 
-3. For each component, read the bit. If the UNSAT bit is true, set the rating string 
-   variable (rr/sm/uw/cs/la) to "Unsatisfactory"; otherwise "Satisfactory". These feed 
-   the existing NormalizeRatingSimple calls, so the frontend checkboxes will show checked 
-   when Unsatisfactory.
+3. What is the response path/field the frontend would read per-component comments from, 
+   if the backend included them?
 
-4. Also capture the 5 *_comments values so they can be returned for the rationale editors. 
-   Look at the CrmRatings model returned by this method — if it has per-component comment 
-   fields, populate them. If CrmRatings has NO comment fields and adding them requires 
-   editing another file (the DTO/model), STOP and tell me first (for now, still return 
-   the UNSAT-based rating strings so at least the checkboxes restore correctly).
-
-Match the existing ADO.NET read style (open connection, SqlCommand, reader) used 
-elsewhere in this file. Handle the case where the review row has NULLs (treat null bit 
-as false → "Satisfactory").
-
-Modify ONLY SqlReviewRepository.cs. If the CrmRatings DTO needs new comment fields in 
-another file, STOP and ask.
+Report only with exact code and file paths. No edits.

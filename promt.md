@@ -1,11 +1,15 @@
-Task: On the Customer Info tab, make the "CUSTOMER SIZE" field an editable dropdown (select) instead of a read-only text field.
+Task: On the Customer Info tab, convert the "FHN PORTFOLIO SEGMENT" field from a read-only text field into an editable dropdown (SelectField). The dropdown options must be sourced from the database, not hardcoded.
 
-Dropdown options (hardcoded, in this exact order):
-<$1MM, $1MM-$5MM, $5MM-$20MM, $20MM-$50MM, $50MM-$100MM, >$100MM
+Data source (use LIVE DB, ignore columns.csv):
+- Table: 03_LIBRARY_09_Selections
+- Filter: Tab = "Customer Info" AND Section = "FHN Portfolio Segment"
+- Use the appropriate value column from that table as the dropdown option list (inspect the table's columns on the live DB first and show me which column holds the selection text).
 
 Constraints:
-- Use live DB knowledge only; ignore backend-schema/columns.csv.
-- READ-ONLY diagnostics first: locate the Customer Info frontend component and show me the current "CUSTOMER SIZE" field JSX block before editing.
-- Single-file edit only (frontend component). Do NOT change any DTO/API/backend in this step.
-- Convert the field to a dropdown bound to the same value/name used now (so the selected value saves through the existing Save path). Keep the current value pre-selected on load.
-- Show the diagnostic and your proposed edit, then wait for my confirmation before applying.
+- READ-ONLY diagnostics first. Show me:
+  (a) the live DB columns of 03_LIBRARY_09_Selections and a sample of rows where Tab='Customer Info' AND Section='FHN Portfolio Segment',
+  (b) the current "FHN PORTFOLIO SEGMENT" field JSX in CustomerInfoSection.tsx,
+  (c) how the existing library-backed dropdowns (if any) in this project fetch options (API route + frontend service), so we follow the same pattern.
+- Then propose the full plan (backend API endpoint if needed + frontend service + SelectField wiring) BEFORE editing.
+- Keep the binding (section/name/value) same as the current field so the existing Save path persists the selected value.
+- Single-file edits, step-by-step. Wait for my confirmation at each file.

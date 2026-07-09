@@ -1,7 +1,19 @@
-Plan approved. Proceed step-by-step in the order listed. Start with step 1 (ICustomerInfoLookupRepository.cs) and pause after each file for my confirmation.
+Task: On the Customer Info tab (Relationship Overview), convert SEGMENT, UNIT, and MARKET into CASCADING dropdowns (SEGMENT > UNIT > MARKET), sourced from the live database.
 
-One note: the new endpoint accepts multiple roles via repeated query params (roles=PML&roles=RPML). Please make sure:
-- The SQL uses a properly parameterized IN clause (one @param per role), not string concatenation.
-- The controller safely handles an empty roles list (return empty array, no error).
+Cascade logic (per UAT requirement):
+- SEGMENT: distinct values of [Segment] from 01_DATA_01_Data Mart Trial. Independent (not dependent on Unit/Market).
+- UNIT: depends on SEGMENT.
+    * If SEGMENT = 'Regional Banking'  -> distinct [Region] values (filtered by chosen Segment)
+    * Else                              -> distinct [SpecialtyLine] values (filtered by chosen Segment)
+- MARKET: depends on SEGMENT and UNIT -> distinct [Market] values filtered by chosen Segment (and Unit).
 
-Keep the existing fallback to userOptionsAll/userOptionsCRO if the live fetch fails, as you described. Bindings (section/name/value) stay unchanged.
+Constraints:
+- READ-ONLY diagnostics FIRST. Show me:
+  (a) Confirm these columns exist on 01_DATA_01_Data Mart Trial (live DB): Segment, Region, SpecialtyLine, Market. Give a few sample distinct values of each, and confirm exact column names/spelling.
+  (b) The CURRENT JSX for SEGMENT, UNIT, MARKET in CustomerInfoSection.tsx — exact bindings (section/name/value). I believe they are currently read-only <Field>. Confirm.
+  (c) Whether cascading (dependent) lookups can reuse the existing CustomerInfoLookup repository/controller pattern. Propose the smallest backend addition: likely endpoints that accept a segment (and unit) filter and return distinct dependent values. Follow the same pattern as distribution-party-names.
+- Then propose the FULL plan (backend endpoints + frontend service + cascading state wiring) BEFORE editing.
+- Keep each field's binding (section/name/value) unchanged so the existing Save path persists values.
+- Cascading behavior: when SEGMENT changes, reset/reload UNIT options; when UNIT changes, reset/reload MARKET options. Keep current saved values visible via ensureIncludesSelected on initial load.
+- Single-file edits, step-by-step, wait for my confirmation at each file.
+- Use LIVE DB, ignore columns.csv. I will run any read-only SQL in SSMS and paste results.

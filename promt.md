@@ -1,30 +1,11 @@
--- 1) Column existence
-SELECT c.name
-FROM sys.columns c
-WHERE c.object_id = OBJECT_ID(N'[dbo].[01_DATA_01_Data Mart Trial]')
-  AND c.name IN (N'Segment', N'Region', N'SpecialtyLine', N'Market')
-ORDER BY c.name;
+Column names and sample values confirmed:
+- Segment: Corporate Segments, Regional Banking, Specialty Banking, UNKNOWN, Wholesale
+- Region (Unit for Regional Banking): Mid-*, Other, South, Sout*, West
+- SpecialtyLine (Unit for non-Regional): Corporate Banking, Corporate Correspondent, Energy, Equipment Finance, Franchise Finance, Healthcare, Mortgage Warehouse, Other
+- Market: Acadiana, Acadiana Retail, AL Birmingham, etc.
 
--- 2) Segment distinct
-SELECT DISTINCT TOP (20) LTRIM(RTRIM([Segment])) AS Segment
-FROM [dbo].[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
-WHERE [Segment] IS NOT NULL AND LTRIM(RTRIM([Segment])) <> ''
-ORDER BY Segment;
+Cascade logic confirmed. Plan approved. Proceed step-by-step, starting with step 1 (interface: add the 5 methods to ICustomerInfoLookupRepository). Pause after each file for my confirmation.
 
--- 3) Region distinct
-SELECT DISTINCT TOP (20) LTRIM(RTRIM([Region])) AS Region
-FROM [dbo].[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
-WHERE [Region] IS NOT NULL AND LTRIM(RTRIM([Region])) <> ''
-ORDER BY Region;
+Reminder: use "SELECT DISTINCT TOP (n)" ordering in the SQL repository, NOT "SELECT TOP (n) DISTINCT".
 
--- 4) SpecialtyLine distinct
-SELECT DISTINCT TOP (20) LTRIM(RTRIM([SpecialtyLine])) AS SpecialtyLine
-FROM [dbo].[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
-WHERE [SpecialtyLine] IS NOT NULL AND LTRIM(RTRIM([SpecialtyLine])) <> ''
-ORDER BY SpecialtyLine;
-
--- 5) Market distinct
-SELECT DISTINCT TOP (20) LTRIM(RTRIM([Market])) AS Market
-FROM [dbo].[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
-WHERE [Market] IS NOT NULL AND LTRIM(RTRIM([Market])) <> ''
-ORDER BY Market;
+For the units endpoint, match segment case-insensitively when checking for 'Regional Banking'.

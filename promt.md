@@ -1,18 +1,41 @@
 Single-file edit to useCrmFindings.ts only. Show diff before applying.
 
-Two fixes to the label-building effect:
+The previous guard change broke labels for all components. Revert to a clean, correct version of the label-building effect. Replace the ENTIRE effect with this:
 
-FIX 1 (SS and other components not getting labels): The `if (labelMap[comp]) continue;` guard can permanently skip a component whose entry was set before its library resolved. Change the guard so it only skips when the component ALREADY has a non-empty label map with at least one "code - description" entry. Replace:
-  if (labelMap[comp]) continue;
-with:
-  const existing = labelMap[comp];
-  const hasLabels = existing && Object.values(existing).some(v => v.includes(" - "));
-  if (hasLabels) continue;
+useEffect(() => {
+  let isCancelled = false;
+  const comps = Object.keys(codeMap) as CrmComponentId[];
+  for (const comp of comps) {
+    const codes = codeMap[comp] ?? [];
+    if (!comp || codes.length === 0) continue;
+    if (inFlight.current.has(comp)) continue;
+    const existing = labelMap[comp];
+    const alreadyDone = existing && Object.keys(existing).length > 0
+      && Object.values(existing).some(v => typeof v === "string" && v.includes(" - "));
+    if (alreadyDone) continue;
 
-FIX 2 (consistent formatting): build each label as a single clean format:
-  map[code] = desc ? `${code} - ${desc}` : code;
-(single " - " separator, not em-spaces).
+    inFlight.current.add(comp);
+    listCasFindingsLibrary(comp)
+      .then((items) => {
+        const map: Record<string, string> = {};
+        if (Array.isArray(items)) {
+          for (const it of items as any[]) {
+            const code = String(it?.findingCode ?? it?.FindingCode ?? "").trim();
+            if (!code) continue;
+            const desc = String(it?.description ?? it?.Description ?? "").trim();
+            map[code] = desc ? `${code} - ${desc}` : code;
+          }
+        }
+        if (!isCancelled) setLabelMap((prev) => ({ ...prev, [comp]: map }));
+      })
+      .catch(() => {
+        const map: Record<string, string> = {};
+        for (const c of codes) map[c] = c;
+        if (!isCancelled) setLabelMap((prev) => ({ ...prev, [comp]: map }));
+      })
+      .finally(() => { inFlight.current.delete(comp); });
+  }
+  return () => { isCancelled = true; };
+}, [codeMap, labelMap]);
 
-Keep the in-flight guard, deps [codeMap, labelMap], build directly from library items (findingCode/description), catch fallback, and option value = code. Do NOT touch save logic.
-
-Show diff. STOP if another file needs changing.
+Do NOT touch save logic or option value (value stays = code). No other file. Show diff. STOP if another file needs changing.

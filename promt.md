@@ -1,9 +1,10 @@
 Read-only diagnostic, no edits.
 
-In useCrmFindings.ts, show me the FULL label-building useEffect, specifically:
-1. Its dependency array (exact deps).
-2. Where `codes` comes from INSIDE the effect for each `comp` — is `codes` read from codeMap[comp] (FINDING_CODE_OPTIONS) at the moment the effect runs?
-3. The guard logic that decides whether to skip a component (labelMap[comp] exists check and inFlight check) — does it skip a component whose labelMap[comp] was previously set to an EMPTY object {}?
-4. The order of state updates: is it possible the effect runs BEFORE codeMap is populated (i.e. codes is empty []), builds an empty map, sets labelMap[comp] = {}, and then never re-runs because the guard sees labelMap[comp] already exists?
+I need to trace codeOpts vs the label source on the render side of CrmFindingsAndRatingsSection.tsx.
 
-Report the deps array and whether an empty-codes early build can permanently cache an empty label map. STOP and ask before editing.
+Show me:
+1. Exactly what `codeOpts` and `labelOpts` are assigned from — i.e. which hook return values feed them. Paste the lines like `const { FINDING_CODE_OPTIONS: codeOpts, FINDING_LABELS: labelOpts } = useCrmFindings(...)` or however they're destructured/aliased.
+2. Confirm: is `codeOpts[row.component]` the SAME source (codeMap from lookups.findingCodes) that the label-building effect iterates over? Or does the dropdown get its list of codes from a DIFFERENT source (e.g. the full findings/library response, all CS-101..CS-116OLD) than codeMap?
+3. For a given component like "04-Credit Servicing", print (or describe) whether codeOpts["04-Credit Servicing"] and the keys of labelOpts["04-Credit Servicing"] contain the SAME set of codes, or different sets.
+
+This will tell me if the dropdown lists codes that were never in codeMap, so no label was ever built for them. Report only. STOP before editing.

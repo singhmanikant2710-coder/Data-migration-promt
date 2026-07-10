@@ -1,41 +1,12 @@
-Single-file edit to useCrmFindings.ts only. Show diff before applying.
+Read-only first, no edits: In CrmFindingsAndRatingsSection.tsx, show me the EXACT current JSX of the Finding Code <option> rendering (the codeOptions.map block). I need to see whether the option text is `{code}` or `{labelOptions[code] ?? code}`, and confirm labelOptions is defined in that scope as `labelOpts[row.component] ?? {}`.
 
-The previous guard change broke labels for all components. Revert to a clean, correct version of the label-building effect. Replace the ENTIRE effect with this:
+Report the exact lines. STOP before editing.
 
-useEffect(() => {
-  let isCancelled = false;
-  const comps = Object.keys(codeMap) as CrmComponentId[];
-  for (const comp of comps) {
-    const codes = codeMap[comp] ?? [];
-    if (!comp || codes.length === 0) continue;
-    if (inFlight.current.has(comp)) continue;
-    const existing = labelMap[comp];
-    const alreadyDone = existing && Object.keys(existing).length > 0
-      && Object.values(existing).some(v => typeof v === "string" && v.includes(" - "));
-    if (alreadyDone) continue;
+Single-file edit to CrmFindingsAndRatingsSection.tsx only.
 
-    inFlight.current.add(comp);
-    listCasFindingsLibrary(comp)
-      .then((items) => {
-        const map: Record<string, string> = {};
-        if (Array.isArray(items)) {
-          for (const it of items as any[]) {
-            const code = String(it?.findingCode ?? it?.FindingCode ?? "").trim();
-            if (!code) continue;
-            const desc = String(it?.description ?? it?.Description ?? "").trim();
-            map[code] = desc ? `${code} - ${desc}` : code;
-          }
-        }
-        if (!isCancelled) setLabelMap((prev) => ({ ...prev, [comp]: map }));
-      })
-      .catch(() => {
-        const map: Record<string, string> = {};
-        for (const c of codes) map[c] = c;
-        if (!isCancelled) setLabelMap((prev) => ({ ...prev, [comp]: map }));
-      })
-      .finally(() => { inFlight.current.delete(comp); });
-  }
-  return () => { isCancelled = true; };
-}, [codeMap, labelMap]);
+In the Finding Code options map, change the option display text to use the label with fallback. Ensure just above the map:
+  const labelOptions = row.component ? (labelOpts[row.component] ?? {}) : {};
+And the option:
+  <option key={code} value={code}>{labelOptions[code] ?? code}</option>
 
-Do NOT touch save logic or option value (value stays = code). No other file. Show diff. STOP if another file needs changing.
+Keep value={code} unchanged. Do NOT touch save logic. Confirm labelOpts is destructured from useCrmFindings as FINDING_LABELS. Show diff. STOP if another file needs changing.

@@ -1,10 +1,11 @@
-Read-only diagnostic, no edits.
+Read-only diagnostic, no edits to files. I want to inspect runtime values via the browser console instead.
 
-I need to trace codeOpts vs the label source on the render side of CrmFindingsAndRatingsSection.tsx.
+Give me a set of console.log statements I can paste directly into the browser DevTools Console (not into the code) — or tell me exactly what to inspect — to check, for the currently rendered CRM Findings page:
 
-Show me:
-1. Exactly what `codeOpts` and `labelOpts` are assigned from — i.e. which hook return values feed them. Paste the lines like `const { FINDING_CODE_OPTIONS: codeOpts, FINDING_LABELS: labelOpts } = useCrmFindings(...)` or however they're destructured/aliased.
-2. Confirm: is `codeOpts[row.component]` the SAME source (codeMap from lookups.findingCodes) that the label-building effect iterates over? Or does the dropdown get its list of codes from a DIFFERENT source (e.g. the full findings/library response, all CS-101..CS-116OLD) than codeMap?
-3. For a given component like "04-Credit Servicing", print (or describe) whether codeOpts["04-Credit Servicing"] and the keys of labelOpts["04-Credit Servicing"] contain the SAME set of codes, or different sets.
+1. The exact value of a finding row's `component` string (row.component) for the row showing "04-Credit Servicing".
+2. Whether labelOpts (FINDING_LABELS) has a key exactly equal to that row.component string, and if so, how many entries labelOpts[row.component] contains.
+3. The keys present in labelOpts at this moment (to see if "04-Credit Servicing" is among them or if the key differs by casing/whitespace/prefix).
 
-This will tell me if the dropdown lists codes that were never in codeMap, so no label was ever built for them. Report only. STOP before editing.
+If these values can't be reached from the console because they're inside the component closure, instead add a TEMPORARY single console.log inside CrmFindingsAndRatingsSection.tsx that logs { rowComponent: row.component, labelKeys: Object.keys(labelOpts), labelForRow: labelOpts[row.component] } right before the codeOptions.map render, so I can read it in the console. Mark it clearly as temporary debug to remove later.
+
+STOP and ask before editing. Recommend which approach.

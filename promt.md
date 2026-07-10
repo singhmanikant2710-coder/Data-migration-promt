@@ -1,10 +1,10 @@
-SELECT DISTINCT LTRIM(RTRIM([IntRepCMLSubCategory])) AS Val
-FROM [dbo].[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
-WHERE [IntRepCMLSubCategory] IS NOT NULL 
-  AND LTRIM(RTRIM([IntRepCMLSubCategory])) <> ''
-ORDER BY Val;
+SELECT c.name AS ColumnName
+FROM sys.columns c
+WHERE c.object_id = OBJECT_ID(N'[dbo].[01_DATA_01_Data Mart Trial]')
+  AND c.name LIKE '%IntRep%';
 
-SELECT COUNT(DISTINCT LTRIM(RTRIM([IntRepCMLSubCategory]))) AS DistinctCount
-FROM [dbo].[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
-WHERE [IntRepCMLSubCategory] IS NOT NULL 
-  AND LTRIM(RTRIM([IntRepCMLSubCategory])) <> '';
+  SELECT COUNT(*) AS TotalRows
+FROM [dbo].[01_DATA_01_Data Mart Trial] WITH (NOLOCK);
+
+SELECT TOP 20 [IntRepCMLSubCategory]
+FROM [dbo].[01_DATA_01_Data Mart Trial] WITH (NOLOCK);

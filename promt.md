@@ -1,12 +1,3 @@
-Read-only first, no edits: In CrmFindingsAndRatingsSection.tsx, show me the EXACT current JSX of the Finding Code <option> rendering (the codeOptions.map block). I need to see whether the option text is `{code}` or `{labelOptions[code] ?? code}`, and confirm labelOptions is defined in that scope as `labelOpts[row.component] ?? {}`.
+Read-only, no edits. In CrmFindingsAndRatingsSection.tsx show me the EXACT destructuring line from useCrmFindings — the one that pulls FINDING_CODE_OPTIONS and FINDING_LABELS, e.g. `const { FINDING_CODE_OPTIONS: codeOpts, FINDING_LABELS: labelOpts } = useCrmFindings();`. 
 
-Report the exact lines. STOP before editing.
-
-Single-file edit to CrmFindingsAndRatingsSection.tsx only.
-
-In the Finding Code options map, change the option display text to use the label with fallback. Ensure just above the map:
-  const labelOptions = row.component ? (labelOpts[row.component] ?? {}) : {};
-And the option:
-  <option key={code} value={code}>{labelOptions[code] ?? code}</option>
-
-Keep value={code} unchanged. Do NOT touch save logic. Confirm labelOpts is destructured from useCrmFindings as FINDING_LABELS. Show diff. STOP if another file needs changing.
+Also in useCrmFindings.ts show the EXACT return object keys (the `return { ... }` at the end). I need to confirm the hook actually RETURNS FINDING_LABELS (labelMap) and that the render destructures the SAME key name. Report both verbatim. STOP.

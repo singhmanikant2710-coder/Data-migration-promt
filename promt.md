@@ -1,21 +1,30 @@
-Approved — implement UAT #57 exactly as planned. Keep FormChangesContext as-is (the mergeValues array fix stays; it is confirmed safe for all other sections since only crmFindingsAndRatings stages an array).
+UAT #57 is still broken. Proof: on CRM Findings there is ONE row (01-Risk Recognition, RR-101) whose Severity is now "Observation" — so there are ZERO rows with Severity = "Finding". Yet on CRM Ratings, "RISK RECOGNITION FINDINGS" still shows 1, because the UNSAT RISK RECOGNITION checkbox is ticked.
 
-Implement:
+This proves the five StatCards in CrmRatingsSection.tsx are STILL reading from the UNSAT rating flags, not from the finding counts. That file was evidently never updated.
 
-1. CrmFindingsAndRatingsSection.tsx
-   a. Add Row: build nextArr from (pendingFindings ?? s.findings), append the new row, stage via setSection("crmFindingsAndRatings", { findings: nextArr }), and setActiveRowId(newId).
-   b. Delete Row: for an unsaved row, filter from (pendingFindings ?? s.findings), stage it, then deleteRow(row.id). For a saved row, after deleteCrmFinding succeeds, stage the filtered array then deleteRow(row.id). On failure, preserve the row exactly as today.
-   c. Derive: const pendingFindings = changes?.changes?.crmFindingsAndRatings?.findings;
-             const effectiveFindings = Array.isArray(pendingFindings) ? pendingFindings : (s?.findings ?? []);
-      Use effectiveFindings in exactly three places: active-row init useEffect, activeDesc useMemo, and the table row render.
-   d. Keep per-field edit staging as-is.
+Fix it now — single file: CrmRatingsSection.tsx.
 
-2. CrmRatingsSection.tsx — compute the same effectiveFindings and derive DISPLAY-ONLY counts (severity === "Finding", components 01–05). Wire the five StatCards with ?? 0 fallback.
+1. Compute the effective findings in this component:
+   const pendingFindings = changes?.changes?.crmFindingsAndRatings?.findings;
+   const effectiveFindings = Array.isArray(pendingFindings) ? pendingFindings : (s?.findings ?? []);
+   (Use useFormChangesOptional / the same context accessor the other sections use.)
+
+2. Derive DISPLAY-ONLY counts — rows where severity === "Finding", bucketed by component prefix:
+   riskRecognition      → component starts with "01-"
+   scorecardManagement  → "02-"
+   underwriting         → "03-"
+   creditServicing      → "04-"
+   loanAdministration   → "05-"
+
+3. REPLACE the five StatCard value props. They currently look like:
+   value={(s?.ratings.riskRecognition === "Unsatisfactory") ? 1 : 0}
+   They must become:
+   value={counts.riskRecognition ?? 0}
+   ...and the same for the other four.
 
 Hard constraints:
-- Never use { ...array } or Object.assign({}, array). Always pass real Arrays.
-- Do NOT touch the save path, setRating, or the UNSAT checkboxes.
+- The UNSAT checkboxes, setRating and the save path must NOT change at all.
+- Counts are display-only — never written to state, never in a save payload.
 - No new API calls.
-- Counts are display-only: never written to state, never included in any save payload.
 
-Apply and show me the diff for each file. STOP after applying.
+Show me the diff of CrmRatingsSection.tsx, and paste the BEFORE and AFTER of all five StatCard value props so I can verify. STOP after applying.

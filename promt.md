@@ -1,31 +1,33 @@
-UAT #86 — Scorecards screen: add a "Scorecard Comments" Rich Text field.
+SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'dbo'
+  AND TABLE_NAME = '02_CORE_02_Reviews'
+  AND COLUMN_NAME = 'Scorecard_information';
 
-Client requirement:
-1. Add a Rich Text field to the Scorecards screen, similar to the existing comment fields in other sections of the Review Form.
-2. Users enter comments about the scorecards they have assessed.
-3. It must be bound to the DB field: [02_CORE_02_Reviews].[Scorecard_information]
-4. UI/formatting must match the existing comment sections in the Review Form.
-5. Section header must read: "Scorecard Comments"
 
-Expected behavior: rich text editor displayed on the Scorecards screen; users can enter, edit and SAVE formatted comments; comments persist to Scorecard_information; appearance consistent with other comment sections.
 
-YOUR TASK — report FIRST (read-only, no edits), then propose the plan:
+  Approved — proceed. The [Scorecard_information] column exists on dbo.[02_CORE_02_Reviews]. Use LIVE DB, ignore columns.csv.
 
-1. Frontend:
-   a. Show me ScorecardsSection.tsx as it exists today — its structure and how it currently saves (does it use FormChangesContext / setSection? What section key?).
-   b. Find an existing rich-text comment section to copy from (e.g. the Finding Comments editor in CrmFindingsAndRatingsSection, or the UNSAT rationale editors in CrmRatingsSection, or Risk Rating Justification). Show the RichTextEditor component and exactly how it's wired (value, onChange, staging to FormChangesContext, and how the HTML is saved).
+Implement in this ORDER, and STOP after each stage for my confirmation and testing:
 
-2. Backend — trace end-to-end what is needed for Scorecard_information:
-   a. Does the column [Scorecard_information] already exist in dbo.[02_CORE_02_Reviews]? Verify against the LIVE DB (ignore columns.csv — it is stale). Give me the SQL to confirm.
-   b. Does the review GET payload already return this field (check the DTO / repository SELECT)? If not, what must be added?
-   c. Does the SAVE path already accept and persist it (check the save DTO / UPDATE statement)? If not, what must be added?
-   d. Identify every file that needs changing on the backend (repository, service, DTO, controller).
+STAGE 1 — BACKEND (read path only):
+- Add Scorecard_information to ReviewEntity, the review GET DTO, the repository SELECT, and the service mapping, mirroring exactly how Risk_rating_justification is handled today (same null-safety, same NVARCHAR/HTML treatment).
+- Do NOT touch the save path yet.
+- After this stage I will restart the API and verify the field appears in the GET response.
 
-3. Propose the implementation plan, file by file, in the ORDER we should apply it (backend first, then frontend), so I can test incrementally.
+STAGE 2 — BACKEND (save path):
+- Add Scorecard_information to the Save DTO, the repository UPDATE, and the service mapping, again mirroring Risk_rating_justification.
+- Additive only — no existing field's behaviour may change.
 
-Constraints:
-- Reuse the existing RichTextEditor component and the existing comment-section styling — do not build new UI patterns.
-- Do not break any existing Scorecards behaviour or save logic.
-- Follow the existing Clean Architecture layering used elsewhere in the backend.
+STAGE 3 — FRONTEND:
+- Surface the value in the review payload and expose it (mirroring how riskRatingJustification is exposed).
+- Add a "Scorecard Comments" SectionCard to ScorecardsSection.tsx with the existing RichTextEditor, wired exactly like RiskRatingJustificationSection (value, onChange staging to FormChangesContext, readOnly={!isEditing}, showToolbar={isEditing}, minHeight 220).
+- Place it BELOW the scorecards grid.
+- Header text exactly: "Scorecard Comments".
 
-Report findings and plan. STOP and wait for approval before any edits.
+Hard constraints:
+- Do NOT modify the existing ScorecardsSection group/transaction staging logic — the new field is independent and review-level.
+- Reuse the existing RichTextEditor and SectionCard — no new UI patterns.
+- Confirm the FormChangesContext section key you use for the new field and that the save aggregator actually picks it up and sends it (this is the step most likely to be missed — verify it end-to-end).
+
+Show me the diff for STAGE 1 and STOP.

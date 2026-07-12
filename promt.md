@@ -1,20 +1,9 @@
-UAT #55 — CRM Findings: default Severity to "Observation" for certain components.
+Approved — Option B (Lock).
 
-Client requirement:
-"Can we default the Severity (Finding level) to Observation when a user selects a 06-Servicing Systems or 07-Data Integrity finding? We don't want users selecting 'Finding' for these type items."
+Implement:
+1. When the user changes CRM Component to "06-Servicing Systems" or "07-Data Integrity", default that row's Severity to "Observation" (as per your sketch — updateRow + the changes.setSection snapshot both consistent).
+2. LOCK the Severity control for those two components: disable the Select and show only "Observation" (no "Finding" option available). Re-enable the full dropdown when the component changes to anything else.
+3. Do NOT overwrite severity on initial load — this applies only when the user changes the component. HOWEVER: for existing rows already saved with component 06/07, the Severity control must still render LOCKED (read-only, showing whatever is saved) so users cannot change it to "Finding" going forward. Do not silently rewrite the saved value.
+4. The disabled Select must still display its current value clearly (not appear blank/greyed-out to the point of being unreadable) and must be visually consistent with other disabled controls in the app.
 
-YOUR TASK:
-1. FIRST report (read-only, no edits):
-   a. How the Severity dropdown currently works in CrmFindingsAndRatingsSection.tsx — its options (show SEVERITY_OPTIONS) and how the value is set/saved.
-   b. Where the CRM Component change is handled for a row (the onChange that sets row.component).
-2. THEN propose ONE minimal fix:
-   - When a user selects CRM Component = "06-Servicing Systems" OR "07-Data Integrity" on a row, the Severity for that row should DEFAULT to "Observation".
-   - Ask me to confirm: should Severity then be LOCKED (read-only/disabled) for these two components so users cannot pick "Finding", or should it just default to Observation while still allowing change? The client says "We don't want users selecting Finding for these type items" — this suggests locking, but confirm the exact wording with me before implementing.
-   - Existing rows already saved with a different severity must NOT be silently overwritten on load — only apply the default when the user CHANGES the component.
-
-Requirements:
-- Single file if possible.
-- Do not break the save path; the severity value saved must remain a valid SEVERITY_OPTIONS value.
-- Works alongside the recent #52/#53/#54 changes.
-
-Report findings and plan. STOP and wait for approval.
+Single-file edit to CrmFindingsAndRatingsSection.tsx. Show me the diff. STOP if another file needs changing.

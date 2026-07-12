@@ -1,20 +1,13 @@
-UAT #53 follow-up — UX polish for the Finding Code dropdown.
+The dropdown is now too narrow to be readable — descriptions don't show at all because the menu width is tied to the trigger (column) width, which is small.
 
-The dropdown now correctly shows "CODE - Description", but the native <select> is unusable for the client:
-- Long descriptions make the dropdown extremely WIDE (horizontal scrolling across the screen)
-- Text is truncated, no wrapping
-- The closed select box shows a cut-off label like "CS-104 - Covenar..."
+Fix in the SearchableSelect portal menu (and its usage in CrmFindingsAndRatingsSection.tsx):
 
-Requirement — replace the native <select> for the Finding Code field ONLY (in CrmFindingsAndRatingsSection.tsx) with a custom dropdown that:
-- FIXED width matching the column (never stretches the page horizontally)
-- Each option renders as two parts: the CODE (left, fixed narrow width) and the DESCRIPTION (right, wraps to multiple lines if long) — like the client's Access two-column layout
-- VERTICAL scroll with a max-height (~300px) for long lists
-- A type-to-search/filter input at the top to quickly find a code or description text
-- CLOSED state shows only the selected CODE (e.g. "CS-104"), not the long label
-- Selected VALUE stays the raw finding code — save/persist path completely unchanged
-- Keyboard accessible: arrow keys, Enter to select, Esc to close, closes on outside click
-- Matches the existing app styling (dark navy headers #1F3864, same font/spacing as other dropdowns)
+- The MENU must NOT inherit the trigger width. Give it a fixed, generous width: min-width 640px, max-width 900px (and max-width: 90vw so it never overflows the viewport). It should be left-aligned to the trigger but allowed to extend to the right beyond the column.
+- Keep max-height ~320px with vertical scroll.
+- Remove any horizontal scrollbar inside the menu — the description must WRAP instead (whitespace-normal, break-words).
+- Each option row: two columns — code in a fixed ~90px left column (nowrap, medium weight), description in the remaining space, wrapping to multiple lines. Row padding ~8px 12px, comfortable line-height, hover highlight.
+- Search input at the top: full width of the menu.
+- Closed trigger: still shows only the CODE (unchanged), and the trigger keeps its current small column width.
+- The page must NOT gain horizontal scroll — the menu is an overlay/portal, so it should float above content without stretching the table.
 
-FIRST: search the codebase (frontend/src/app/review/[ecif]/review-info/components/ui.tsx and any shared components/ folders) for an existing reusable combobox/searchable-dropdown component and REUSE it if one exists — do not build new if we already have one.
-
-Report what you find and your plan (which files it touches) BEFORE editing. Do NOT touch the hook or save logic. STOP and wait for approval.
+Keep the option value = raw code and the save path unchanged. Show me the diff before applying. STOP if another file is needed.

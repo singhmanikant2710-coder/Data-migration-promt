@@ -1,33 +1,32 @@
-SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = 'dbo'
-  AND TABLE_NAME = '02_CORE_02_Reviews'
-  AND COLUMN_NAME = 'Scorecard_information';
-
-
-
-  Approved — proceed. The [Scorecard_information] column exists on dbo.[02_CORE_02_Reviews]. Use LIVE DB, ignore columns.csv.
+Approved — confirmed: dbo.[02_CORE_02_Reviews].[Scorecard_information] exists (NVARCHAR). Use the LIVE DB, ignore columns.csv.
 
 Implement in this ORDER, and STOP after each stage for my confirmation and testing:
 
-STAGE 1 — BACKEND (read path only):
-- Add Scorecard_information to ReviewEntity, the review GET DTO, the repository SELECT, and the service mapping, mirroring exactly how Risk_rating_justification is handled today (same null-safety, same NVARCHAR/HTML treatment).
-- Do NOT touch the save path yet.
-- After this stage I will restart the API and verify the field appears in the GET response.
+STAGE 1 — BACKEND READ PATH:
+- Add the ScorecardSection to the Domain ReviewForm (Comments property).
+- In SqlReviewRepository, SELECT [Scorecard_information] and map it into form.Scorecard.Comments, in BOTH GetReviewByEcifAsync and GetReviewByKeysAsync.
+- Mirror exactly how Risk_rating_justification is read (same null-safety, same pattern).
+- Do NOT touch the save path in this stage.
+STOP. I will stop the running Casrr.Api, rebuild, restart, and verify via F12 that the review GET response now contains form.scorecard.comments.
 
-STAGE 2 — BACKEND (save path):
-- Add Scorecard_information to the Save DTO, the repository UPDATE, and the service mapping, again mirroring Risk_rating_justification.
-- Additive only — no existing field's behaviour may change.
+STAGE 2 — BACKEND SAVE PATH:
+- IReviewRepository: add SaveScorecardInfoAsync(int reviewId, string? comments, CancellationToken ct).
+- SqlReviewRepository: implement the UPDATE on dbo.[02_CORE_02_Reviews].[Scorecard_information].
+- ReviewFormSaveModels: add the save DTO.
+- IReviewService / ReviewService: add the service method delegating to the repository.
+- API controller: accept a "scorecard" section in the save request body and route it to the service.
+- Mirror the Risk_rating_justification save flow exactly. Additive only — no existing field's behaviour may change.
+STOP. I will rebuild and test that the save endpoint accepts the section.
 
 STAGE 3 — FRONTEND:
-- Surface the value in the review payload and expose it (mirroring how riskRatingJustification is exposed).
-- Add a "Scorecard Comments" SectionCard to ScorecardsSection.tsx with the existing RichTextEditor, wired exactly like RiskRatingJustificationSection (value, onChange staging to FormChangesContext, readOnly={!isEditing}, showToolbar={isEditing}, minHeight 220).
-- Place it BELOW the scorecards grid.
+- Add a "Scorecard Comments" SectionCard BELOW the existing Scorecards grid in ScorecardsSection.tsx.
+- Reuse the existing RichTextEditor and SectionCard — no new UI patterns.
+- Wire it exactly like RiskRatingJustificationSection: value from response.form.scorecard?.comments ?? "", onChange stages changes.setSection("scorecard", { comments: html }) when isEditing, readOnly={!isEditing}, showToolbar={isEditing}, minHeight 220.
 - Header text exactly: "Scorecard Comments".
+- CRITICAL: verify END-TO-END that the centralized save flow actually picks up the new "scorecard" section from FormChangesContext and sends it in the save request body. Also add "scorecard" to the SectionKey union type in FormChangesContext if it is not already there. This is the step most likely to be missed — confirm it explicitly.
 
 Hard constraints:
-- Do NOT modify the existing ScorecardsSection group/transaction staging logic — the new field is independent and review-level.
-- Reuse the existing RichTextEditor and SectionCard — no new UI patterns.
-- Confirm the FormChangesContext section key you use for the new field and that the save aggregator actually picks it up and sends it (this is the step most likely to be missed — verify it end-to-end).
+- Do NOT modify the existing ScorecardsSection group/transaction staging logic (the "transactions" section key cascade) — the new comments field is independent and review-level.
+- Follow the existing Clean Architecture layering.
 
 Show me the diff for STAGE 1 and STOP.

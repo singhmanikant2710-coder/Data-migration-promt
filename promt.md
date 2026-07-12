@@ -1,26 +1,31 @@
-UAT #58 is not working. Proof (same review, same moment):
-- CRM Findings has ONE row: 01-Risk Recognition, RR-101, Severity = "Finding".
-- CRM Ratings tab correctly shows RISK RECOGNITION FINDINGS = 1 (the #57 fix works).
-- The UNSAT RISK RECOGNITION checkbox is TICKED.
-- BUT on Risk Rating Justification: "RISK RECOGNITION KEY FINDINGS" shows 0, and "UNSATISFACTORY RISK RECOGNITION" shows "No".
+UAT #86 — Scorecards screen: add a "Scorecard Comments" Rich Text field.
 
-Both tiles are still reading the old sources.
+Client requirement:
+1. Add a Rich Text field to the Scorecards screen, similar to the existing comment fields in other sections of the Review Form.
+2. Users enter comments about the scorecards they have assessed.
+3. It must be bound to the DB field: [02_CORE_02_Reviews].[Scorecard_information]
+4. UI/formatting must match the existing comment sections in the Review Form.
+5. Section header must read: "Scorecard Comments"
 
-Show me (read-only, verbatim) the CURRENT JSX of those two StatCards in RiskRatingJustificationSection.tsx — the exact `value=` and `danger=` props of each.
+Expected behavior: rich text editor displayed on the Scorecards screen; users can enter, edit and SAVE formatted comments; comments persist to Scorecard_information; appearance consistent with other comment sections.
 
-I need to see whether they still read:
-  value={String(d.riskRecognitionKeyFindings)}
-  value={(d.riskRecognitionRating ?? "").toLowerCase() === "unsatisfactory" ? "Yes" : "No"}
-or the new derived values (rrFindingCount / rrUnsat).
+YOUR TASK — report FIRST (read-only, no edits), then propose the plan:
 
-Also confirm: was RiskRatingJustificationSection.tsx actually modified, and does it now import useCrmFindings and read changes?.changes?.crmFindingsAndRatings?
+1. Frontend:
+   a. Show me ScorecardsSection.tsx as it exists today — its structure and how it currently saves (does it use FormChangesContext / setSection? What section key?).
+   b. Find an existing rich-text comment section to copy from (e.g. the Finding Comments editor in CrmFindingsAndRatingsSection, or the UNSAT rationale editors in CrmRatingsSection, or Risk Rating Justification). Show the RichTextEditor component and exactly how it's wired (value, onChange, staging to FormChangesContext, and how the HTML is saved).
 
-If the file was never changed, apply the approved fix now:
-- rrFindingCount = count of effectiveFindings where component starts with "01-" AND severity === "Finding"
-  (effectiveFindings = Array.isArray(pendingFindings) ? pendingFindings : crmState?.findings ?? [])
-- rrUnsat = effective rating (pending ?? saved from useCrmFindings) === "Unsatisfactory"
-- Wire both StatCards to these.
+2. Backend — trace end-to-end what is needed for Scorecard_information:
+   a. Does the column [Scorecard_information] already exist in dbo.[02_CORE_02_Reviews]? Verify against the LIVE DB (ignore columns.csv — it is stale). Give me the SQL to confirm.
+   b. Does the review GET payload already return this field (check the DTO / repository SELECT)? If not, what must be added?
+   c. Does the SAVE path already accept and persist it (check the save DTO / UPDATE statement)? If not, what must be added?
+   d. Identify every file that needs changing on the backend (repository, service, DTO, controller).
 
-Display-only. No save-path changes. No new API calls.
+3. Propose the implementation plan, file by file, in the ORDER we should apply it (backend first, then frontend), so I can test incrementally.
 
-Show me the diff with BEFORE and AFTER of both StatCard props. STOP after applying.
+Constraints:
+- Reuse the existing RichTextEditor component and the existing comment-section styling — do not build new UI patterns.
+- Do not break any existing Scorecards behaviour or save logic.
+- Follow the existing Clean Architecture layering used elsewhere in the backend.
+
+Report findings and plan. STOP and wait for approval before any edits.

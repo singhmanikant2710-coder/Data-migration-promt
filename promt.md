@@ -1,11 +1,26 @@
-Approved — apply the plan exactly as proposed. Single file: RiskRatingJustificationSection.tsx.
+UAT #58 is not working. Proof (same review, same moment):
+- CRM Findings has ONE row: 01-Risk Recognition, RR-101, Severity = "Finding".
+- CRM Ratings tab correctly shows RISK RECOGNITION FINDINGS = 1 (the #57 fix works).
+- The UNSAT RISK RECOGNITION checkbox is TICKED.
+- BUT on Risk Rating Justification: "RISK RECOGNITION KEY FINDINGS" shows 0, and "UNSATISFACTORY RISK RECOGNITION" shows "No".
 
-For the false case, use "No" (value={rrUnsat ? "Yes" : "No"}).
+Both tiles are still reading the old sources.
 
-Hard constraints (repeat):
-- DISPLAY-ONLY: no writes to state, nothing added to any save payload, no new API calls.
-- Do NOT touch the save path, setJustification, or the UNSAT checkboxes on CRM Ratings.
-- Must react live to unsaved edits (pending FormChangesContext snapshot) exactly like the #57 StatCards.
-- Confirm that importing useCrmFindings() into this component does NOT trigger an extra network request (it must reuse the shared ReviewDataContext payload).
+Show me (read-only, verbatim) the CURRENT JSX of those two StatCards in RiskRatingJustificationSection.tsx — the exact `value=` and `danger=` props of each.
 
-Apply and show me the diff. STOP after applying.
+I need to see whether they still read:
+  value={String(d.riskRecognitionKeyFindings)}
+  value={(d.riskRecognitionRating ?? "").toLowerCase() === "unsatisfactory" ? "Yes" : "No"}
+or the new derived values (rrFindingCount / rrUnsat).
+
+Also confirm: was RiskRatingJustificationSection.tsx actually modified, and does it now import useCrmFindings and read changes?.changes?.crmFindingsAndRatings?
+
+If the file was never changed, apply the approved fix now:
+- rrFindingCount = count of effectiveFindings where component starts with "01-" AND severity === "Finding"
+  (effectiveFindings = Array.isArray(pendingFindings) ? pendingFindings : crmState?.findings ?? [])
+- rrUnsat = effective rating (pending ?? saved from useCrmFindings) === "Unsatisfactory"
+- Wire both StatCards to these.
+
+Display-only. No save-path changes. No new API calls.
+
+Show me the diff with BEFORE and AFTER of both StatCard props. STOP after applying.

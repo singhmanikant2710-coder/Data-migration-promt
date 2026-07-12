@@ -1,11 +1,17 @@
-Approved — apply the single-file change to CrmFindingsAndRatingsSection.tsx (remove the isEditing gate from rowsToRender).
+The isEditing fix did not help — the pending row still disappears. So `pending` itself is empty/undefined when we return to CRM Findings. Stop reading code; prove it at runtime.
 
-Additionally, verify one thing that could still break this (report it, don't guess):
+Apply a TEMPORARY debug log (single file, CrmFindingsAndRatingsSection.tsx) — I will remove it after. Inside rowsToRender, before the return:
 
-Does `changes.setSection(key, payload)` MERGE into the existing section object, or REPLACE it entirely?
+console.log("CRM_ROWS_DEBUG", {
+  hasChanges: !!changes,
+  changesKeys: Object.keys((changes as any)?.changes ?? {}),
+  pendingSection: (changes as any)?.changes?.crmFindingsAndRatings,
+  pendingFindingsCount: Array.isArray((changes as any)?.changes?.crmFindingsAndRatings?.findings)
+    ? (changes as any).changes.crmFindingsAndRatings.findings.length
+    : "NOT_AN_ARRAY",
+  savedFindingsCount: (s?.findings ?? []).length,
+});
 
-This matters because CrmRatingsSection also writes to the SAME section key "crmFindingsAndRatings" when the user toggles a UNSAT rating (it stages { ratings: ... }). If setSection REPLACES the section object rather than merging, then visiting the CRM Ratings tab and touching a rating would WIPE the pending `findings` array — reproducing this exact bug even after the isEditing fix.
+ALSO — in the same task, report (read-only) the implementation of `setSection` in FormChangesContext: does it MERGE the payload into the existing section object, or REPLACE the whole section object? Show the code verbatim.
 
-Show me the implementation of setSection in FormChangesContext and confirm merge vs replace. If it replaces, tell me — do not silently work around it.
-
-Apply the rowsToRender fix and show the diff. STOP after applying.
+Apply the log and report setSection. STOP after that.

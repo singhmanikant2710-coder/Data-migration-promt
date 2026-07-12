@@ -1,14 +1,21 @@
-Read-only diagnostic, no edits.
+Approved — implement UAT #57 exactly as planned. Keep FormChangesContext as-is (the mergeValues array fix stays; it is confirmed safe for all other sections since only crmFindingsAndRatings stages an array).
 
-Question about a possible regression from the FormChangesContext mergeValues fix.
+Implement:
 
-Does the Covenants section (CovenantsSection.tsx) stage ARRAYS into FormChangesContext via setSection/setField? Show me every setSection/setField call in that file and the shape of the payload.
+1. CrmFindingsAndRatingsSection.tsx
+   a. Add Row: build nextArr from (pendingFindings ?? s.findings), append the new row, stage via setSection("crmFindingsAndRatings", { findings: nextArr }), and setActiveRowId(newId).
+   b. Delete Row: for an unsaved row, filter from (pendingFindings ?? s.findings), stage it, then deleteRow(row.id). For a saved row, after deleteCrmFinding succeeds, stage the filtered array then deleteRow(row.id). On failure, preserve the row exactly as today.
+   c. Derive: const pendingFindings = changes?.changes?.crmFindingsAndRatings?.findings;
+             const effectiveFindings = Array.isArray(pendingFindings) ? pendingFindings : (s?.findings ?? []);
+      Use effectiveFindings in exactly three places: active-row init useEffect, activeDesc useMemo, and the table row render.
+   d. Keep per-field edit staging as-is.
 
-Context: the OLD code did `{ ...prevEntry, ...next }` whenever both were `typeof === "object"` — and since `typeof [] === "object"`, any array staged there was already being corrupted into a plain object with numeric keys. The NEW mergeValues keeps arrays as arrays.
+2. CrmRatingsSection.tsx — compute the same effectiveFindings and derive DISPLAY-ONLY counts (severity === "Finding", components 01–05). Wire the five StatCards with ?? 0 fallback.
 
-So tell me:
-1. Does Covenants stage arrays? If YES, it was ALREADY broken before my change (arrays were being turned into objects), so the new fix cannot have caused a new regression — it can only have changed the shape of an already-broken behaviour.
-2. If Covenants stages only plain objects/scalars, then mergeValues behaves IDENTICALLY to the old code for it — so it cannot be the cause either.
-3. Either way, explain what actually happens on "Add covenant → Save" and why the newly added covenant does not appear in the UI after save. Trace the save response handling and the re-render path.
+Hard constraints:
+- Never use { ...array } or Object.assign({}, array). Always pass real Arrays.
+- Do NOT touch the save path, setRating, or the UNSAT checkboxes.
+- No new API calls.
+- Counts are display-only: never written to state, never included in any save payload.
 
-Report with evidence. STOP before editing.
+Apply and show me the diff for each file. STOP after applying.

@@ -1,15 +1,21 @@
-Read-only diagnostic, no edits.
+Your code review says STEP 2 is correct, but the RUNTIME behaviour is still broken — the unsaved row still disappears on tab switch. So the condition is failing at runtime. Stop re-reading the code and answer this specific question.
 
-STEP 2 was applied but the behaviour is UNCHANGED: on the CRM Findings tab I add a row and set component/finding code/severity, switch to CRM Ratings without saving, come back — the unsaved row is STILL gone and the saved DB rows are shown.
+In `rowsToRender` the condition is:
+    if (isEditing && Array.isArray(pending)) return pending;
+    return s?.findings ?? [];
 
-Investigate and prove (with evidence from the code, not assumptions):
+QUESTION: after the user switches to CRM Ratings and comes BACK to CRM Findings, is `isEditing` still TRUE, or has it reset to FALSE?
 
-1. `rowsToRender` uses the condition `if (isEditing && Array.isArray(pending))`. Where does `isEditing` come from in this component? After a tab switch and remount, is `isEditing` still TRUE, or does it reset to FALSE? If it resets to false, the pending snapshot is ignored and the table falls back to saved data — which would exactly explain the observed behaviour. Confirm or rule this out.
+Trace it: show me exactly where `isEditing` comes from, where it is set, and whether it survives a section switch (the section remounts, and the Edit/Save/Cancel toolbar lives in the parent page). If `isEditing` resets to false on remount, then the pending snapshot is ignored and the table falls back to saved data — which exactly matches the bug.
 
-2. Is `changes.changes.crmFindingsAndRatings.findings` actually populated at the moment the CRM Findings section remounts after coming back from CRM Ratings? Trace whether FormChangesProvider truly survives the section switch (earlier you said router.replace does not unmount the providers — verify that is actually the case at runtime, including whether ReviewDataContext's refetch on section change causes the section subtree to remount and whether that clears anything).
+If that is the cause, the fix is: `rowsToRender` should use the pending snapshot whenever one EXISTS, regardless of `isEditing` — because a pending snapshot by definition means there are unsaved changes that must be shown. i.e.:
 
-3. Does anything reset the Edit mode / isEditing flag on section change? Show where isEditing is set and cleared.
+    const rowsToRender = useMemo(() => {
+      const pending = changes?.changes?.crmFindingsAndRatings?.findings;
+      if (Array.isArray(pending)) return pending;
+      return s?.findings ?? [];
+    }, [changes?.changes?.crmFindingsAndRatings?.findings, s?.findings]);
 
-4. If `isEditing` is the blocker, tell me the correct fix: should rowsToRender use the pending snapshot regardless of isEditing (i.e. drop the isEditing condition), or should Edit mode itself persist across tab switches? Recommend which is correct for this app and why.
+Confirm whether `isEditing` is the blocker, and if so apply the fix above (single file, CrmFindingsAndRatingsSection.tsx). If `isEditing` is NOT the blocker, tell me what actually is — with evidence, not a code re-read.
 
-Report with evidence. STOP before editing.
+Show me the diff. STOP for approval.

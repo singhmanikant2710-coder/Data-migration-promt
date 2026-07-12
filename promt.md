@@ -1,11 +1,18 @@
-Approved — apply the 2-file change as planned:
-1. useCrmFindings.ts: read the in-edit findings snapshot from FormChangesContext (useFormChangesOptional) and derive findingCounts from `effectiveFindings` (pending snapshot ?? saved state.findings).
-2. CrmRatingsSection.tsx: destructure findingCounts and wire the five StatCard values (with ?? 0 fallback).
+Read-only diagnostic, no edits. Two things to determine.
 
-Conditions:
-- findingCounts must remain DISPLAY-ONLY. Do not write counts to state.findings, do not include them in any save payload, and do not alter setRating, the UNSAT checkboxes, or the save path in any way.
-- effectiveFindings must be used ONLY for the count derivation — it must NOT replace state.findings anywhere else in the hook (the CRM Findings table itself must keep rendering from its existing source, or we risk breaking editing on that tab).
-- Verify the import path for useFormChangesOptional is correct (your draft showed two conflicting paths — resolve it against the actual file location, the same way other sections import it).
-- After the change, confirm the CRM Findings tab still edits/adds/deletes rows normally (no regression from the hook change).
+OBSERVED BEHAVIOUR:
+On the CRM Findings tab (in Edit mode), I add a row: Component = 01-Risk Recognition, Finding Code selected, Severity = Finding. WITHOUT saving, I switch to the CRM Ratings tab — the Risk Recognition Findings count shows 0. When I switch BACK to CRM Findings, my unsaved row is gone and the saved DB data is shown again.
 
-Show me the diff. STOP if any other file needs changing.
+INVESTIGATE AND REPORT:
+
+1. Is the loss of unsaved edits on tab/section switch INTENTIONAL app behaviour, or a bug?
+   - Where is FormChangesContext provided (which component)? Does that provider UNMOUNT when the user switches sections, discarding pending changes?
+   - Do OTHER sections (e.g. Customer Info, Covenants) also lose unsaved edits when you switch tabs, or do they retain them? Check the code and tell me whether this is consistent app-wide.
+
+2. Does `changes.changes.crmFindingsAndRatings.findings` still hold the pending rows at the moment the user lands on CRM Ratings, or is it already cleared? Prove it from the code.
+
+Based on the answer, tell me which is true:
+(A) Unsaved edits are SUPPOSED to survive tab switches, and this is a bug that needs fixing (in which case: what is the root cause and the minimal fix?), OR
+(B) The app is designed so the user must Save before switching tabs, and pending changes are intentionally discarded (in which case UAT #57 simply needs the sub-totals to derive from SAVED findings, and the user must Save the CRM Findings tab first for the counts to update).
+
+Report with evidence from the code. STOP before editing.

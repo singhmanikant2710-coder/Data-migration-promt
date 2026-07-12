@@ -1,8 +1,11 @@
-Approved — apply the single-file change to CrmRatingsSection.tsx exactly as planned:
-- Destructure findingCounts from useCrmFindings.
-- Wire the five StatCard values to findingCounts (with ?? 0 fallback).
-- Do NOT touch the UNSAT checkboxes, setRating, or any save logic.
+Approved — apply the 2-file change as planned:
+1. useCrmFindings.ts: read the in-edit findings snapshot from FormChangesContext (useFormChangesOptional) and derive findingCounts from `effectiveFindings` (pending snapshot ?? saved state.findings).
+2. CrmRatingsSection.tsx: destructure findingCounts and wire the five StatCard values (with ?? 0 fallback).
 
-One check before you apply: confirm that `state.findings` in useCrmFindings reflects UNSAVED in-edit changes made on the CRM Findings tab (not just the last saved payload), so the counts update live as the user adds/edits/deletes findings without saving. If it only reflects saved data, tell me — do not work around it silently.
+Conditions:
+- findingCounts must remain DISPLAY-ONLY. Do not write counts to state.findings, do not include them in any save payload, and do not alter setRating, the UNSAT checkboxes, or the save path in any way.
+- effectiveFindings must be used ONLY for the count derivation — it must NOT replace state.findings anywhere else in the hook (the CRM Findings table itself must keep rendering from its existing source, or we risk breaking editing on that tab).
+- Verify the import path for useFormChangesOptional is correct (your draft showed two conflicting paths — resolve it against the actual file location, the same way other sections import it).
+- After the change, confirm the CRM Findings tab still edits/adds/deletes rows normally (no regression from the hook change).
 
-Show me the diff. STOP if another file needs changing.
+Show me the diff. STOP if any other file needs changing.

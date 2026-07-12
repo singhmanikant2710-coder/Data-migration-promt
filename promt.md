@@ -1,25 +1,20 @@
-UAT #53 — CRM Findings Finding Code dropdown must show "Code - Description".
+UAT #53 follow-up — UX polish for the Finding Code dropdown.
 
-I'm attaching two screenshots:
-1. CLIENT EXPECTED (Access prototype): the Finding Code dropdown lists each option as the code plus its description, e.g. "SS-101  Document imaging (or indexing) needs updating".
-2. CURRENT APP: the dropdown lists only codes (SS-101, SS-102...). No descriptions.
+The dropdown now correctly shows "CODE - Description", but the native <select> is unusable for the client:
+- Long descriptions make the dropdown extremely WIDE (horizontal scrolling across the screen)
+- Text is truncated, no wrapping
+- The closed select box shows a cut-off label like "CS-104 - Covenar..."
 
-WHAT WE ALREADY VERIFIED (do not re-verify, take as given):
-- GET /api/v1/findings/library?component=... returns 200 with correct data. Response items are camelCase:
-  { "component": "04-Credit Servicing", "findingCode": "CS-104", "description": "Covenant compliance monitoring lacks timeliness...", "category": "...", "guidance": "..." }
-- useCrmFindings.ts fetches this via listCasFindingsLibrary (authenticated, from @/services/api/casFindings), builds labelMap[comp][code] = `${code} - ${description}`, and returns it as FINDING_LABELS.
-- CrmFindingsAndRatingsSection.tsx destructures `FINDING_LABELS: labelOpts`, computes `const labelOptions = row.component ? (labelOpts[row.component] ?? {}) : {};` and renders `<option key={code} value={code}>{labelOptions[code] ?? code}</option>`.
-- Names/keys match on both sides. Codes DO render (so codeMap is populated). But labels never appear — the render always falls back to `code`, meaning labelOpts[row.component] is empty/undefined at render time.
+Requirement — replace the native <select> for the Finding Code field ONLY (in CrmFindingsAndRatingsSection.tsx) with a custom dropdown that:
+- FIXED width matching the column (never stretches the page horizontally)
+- Each option renders as two parts: the CODE (left, fixed narrow width) and the DESCRIPTION (right, wraps to multiple lines if long) — like the client's Access two-column layout
+- VERTICAL scroll with a max-height (~300px) for long lists
+- A type-to-search/filter input at the top to quickly find a code or description text
+- CLOSED state shows only the selected CODE (e.g. "CS-104"), not the long label
+- Selected VALUE stays the raw finding code — save/persist path completely unchanged
+- Keyboard accessible: arrow keys, Enter to select, Esc to close, closes on outside click
+- Matches the existing app styling (dark navy headers #1F3864, same font/spacing as other dropdowns)
 
-CONCLUSION: this is a timing / reactivity / state-propagation bug, not a naming or auth bug.
+FIRST: search the codebase (frontend/src/app/review/[ecif]/review-info/components/ui.tsx and any shared components/ folders) for an existing reusable combobox/searchable-dropdown component and REUSE it if one exists — do not build new if we already have one.
 
-YOUR TASK:
-Investigate end-to-end WHY labelMap never reaches the render (e.g. the label-building effect not firing, its deps, setLabelMap not triggering a re-render, memoization returning a stale reference, the component key used to write vs read, or codeMap resolving component names differently than row.component). Add temporary console logs if needed to prove the root cause.
-
-Then propose ONE minimal fix. Requirements:
-- Option value MUST stay the raw finding code (save path unchanged).
-- Displayed label: "CODE - Description".
-- Must work for ALL components (both CS-* and SS-* rows), not just the first one loaded.
-- No fetch loops.
-
-Report the ROOT CAUSE with evidence first, then show the proposed diff. STOP and wait for my approval before applying. Single file if possible; if two files are truly needed, say so and explain.
+Report what you find and your plan (which files it touches) BEFORE editing. Do NOT touch the hook or save logic. STOP and wait for approval.

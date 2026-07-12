@@ -1,13 +1,24 @@
-The dropdown is now too narrow to be readable — descriptions don't show at all because the menu width is tied to the trigger (column) width, which is small.
+UAT #52 — CRM Findings: "Finding Description" must update based on the selected/clicked finding row.
 
-Fix in the SearchableSelect portal menu (and its usage in CrmFindingsAndRatingsSection.tsx):
+I'm attaching two screenshots:
+1. CLIENT EXPECTED (Access prototype): the Finding Description field at the top shows the description of the finding row the user has clicked/highlighted. Clicking a different row updates it.
+2. CURRENT APP: the Finding Description box does not change when the user clicks different finding rows.
 
-- The MENU must NOT inherit the trigger width. Give it a fixed, generous width: min-width 640px, max-width 900px (and max-width: 90vw so it never overflows the viewport). It should be left-aligned to the trigger but allowed to extend to the right beyond the column.
-- Keep max-height ~320px with vertical scroll.
-- Remove any horizontal scrollbar inside the menu — the description must WRAP instead (whitespace-normal, break-words).
-- Each option row: two columns — code in a fixed ~90px left column (nowrap, medium weight), description in the remaining space, wrapping to multiple lines. Row padding ~8px 12px, comfortable line-height, hover highlight.
-- Search input at the top: full width of the menu.
-- Closed trigger: still shows only the CODE (unchanged), and the trigger keeps its current small column width.
-- The page must NOT gain horizontal scroll — the menu is an overlay/portal, so it should float above content without stretching the table.
+CONTEXT (already in place from UAT #53 — reuse, do not refetch):
+- The CAS Findings library (code → description) is already fetched in this screen for the Finding Code dropdown labels. Every row's finding code already has its description available client-side.
+- The dropdown now renders "CODE - Description" and the option value remains the raw finding code.
 
-Keep the option value = raw code and the save path unchanged. Show me the diff before applying. STOP if another file is needed.
+YOUR TASK:
+1. FIRST investigate and REPORT (read-only, no edits):
+   a. Where the Finding Description box currently gets its value (exact JSX + state/field it reads).
+   b. Whether that field is a SAVED/persisted DB field or a purely display field. This is critical — if it is persisted, we must NOT overwrite saved data when re-rendering it.
+   c. Whether the component tracks a "selected/active row"; if not, the minimal way to add it.
+2. THEN propose ONE minimal fix so that clicking/focusing a finding row updates the Finding Description box with that row's finding code description (sourced from the already-fetched library — no new fetch).
+
+Requirements:
+- No new API calls / no fetch loops.
+- Do NOT change the save path or overwrite persisted data.
+- Row click/focus should visually indicate the active row (subtle highlight), consistent with existing app styling.
+- Must work for all components (CS-*, SS-*, etc.).
+
+Report your findings and proposed plan with the exact files it touches. STOP and wait for my approval before editing.

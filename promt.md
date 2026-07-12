@@ -1,15 +1,16 @@
-Approved — implement the full fix. This requires 2-3 files. Do it in ORDER, pausing after each file for my confirmation.
+UAT #57 — STEP 2 (continuing the approved plan). Ignore any earlier UAT #54 context; #54 is already done and committed.
 
-STEP 1 — CrmFindingsAndRatingsSection.tsx: stage pending changes on Add Row and Delete Row too (currently only field edits stage a snapshot to FormChangesContext). After addEmptyRow/deleteRow, immediately call changes.setSection("crmFindingsAndRatings", { findings: <full updated array> }) using the same mapping as the field handlers.
+Recap of where we are:
+- STEP 1 is DONE: CrmFindingsAndRatingsSection.tsx now stages a snapshot to FormChangesContext on Add Row and Delete Row (in addition to field edits).
+- STEP 2 (this step) — the DISPLAY fix in CrmFindingsAndRatingsSection.tsx:
+  While in Edit mode, the CRM Findings TABLE must render from the pending FormChangesContext snapshot (changes.changes.crmFindingsAndRatings.findings) when one exists, falling back to the saved state.findings otherwise.
+  Reason: today the table renders only from hook-local state, which re-initializes from the saved backend payload when the section remounts on tab switch — so unsaved rows visually disappear. Customer Info already reads pending values from FormChangesContext; we are making CRM Findings consistent with that pattern.
 
-STEP 2 — CrmFindingsAndRatingsSection.tsx (display fix): while in Edit mode, the findings TABLE must render from the pending FormChangesContext snapshot when one exists, falling back to saved state.findings otherwise. This makes unsaved rows survive a tab switch, consistent with how Customer Info already works. Do NOT change the save path — Save must continue to send exactly what it sends today.
-
-STEP 3 — useCrmFindings.ts + CrmRatingsSection.tsx: derive findingCounts from the effective findings (pending snapshot ?? saved state.findings) and wire the five StatCards to findingCounts (?? 0 fallback). findingCounts stays DISPLAY-ONLY — never written to state, never in a save payload. effectiveFindings must be used ONLY for the count derivation, not to replace state.findings elsewhere in the hook.
-
-Constraints across all steps:
+Requirements:
+- Do NOT change the save path — Save must send exactly what it sends today.
+- Cancel must still clear pending changes and restore saved data.
+- Editing (add/edit/delete rows, dropdowns, comments, follow-up) must keep working normally.
 - No new API calls.
-- Do NOT touch setRating, the UNSAT checkboxes, or the save/persist logic.
-- Cancel must still discard pending changes (FormChangesContext.clear()) and restore saved data.
-- Resolve the correct import path for useFormChangesOptional against the actual file location.
+- Single file: CrmFindingsAndRatingsSection.tsx.
 
-Show me the diff for STEP 1 first. STOP after each step for my confirmation.
+Show me the diff. STOP for approval before applying. After I approve and test, we go to STEP 3 (wire findingCounts into CrmRatingsSection).

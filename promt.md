@@ -1,9 +1,20 @@
-Approved — apply the plan, with these explicit guarantees:
+UAT #55 — CRM Findings: default Severity to "Observation" for certain components.
 
-1. CRITICAL — do NOT change the save payload. The `info` field must continue to be sent in the crmFindingsAndRatings save payload exactly as it is today (`info: f.info ?? null`), preserving any existing saved values in the DB. We are only removing the INPUT from the UI; we are not deleting or nulling the stored data.
+Client requirement:
+"Can we default the Severity (Finding level) to Observation when a user selects a 06-Servicing Systems or 07-Data Integrity finding? We don't want users selecting 'Finding' for these type items."
 
-2. Confirm explicitly in your summary: after this change, saving a review does NOT wipe or overwrite any existing row.info values in the database.
+YOUR TASK:
+1. FIRST report (read-only, no edits):
+   a. How the Severity dropdown currently works in CrmFindingsAndRatingsSection.tsx — its options (show SEVERITY_OPTIONS) and how the value is set/saved.
+   b. Where the CRM Component change is handled for a row (the onChange that sets row.component).
+2. THEN propose ONE minimal fix:
+   - When a user selects CRM Component = "06-Servicing Systems" OR "07-Data Integrity" on a row, the Severity for that row should DEFAULT to "Observation".
+   - Ask me to confirm: should Severity then be LOCKED (read-only/disabled) for these two components so users cannot pick "Finding", or should it just default to Observation while still allowing change? The client says "We don't want users selecting Finding for these type items" — this suggests locking, but confirm the exact wording with me before implementing.
+   - Existing rows already saved with a different severity must NOT be silently overwritten on load — only apply the default when the user CHANGES the component.
 
-3. The category cell is display-only and read-only in BOTH edit mode and read-only mode (no input in either).
+Requirements:
+- Single file if possible.
+- Do not break the save path; the severity value saved must remain a valid SEVERITY_OPTIONS value.
+- Works alongside the recent #52/#53/#54 changes.
 
-Apply the single-file change to CrmFindingsAndRatingsSection.tsx (categoryMap + INFO cell + colgroup widths). Show me the diff. STOP if another file needs changing.
+Report findings and plan. STOP and wait for approval.

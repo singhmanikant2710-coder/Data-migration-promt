@@ -1,21 +1,13 @@
-The guard already includes Scorecard, yet a scorecard-only save still returns 400 "No changes were provided". So dto.Scorecard is arriving as null, or its Change is not binding.
+Key clue: saving works when I ALSO change a scorecard grid field (which stages the "transactions" section), but fails with 400 "No changes were provided" when I change ONLY the Scorecard Comments rich text.
 
-The frontend sends exactly:
-{
-  "ecif": "id-17836",
-  "reviewId": 17836,
-  "sampleId": 311,
-  "scorecard": { "change": "Upsert", "data": { "comments": "<b>Testing </b>Scorecard Comments" } }
-}
+This proves the backend guard is not counting dto.Scorecard — it is arriving null or with Change=None.
 
-Investigate and prove (read-only first):
+Apply the temporary diagnostic log at the very top of the Save action in ReviewController.cs (before the guard):
 
-1. Show the ReviewFormSaveRequest DTO — specifically the Scorecard property declaration and how the OTHER working single-object sections (e.g. RiskRatingJustification) are declared. Are they identical in type and JSON naming? Show both verbatim.
+try {
+    var sc = dto?.Scorecard == null ? "Scorecard NULL" : $"Scorecard.Change={dto.Scorecard.Change}, DataKind={dto.Scorecard.Data.ValueKind}";
+    Console.WriteLine($"[Save] {sc}");
+    Console.WriteLine($"[Save] RAW BODY CHECK - dto null? {dto == null}");
+} catch (Exception ex) { Console.WriteLine($"[Save] log error: {ex.Message}"); }
 
-2. Show the SectionChange<T> type and the SectionChangeKind enum. How does "Upsert" (a string) bind to SectionChangeKind? Is there a JsonStringEnumConverter registered, or an attribute? Confirm RiskRatingJustification binds successfully with the same "change": "Upsert" string — if it does, Scorecard must be declared differently.
-
-3. Check the JSON property name binding: does Scorecard need a [JsonPropertyName("scorecard")] attribute, or does the app rely on camelCase policy? Compare with RiskRatingJustification.
-
-4. Add a temporary log at the very start of the Save action that dumps whether dto.Scorecard is null and what dto.Scorecard?.Change is, so we can see it at runtime.
-
-Report the difference between how Scorecard and RiskRatingJustification are declared. That difference is the bug. STOP before editing.
+Apply it. STOP.

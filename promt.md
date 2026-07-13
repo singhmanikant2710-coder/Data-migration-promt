@@ -1,11 +1,21 @@
-The read path works (saved scorecard comments now display correctly on load). But saving a scorecard-comment-only change still returns 400 "No changes were provided".
+The guard already includes Scorecard, yet a scorecard-only save still returns 400 "No changes were provided". So dto.Scorecard is arriving as null, or its Change is not binding.
 
-Root cause: in backend/src/Casrr.Api/Controllers/ReviewController.cs there is a guard that counts how many sections were supplied and returns 400 if none. That guard does NOT check dto.Scorecard, so a scorecard-only save is rejected.
+The frontend sends exactly:
+{
+  "ecif": "id-17836",
+  "reviewId": 17836,
+  "sampleId": 311,
+  "scorecard": { "change": "Upsert", "data": { "comments": "<b>Testing </b>Scorecard Comments" } }
+}
 
-Show me that guard verbatim (read-only first) — the code that builds `postedSections` / counts sections and returns the "No changes were provided" 400.
+Investigate and prove (read-only first):
 
-Then fix it: add dto.Scorecard to that guard exactly the way dto.RiskRatingJustification is handled there, so a scorecard-only save is accepted.
+1. Show the ReviewFormSaveRequest DTO — specifically the Scorecard property declaration and how the OTHER working single-object sections (e.g. RiskRatingJustification) are declared. Are they identical in type and JSON naming? Show both verbatim.
 
-Confirm the guard now recognises Scorecard, and that no other section's behaviour changes.
+2. Show the SectionChange<T> type and the SectionChangeKind enum. How does "Upsert" (a string) bind to SectionChangeKind? Is there a JsonStringEnumConverter registered, or an attribute? Confirm RiskRatingJustification binds successfully with the same "change": "Upsert" string — if it does, Scorecard must be declared differently.
 
-Show me the diff. STOP after applying.
+3. Check the JSON property name binding: does Scorecard need a [JsonPropertyName("scorecard")] attribute, or does the app rely on camelCase policy? Compare with RiskRatingJustification.
+
+4. Add a temporary log at the very start of the Save action that dumps whether dto.Scorecard is null and what dto.Scorecard?.Change is, so we can see it at runtime.
+
+Report the difference between how Scorecard and RiskRatingJustification are declared. That difference is the bug. STOP before editing.

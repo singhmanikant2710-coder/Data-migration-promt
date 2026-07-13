@@ -1,23 +1,13 @@
-Apply this edit now. Single file only.
+Read-only check, no edits.
 
-File: frontend/src/app/review/[ecif]/review-info/components/sections/ScorecardsSection.tsx
+Trace the SAVE flow end-to-end for the new "scorecard" section:
 
-Add a new SectionCard titled exactly "Scorecard Comments" BELOW the existing Scorecards grid.
+1. Show me the centralized save handler (handleSave in page.tsx / ReviewInfoContent) — specifically the code that reads FormChangesContext (getMerged / changes) and builds the save request body.
 
-Inside it, use the existing RichTextEditor component (from @/components/ui/RichTextEditor), wired exactly like RiskRatingJustificationSection.tsx does:
+2. Confirm: does it automatically include ANY section present in FormChangesContext, or does it explicitly pick named sections one by one? If it explicitly lists sections, "scorecard" must be added to that list — check whether it is.
 
-  value = response.form.scorecard?.comments ?? ""
-  onChange = (html) => { if (isEditing && changes) changes.setSection("scorecard", { comments: html }); }
-  readOnly={!isEditing}
-  showToolbar={isEditing}
-  minHeight={220}
-  placeholder="Add comments about the scorecards…"
-  ariaLabel="Scorecard Comments"
+3. Confirm the JSON key the frontend sends for this section matches EXACTLY what the backend controller expects (e.g. frontend sends "scorecard": { comments: "..." } and the controller binds a "scorecard" property with a Comments field).
 
-Reuse the existing SectionCard and RichTextEditor — no new UI patterns.
+4. Confirm "scorecard" is in the SectionKey union type in FormChangesContext.tsx.
 
-DO NOT touch the existing Scorecards grid logic or its stagePatchForGroup / setSection("transactions", ...) cascade.
-
-Also confirm: is "scorecard" present in the SectionKey union type in FormChangesContext.tsx? If not, add it.
-
-Apply and show me the diff. Do not touch any other file.
+Report with evidence. If anything is missing, tell me exactly what to add. STOP before editing.

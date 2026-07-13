@@ -1,7 +1,15 @@
-The Console.WriteLine diagnostic log is not appearing in the terminal when I hit Save. 
+Found it. The 400 is NOT coming from the controller guard — it comes from a SECOND guard inside the service:
 
-Show me exactly WHERE in ReviewController.cs you placed the log — paste the surrounding code. Confirm it is inside the Save action method body, before the postedSections guard.
+  Casrr.Domain.Exceptions.DomainValidationException: No changes were provided.
+     at Casrr.Application.Services.ReviewService.SaveAsync(ReviewFormSaveRequest dto, ...) 
+        in backend/src/Casrr.Application/Services/ReviewService.cs:line 72
 
-Also: this app uses Serilog (I see [INF] structured logs in the terminal). Console.WriteLine may not surface. Replace it with the app's ILogger instead — use _logger.LogInformation(...) the same way other logs in this controller do.
+Fix: open backend/src/Casrr.Application/Services/ReviewService.cs, look at the validation around line 72 that throws DomainValidationException("No changes were provided"). It counts/checks which sections were supplied and does NOT include dto.Scorecard.
 
-Apply and show the diff.
+Add dto.Scorecard to that check, exactly the way dto.RiskRatingJustification is handled there.
+
+Also verify the rest of SaveAsync actually routes the scorecard section to SaveScorecardInfoAsync — if the service only throws but never handles scorecard, wire that up too (mirroring how riskRatingJustification is handled in the same method).
+
+Also REMOVE the temporary Console.WriteLine diagnostic logs from ReviewController.cs.
+
+Show me the diff. STOP after applying.

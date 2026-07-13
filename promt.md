@@ -1,13 +1,11 @@
-Fix both compile errors now.
+The read path works (saved scorecard comments now display correctly on load). But saving a scorecard-comment-only change still returns 400 "No changes were provided".
 
-ERROR 1 — backend/src/Casrr.Api/Controllers/ReviewController.cs (~line 152):
-  CS8852: Init-only property 'ReviewFormSaveRequest.PostedSections' can only be assigned in an object initializer.
-  The line `try { dto!.PostedSections = postedSections.ToArray(); } catch {}` fails because PostedSections is { get; init; }.
-  Fix: change PostedSections from `init` to `set` in ReviewFormSaveModels.cs, OR (preferred) avoid mutating dto and pass postedSections through however the existing code already echoes posted sections back. Pick whichever is less invasive and does not alter existing behaviour — tell me which you chose.
+Root cause: in backend/src/Casrr.Api/Controllers/ReviewController.cs there is a guard that counts how many sections were supplied and returns 400 if none. That guard does NOT check dto.Scorecard, so a scorecard-only save is rejected.
 
-ERROR 2 — frontend page.tsx (~line 529):
-  ts(2339): Property 'scorecard' does not exist on type 'ReviewFormSaveRequest'.
-  Fix: add an optional `scorecard` property to the frontend TypeScript type ReviewFormSaveRequest (in frontend/src/services/api/reviews.ts or wherever that type is declared), matching the shape of the other single-object sections, e.g.:
-    scorecard?: { change: string; data: any };
+Show me that guard verbatim (read-only first) — the code that builds `postedSections` / counts sections and returns the "No changes were provided" 400.
 
-Apply both fixes and show me the diffs. Do not change any other behaviour.
+Then fix it: add dto.Scorecard to that guard exactly the way dto.RiskRatingJustification is handled there, so a scorecard-only save is accepted.
+
+Confirm the guard now recognises Scorecard, and that no other section's behaviour changes.
+
+Show me the diff. STOP after applying.

@@ -1,11 +1,28 @@
-Apply this edit now. Single file only.
+Apply this edit now. Two files only.
 
-File: backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+1. backend/src/Casrr.Application/IReviewRepository.cs
+   Add this method signature:
+   Task SaveScorecardInfoAsync(int reviewId, string? comments, CancellationToken ct);
 
-Find the existing SQL query that selects [Risk_rating_justification] from dbo.[02_CORE_02_Reviews]. Add [Scorecard_information] to that SAME query (do not create a new query), and map the value into form.Scorecard.Comments.
+2. backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+   Implement it:
+   UPDATE dbo.[02_CORE_02_Reviews]
+   SET [Scorecard_information] = @comments
+   WHERE [Review_id] = @reviewId;
 
-Do this in both GetReviewByEcifAsync and GetReviewByKeysAsync.
+Mirror EXACTLY how SaveRiskRatingJustificationAsync is written in the same file (same null-safety, same parameter handling, same connection/command pattern).
 
-Note: the ScorecardSection with a Comments property already exists on ReviewForm in ReviewQueue.cs — use it, do not re-create it.
+Apply and show me the diff. Do not touch any other file.
 
-Apply the edit and show me the diff. Do not touch any other file.
+
+Apply this edit now. Two files only.
+
+1. backend/src/Casrr.Application/Services/IReviewService.cs
+   Add the service method signature for saving scorecard comments.
+
+2. backend/src/Casrr.Application/Services/ReviewService.cs
+   Implement it — it should simply delegate to the repository's SaveScorecardInfoAsync.
+
+Mirror EXACTLY how the Risk Rating Justification save is done in these same two files (same signature style, same delegation pattern).
+
+Apply and show me the diff. Do not touch any other file.

@@ -1,14 +1,13 @@
-Apply this fix now. Single file only.
+Fix both compile errors now.
 
-File: backend/src/Casrr.Api/Controllers/ReviewController.cs
+ERROR 1 — backend/src/Casrr.Api/Controllers/ReviewController.cs (~line 152):
+  CS8852: Init-only property 'ReviewFormSaveRequest.PostedSections' can only be assigned in an object initializer.
+  The line `try { dto!.PostedSections = postedSections.ToArray(); } catch {}` fails because PostedSections is { get; init; }.
+  Fix: change PostedSections from `init` to `set` in ReviewFormSaveModels.cs, OR (preferred) avoid mutating dto and pass postedSections through however the existing code already echoes posted sections back. Pick whichever is less invasive and does not alter existing behaviour — tell me which you chose.
 
-Problem: the save endpoint returns 400 "No changes were provided" even though the request body contains a valid scorecard section:
-{ "ecif": "id-17836", "reviewId": 17836, "sampleId": 311, "scorecard": { "change": "Upsert", "data": { "comments": "<b>Testing </b>Scorecard Comments" } } }
+ERROR 2 — frontend page.tsx (~line 529):
+  ts(2339): Property 'scorecard' does not exist on type 'ReviewFormSaveRequest'.
+  Fix: add an optional `scorecard` property to the frontend TypeScript type ReviewFormSaveRequest (in frontend/src/services/api/reviews.ts or wherever that type is declared), matching the shape of the other single-object sections, e.g.:
+    scorecard?: { change: string; data: any };
 
-Cause: there is a validation/guard in the Save endpoint that counts how many sections were supplied (to reject empty requests). That check does not include dto.Scorecard, so a scorecard-only save is treated as "no changes".
-
-Find that validation/guard and add Scorecard to it — exactly the same way RiskRatingJustification is counted there.
-
-Do not change any other validation logic or any other section's behaviour.
-
-Apply and show me the diff. Do not touch any other file.
+Apply both fixes and show me the diffs. Do not change any other behaviour.

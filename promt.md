@@ -1,21 +1,15 @@
-UAT #39 — Review Queue: the "Filter rows" search must also update the "Progress Status" grid totals.
+Approved with one correction — apply the plan, but with this change:
 
-Client requirement:
-"Can the 'Google' search Filter rows feature update the 'Progress Status' grid totals?"
+The progress counts must be derived from the rows AFTER the "My View" scope and the text search (filterQuery) are applied, but BEFORE statusFilter is applied.
 
-(Note: the client also asked "What does the Clear button do? It does not seem to clear out comments" — that appears to be a copy-paste from another item, since there are no comments on Review Queue. Ignore it for now unless you find a Clear button on this screen that is genuinely broken — if you do, report what it currently does.)
+Reason: if a user clicks a status in the Progress Status grid (setting statusFilter), deriving the counts from the fully-filtered rows would collapse the grid to show only that status with a count, and 0 for everything else. That would be confusing and would break the grid's purpose as a navigation aid.
 
-YOUR TASK:
-1. FIRST report (read-only, no edits):
-   a. Find the Review Queue screen component. Show me the "Filter rows" search input and how it filters the table rows (client-side filter on the loaded rows, or a server-side query?).
-   b. Show me the "Progress Status" grid/totals — where do those numbers come from? Are they derived from the same row array the table renders, or computed separately (e.g. from a different API call or from the unfiltered dataset)?
-   c. Confirm why the totals do not currently react to the filter.
+So: create an intermediate memo (e.g. scopedSearchedRows) = rows after My View scope + filterQuery text search, WITHOUT statusFilter. Derive progressCountsFromScoped and totalsUI from that array. Keep filteredRows (which additionally applies statusFilter) for the TABLE rows only.
 
-2. THEN propose ONE minimal fix so the Progress Status totals are derived from the FILTERED rows, updating live as the user types in the search box (and resetting when the search is cleared).
+Everything else as planned:
+- Overlay derived counts onto the server-provided progressCounts to preserve ordering/highlight, appending any statuses not in the server list.
+- Render the panel from progressCountsUI and totalsUI.
+- Display-only, no new API calls, no save-path changes.
+- Clearing the search restores the full counts for the current scope.
 
-Constraints:
-- Prefer a client-side derivation from the already-filtered row array — no new API calls if the data is already loaded.
-- Display-only: no changes to any save path or persisted data.
-- The totals must return to the full counts when the filter is cleared.
-
-Report findings and plan with exact files touched. STOP and wait for approval.
+Apply and show me the diff. STOP after applying.

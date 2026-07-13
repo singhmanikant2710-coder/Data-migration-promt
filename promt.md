@@ -1,13 +1,7 @@
-Key clue: saving works when I ALSO change a scorecard grid field (which stages the "transactions" section), but fails with 400 "No changes were provided" when I change ONLY the Scorecard Comments rich text.
+The Console.WriteLine diagnostic log is not appearing in the terminal when I hit Save. 
 
-This proves the backend guard is not counting dto.Scorecard — it is arriving null or with Change=None.
+Show me exactly WHERE in ReviewController.cs you placed the log — paste the surrounding code. Confirm it is inside the Save action method body, before the postedSections guard.
 
-Apply the temporary diagnostic log at the very top of the Save action in ReviewController.cs (before the guard):
+Also: this app uses Serilog (I see [INF] structured logs in the terminal). Console.WriteLine may not surface. Replace it with the app's ILogger instead — use _logger.LogInformation(...) the same way other logs in this controller do.
 
-try {
-    var sc = dto?.Scorecard == null ? "Scorecard NULL" : $"Scorecard.Change={dto.Scorecard.Change}, DataKind={dto.Scorecard.Data.ValueKind}";
-    Console.WriteLine($"[Save] {sc}");
-    Console.WriteLine($"[Save] RAW BODY CHECK - dto null? {dto == null}");
-} catch (Exception ex) { Console.WriteLine($"[Save] log error: {ex.Message}"); }
-
-Apply it. STOP.
+Apply and show the diff.

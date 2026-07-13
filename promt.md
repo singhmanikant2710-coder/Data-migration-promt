@@ -1,13 +1,17 @@
-Read-only check, no edits.
+Apply this edit now. Single file only.
 
-Trace the SAVE flow end-to-end for the new "scorecard" section:
+File: frontend/src/app/review/[ecif]/review-info/page.tsx
 
-1. Show me the centralized save handler (handleSave in page.tsx / ReviewInfoContent) — specifically the code that reads FormChangesContext (getMerged / changes) and builds the save request body.
+Inside handleSave, alongside the other single-object section branches (next to the riskRatingJustification one), add:
 
-2. Confirm: does it automatically include ANY section present in FormChangesContext, or does it explicitly pick named sections one by one? If it explicitly lists sections, "scorecard" must be added to that list — check whether it is.
+if (s.scorecard) {
+    payload.scorecard = {
+        change: "Upsert",
+        data: s.scorecard
+    };
+    count++;
+}
 
-3. Confirm the JSON key the frontend sends for this section matches EXACTLY what the backend controller expects (e.g. frontend sends "scorecard": { comments: "..." } and the controller binds a "scorecard" property with a Comments field).
+Do not change any other branch or any other logic in handleSave.
 
-4. Confirm "scorecard" is in the SectionKey union type in FormChangesContext.tsx.
-
-Report with evidence. If anything is missing, tell me exactly what to add. STOP before editing.
+Apply and show me the diff. Do not touch any other file.

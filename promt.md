@@ -1,6 +1,13 @@
-Approved. Apply all three fixes now:
-1. SqlReviewRepository.GetFindingCodesLookupAsync — filter Active=1 (also apply to the findings/library query for the modal).
-2. SearchableSelect — add the optional grid props (default to current behaviour when not passed, so other selects are unaffected).
-3. Wire the Finding Code dropdown to use them: two-column grid with sticky header, uniform rows, outer border; renderSelected returns only the code.
+Apply this edit now. Do not read other files. Do not plan. Just apply.
 
-Apply and show me the diffs.
+FILE: backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+
+In the method GetFindingCodesLookupAsync (the query that populates response.lookups.findingCodes, which feeds the Finding Code dropdown options), add a filter so only active findings are returned:
+
+  WHERE [Active] = 1
+
+Table: dbo.[03_LIBRARY_01_CAS Findings]. The [Active] column is BIT (65 rows are 1, 2 rows are 0 — including the legacy CS-116OLD which must disappear from the dropdown).
+
+Use the LIVE DB. Ignore columns.csv — it is stale.
+
+Apply this single edit and show me the diff. STOP.

@@ -1,24 +1,13 @@
-Frontend only. File: frontend/src/app/review-status/page.tsx. Do not plan. Just apply.
+Frontend only. File: frontend/src/app/review-status/page.tsx. Single edit. Do not plan. Just apply.
 
-There is a <style jsx> block around lines 460-477 containing :global(.rs-input ...) rules that force border: 0 !important, box-shadow: none !important, background: transparent !important on the select control. This is fighting the new `boxed` styling on SearchableSelect and causing a box-inside-a-box.
+The page's content wrapper renders at only 366px wide instead of filling the available width, producing large white gutters on both sides. In the DOM it is:
+  <div class="p-4 space-y-4">
+and it sits inside:
+  <div class="mx-auto w-full min-h-0 flex flex-col flex-1">
 
-Do two things:
+Find the JSX element in review-status/page.tsx whose className is exactly "p-4 space-y-4" (it is the outer wrapper of the whole page body, containing the REVIEW STATUS card).
 
-1) DELETE the entire <style jsx>{` ... `}</style> block (lines ~460-477).
+Change its className to:
+  "w-full p-4 space-y-4"
 
-2) At around line 420, the Select Sample Name control is wrapped in two nested divs:
-     <div className="max-w-md">
-       <div className="w-full rs-input">
-         <SearchableSelect className="w-full" ... boxed boldOptions />
-       </div>
-     </div>
-   Replace both wrappers with a single div:
-     <div className="w-full">
-       <SearchableSelect className="w-full" ... boxed boldOptions />
-     </div>
-   Remove "max-w-md" and remove the "rs-input" class entirely.
-
-Keep all SearchableSelect props (options, value, onChange, placeholder, title, boxed, boldOptions) exactly as they are.
-
-Result must be exactly ONE bordered box, matching the Sample Start Date input in height, border, radius, background and text-sm font size.
-Do not touch anything else.
+That is the only change. Do not touch any other element, any other file, or the layout component.

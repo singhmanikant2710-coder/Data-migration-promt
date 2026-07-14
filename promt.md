@@ -1,9 +1,11 @@
-Read-only. No edits. Do not plan. Just report.
+Read-only. No edits. No plan. No summary. Just paste these four snippets verbatim.
 
-1) In frontend/src/app/review-status/page.tsx, print the exact JSX and full className string of:
-   a) the "Select Sample Name" control (the <select> or SearchableSelect and any wrapper div around it)
-   b) the "Sample Start Date" <input>
-2) Print the exact JSX and className of the OUTERMOST wrapper element returned by the Review Status page component.
-3) In frontend/src/app/review-queue/page.tsx, print the exact JSX and className of the OUTERMOST wrapper element returned by that page component.
+1) frontend/src/app/review-status/page.tsx — the "Select Sample Name" control. Paste the full JSX element (SearchableSelect or <select>) INCLUDING its wrapper <div> and every className / style prop.
 
-Output only these snippets verbatim. Do not change any file.
+2) frontend/src/app/review-status/page.tsx — the OUTERMOST element returned by the page component (the top-level JSX after `return (`). Paste just that opening tag with its full className.
+
+3) frontend/src/app/review-queue/page.tsx — the OUTERMOST element returned by that page component. Paste just that opening tag with its full className.
+
+4) If the Select Sample Name control is a SearchableSelect component, also open frontend/src/components/ui/SearchableSelect.tsx and paste the className of its trigger/button element and of its dropdown menu items.
+
+Output only the code. Nothing else.

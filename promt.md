@@ -1,25 +1,29 @@
-UAT #53 has been REOPENED by the client with three issues. Fix all three.
+The description is now only in a tooltip (on hover). That is NOT what the client wants.
 
-ISSUE 1 — Inactive codes still appear in the dropdown.
-We added a filter for [Active] = 1 on dbo.[03_LIBRARY_01_CAS Findings], but inactive codes (e.g. CS-116OLD) are STILL showing. 
-- Verify the filter is actually applied in the query that serves GET /api/v1/findings/library (SqlFindingsRepository.cs). 
-- Check whether the frontend is calling a DIFFERENT endpoint or a cached source that bypasses the filter — the Finding Code dropdown options may come from response.lookups.findingCodes (the review payload), NOT from findings/library. If so, the Active filter must ALSO be applied to whatever query populates lookups.findingCodes.
-- Report which query actually feeds the dropdown options, and apply the Active = 1 filter there too.
+Client requirement: "Previous edit allowed user to see Finding Code Description ALONGSIDE Finding Code and all rows were even."
 
-ISSUE 2 — The dropdown options are "widely dispersed" and rows are uneven.
-Client: "Finding code drop-down options are widely dispersed. Previous edit allowed user to see Finding Code Description alongside Finding Code and all rows were even."
-- In the SearchableSelect option rows, the description currently wraps to multiple lines, making row heights uneven and the list hard to scan.
-- Fix: make every option row a UNIFORM height. Code in a fixed-width left column; description in the right column truncated to a SINGLE line with ellipsis (no wrapping). Add a title/tooltip attribute with the full description so hovering still reveals it.
-- The result should look like the client's Access prototype: two clean columns, all rows the same height.
+The description must be VISIBLE in each option row, next to the code — not hidden in a tooltip.
 
-ISSUE 3 — The closed control shows the full "CODE - Description" label.
-Client: "When selected and Saved, the Finding Code field shows the Finding Code and Description - We only need to see the Finding Code."
-- The CLOSED SearchableSelect trigger must display ONLY the code (e.g. "CS-104"), never the description.
-- The description must appear ONLY in the open dropdown list.
-- Check the renderSelected prop — it should return just the code.
+Fix the renderOption in the SearchableSelect usage for Finding Code:
 
-Constraints:
-- Option value stays the raw finding code — save path unchanged.
-- No new API calls.
+Each option row must render TWO VISIBLE COLUMNS side by side:
+- LEFT column: the code — fixed width ~90px, nowrap, medium weight.
+- RIGHT column: the description — VISIBLE text filling the remaining width, truncated to a SINGLE line with ellipsis (CSS: overflow hidden, text-overflow ellipsis, white-space nowrap) so all rows have the SAME height.
 
-Report what you find for Issue 1 first (which query feeds the dropdown), then apply all three fixes. Show me the diffs.
+So the list should look like:
+  CS-101   Required borrower financial information past due and/or not obtai…
+  CS-102   Required guarantor financial information past due and/or not obta…
+  CS-103   Borrower/guarantor financial statements outside of policy quality …
+
+For this to work the MENU must be WIDE enough:
+- Give the portal menu a fixed width: min-width 640px, max-width 900px, and max-width 90vw. It must NOT inherit the trigger/column width.
+- It is an overlay (portal), so it floats above the table and must not cause page horizontal scroll.
+- Keep max-height ~320px with vertical scroll, and the search box at the top.
+
+Keep the title attribute with the full description as a bonus tooltip, but the description MUST also be visible in the row.
+
+Do NOT change renderSelected — the closed trigger correctly shows only the code, keep that.
+
+Option value stays the raw code — save path unchanged.
+
+Apply and show me the diff.

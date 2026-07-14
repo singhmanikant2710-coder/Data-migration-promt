@@ -1,25 +1,35 @@
-Task: Backend only — fix the Review Status bucket counts. Read-only diagnostics first: open SqlReviewStatusRepository.cs, find the method computing the status square counts (GetStatusPageAsync or its helper), and report the current logic before editing. Single file. Use LIVE DB, ignore columns.csv. Do NOT change the sample dropdown, the grid, the Bucket filter, or pagination.
+Task: Backend fix in SqlReviewStatusRepository.cs — GetStatusPageAsync and its six helper methods. Single file only. Use LIVE DB, ignore columns.csv. Do not touch the frontend. Just apply, do not re-plan.
 
-PROBLEM: The counts are currently computed as MUTUALLY EXCLUSIVE buckets (a CASE/if-else-if priority chain, or a GROUP BY on a derived status). Proof: they sum exactly to the total (109+16+20+118+0+1 = 264). This is WRONG.
+The buckets are currently MUTUALLY EXCLUSIVE (each helper excludes rows that have a "later" milestone). The client's spec is OVERLAPPING — a review that is Approved still has Start_date NOT NULL and must be counted in BOTH "In Progress" AND "Approved". Fix as follows.
 
-The client's spec is intentionally OVERLAPPING — a review that is Approved still has Start_date NOT NULL, so it must be counted in BOTH "In Progress" AND "Approved". Buckets are independent flags, not stages.
+--- 1) Remove the exclusion clauses from each helper's WHERE ---
+Keep the join to Samples (s.Closed = 0), keep the @sampleId filter, keep the date-range filter on each helper's own milestone column. Only remove the "later milestone IS NULL" exclusions and the Cancelled exclusion. New predicates, exactly:
 
-FIX: Replace the count logic with seven INDEPENDENT counts over dbo.[02_CORE_02_Reviews], evaluated in the same scope the page already uses (join to dbo.[02_CORE_01_Samples] on Sample_id where Closed = 0 when "Select All", or filtered to the selected Sample_id). No CASE priority chain, no else-if:
+  GetInProgressAsync        : r.Start_date IS NOT NULL
+  GetCompletedDraftsAsync   : r.Completed_date IS NOT NULL
+  GetApprovedAsync          : r.Review_approval_date IS NOT NULL
+  GetDistributedAsync       : r.Review_distributed_date IS NOT NULL
+  GetFinalizedAsync         : r.Review_finalized_date IS NOT NULL
+  GetUnopenedOrCancelledAsync : r.Start_date IS NULL OR r.Cancelled = 1     (no date filter — leave as-is)
 
-  BorrowersSampled  = COUNT(*)
-  UnopenedCancelled = COUNT WHERE [Start_date] IS NULL OR [Cancelled] = 1
-  InProgress        = COUNT WHERE [Start_date] IS NOT NULL
-  DraftCompleted    = COUNT WHERE [Completed_date] IS NOT NULL
-  Approved          = COUNT WHERE [Review_approval_date] IS NOT NULL
-  Distributed       = COUNT WHERE [Review_distributed_date] IS NOT NULL
-  Finalized         = COUNT WHERE [Review_finalized_date] IS NOT NULL
+Note GetUnopenedOrCancelledAsync currently requires ALL milestones to be NULL. Replace that with the single condition above: Start_date IS NULL OR Cancelled = 1.
 
-They will overlap and will NOT sum to the total. That is expected and correct — do not "correct" it.
+--- 2) Fix BorrowersSampled ---
+It is currently computed as statusCounts.Sum(x => x.Count). That is WRONG — the buckets now overlap and must not sum to the total.
+Replace it with an independent count: the total number of in-scope reviews, i.e. COUNT(*) over dbo.[02_CORE_02_Reviews] r INNER JOIN dbo.[02_CORE_01_Samples] s ON s.Sample_id = r.Sample_id AND s.Closed = 0, with the same (@sampleId IS NULL OR r.Sample_id = @sampleId) filter and NO date filter. Add a small helper for this if needed.
 
-VERIFIED EXPECTED VALUES (already run against the live DB — the API must return exactly these):
+--- 3) Dead code ---
+The unused EF "agg" aggregation in GetStatusPageAsync is not used in the response. Remove it.
+
+--- 4) Grid parity ---
+The grid datasets and the tile counts share the same helpers, so after this change the Bucket filter will correctly return the overlapping row sets (e.g. Bucket = "In Progress" returns all rows where Start_date IS NOT NULL, including Approved and Finalized ones). This is intended. Do not add exclusions back to keep the grid "clean".
+
+--- 5) Expected values (already verified against the live DB — the API must return exactly these, with no date filter applied) ---
   Select All (all reviews joined to samples where Closed = 0):
-    264 / 112 / 158 / 136 / 118 / 0 / 116
-  Single sample, Sample_id = 311:
-    21 / 10 / 12 / 11 / 11 / 0 / 11
+    BorrowersSampled 264 | Unopened/Cancelled 112 | In Progress 158 | Draft Completed 136 | Approved 118 | Distributed 0 | Finalized 116
+  Sample_id = 311:
+    21 | 10 | 12 | 11 | 11 | 0 | 11
 
-IMPORTANT — the Bucket dropdown filter must stay consistent with these counts: selecting a bucket must return exactly the rows matching that same independent condition (e.g. Bucket = "In Progress" returns all 158 rows where Start_date IS NOT NULL, including the ones that are also Approved). If the grid filter currently uses a derived single-status value, change it to use the same independent predicate. Report if the grid and the counts share a code path.
+These will NOT sum to the total. That is correct — do not "fix" it.
+
+After the edit, run read-only diagnostics on this file only and report any errors.

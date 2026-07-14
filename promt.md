@@ -1,28 +1,32 @@
-Apply this now. I am attaching the client's Access prototype screenshot — that is the exact target.
+UAT #82, #83, #84, #85 — Review History screen. Four related changes, all in the same screen. Apply them together.
 
-FILES: frontend/src/components/ui/SearchableSelect.tsx (or wherever SearchableSelect lives) and CrmFindingsAndRatingsSection.tsx
+I'm attaching the client's screenshots showing the Review History screen with each item marked.
 
-Client's complaint: "Finding code drop-down options are widely dispersed. Previous edit allowed user to see Finding Code Description alongside Finding Code and all rows were even."
+CHANGE 1 (#82) — Remove the "Sample Name" dropdown.
+Client: "We can remove this drop-down. This screen is meant to show all Finalized reviews ([Review_finalized_date] Is Not Null) from all Closed Samples."
+- Remove the Sample Name select control entirely.
+- The screen must now always show ALL finalized reviews across all closed samples — i.e. the underlying query must filter on [Review_finalized_date] IS NOT NULL and no longer filter by a selected sample.
+- Report which backend query/endpoint feeds this screen and update it accordingly.
 
-Make the OPEN Finding Code dropdown look like the Access grid in the screenshot:
+CHANGE 2 (#83) — Remove the "Borrower Name" search box and its Search button.
+Client: "Remove this Borrower Name specific search in favor of the 'Google' search filter we have on Review Queue and Review Status."
+- Remove the Borrower Name input + Search button.
+- ADD the same global "Filter rows" search box that Review Queue and Review Status already have (a client-side text filter across the grid's columns). REUSE that existing pattern — do not build a new one.
 
-1. MENU WIDTH: fixed, not inherited from the trigger. min-width 640px, max-width 900px, and max-width 90vw. It is a portal overlay so it floats above the table — it must NOT stretch the table or cause page horizontal scroll.
+CHANGE 3 (#84) — Rename and rebind the "COMPLETED" column.
+Client: "Edit this date column to show Review_finalized_date value instead and label the column 'Finalized'."
+- Column header: change "COMPLETED" to "FINALIZED".
+- The value must come from [Review_finalized_date] (not whatever it currently shows). Update the backend query/DTO if that field is not already returned.
 
-2. STICKY HEADER ROW inside the menu, below the search box, with two labels aligned over their columns:
-   "Finding Code"  |  "Finding Description"
-   Slightly bolder, subtle background, bottom border. Sticky so it stays visible while scrolling.
+CHANGE 4 (#85) — Remove the Refresh and Close buttons.
+Client: "Remove the Refresh and Close buttons. They serve no purpose in the new application environment."
+- Remove both buttons from the Review History header.
 
-3. EACH OPTION ROW — two columns, uniform height:
-   - LEFT: the code, fixed width ~90px, nowrap.
-   - RIGHT: the description, fills the rest, truncated to a SINGLE LINE with ellipsis (overflow: hidden; text-overflow: ellipsis; white-space: nowrap). NO wrapping — this is what makes every row the same height.
-   - The description must be VISIBLE in the row, not only in a tooltip. Also set a title attribute with the full text as a bonus tooltip.
+FIRST report (read-only): show me the Review History page component, the backend query/endpoint that feeds it, and confirm whether [Review_finalized_date] is already in the payload. Then apply all four changes.
 
-4. GRID LOOK: visible outer border around the menu, a subtle vertical divider between the two columns, and subtle horizontal separators between rows.
+Constraints:
+- Reuse the existing global filter pattern from Review Queue for change 2.
+- Do not break the existing grid, sorting, or pagination.
+- Use the LIVE DB, ignore columns.csv.
 
-5. Keep: search box at top, vertical scroll, max-height ~320px, no horizontal scrollbar inside the menu.
-
-IMPORTANT: add these as OPTIONAL props on SearchableSelect and default to the current behaviour when they are not passed — other SearchableSelect usages in the app must not change.
-
-Do not touch the save path. Option value stays the raw code.
-
-Apply and show me the diff. STOP.
+Report findings, then apply. Show me the diffs.

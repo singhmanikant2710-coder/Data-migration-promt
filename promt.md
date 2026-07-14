@@ -1,31 +1,25 @@
-UAT #29 — Customer Info: Relationship Manager & Portfolio Manager dropdowns from Data Mart Trial.
+UAT #53 has been REOPENED by the client with three issues. Fix all three.
 
-Client has confirmed the requirements:
-1. "Let's use the Data Mart Trial table and we can revisit this later if Active Directory connectivity can be established."
-2. "Store both the RM Name and Number in their respective fields, as well as the PM Name and Number. Only the name will appear in the Relationship Manager and Portfolio Manager name fields on-screen."
-3. "Let's show both (e.g., 43724 – Geoffrey Houlditch)" in the dropdown.
+ISSUE 1 — Inactive codes still appear in the dropdown.
+We added a filter for [Active] = 1 on dbo.[03_LIBRARY_01_CAS Findings], but inactive codes (e.g. CS-116OLD) are STILL showing. 
+- Verify the filter is actually applied in the query that serves GET /api/v1/findings/library (SqlFindingsRepository.cs). 
+- Check whether the frontend is calling a DIFFERENT endpoint or a cached source that bypasses the filter — the Finding Code dropdown options may come from response.lookups.findingCodes (the review payload), NOT from findings/library. If so, the Active filter must ALSO be applied to whatever query populates lookups.findingCodes.
+- Report which query actually feeds the dropdown options, and apply the Active = 1 filter there too.
 
-DB (LIVE DB — ignore columns.csv, it is stale):
-- Source table: dbo.[01_DATA_01_Data Mart Trial]
-  - RM: [OfficerName] + [OfficerNumber]
-  - PM: [PMName] + [PM Number]
-- Target fields on the review: Relationship_mgr_name + Relationship_mgr_number, Portfolio_mgr_name + Portfolio_mgr_number
+ISSUE 2 — The dropdown options are "widely dispersed" and rows are uneven.
+Client: "Finding code drop-down options are widely dispersed. Previous edit allowed user to see Finding Code Description alongside Finding Code and all rows were even."
+- In the SearchableSelect option rows, the description currently wraps to multiple lines, making row heights uneven and the list hard to scan.
+- Fix: make every option row a UNIFORM height. Code in a fixed-width left column; description in the right column truncated to a SINGLE line with ellipsis (no wrapping). Add a title/tooltip attribute with the full description so hovering still reveals it.
+- The result should look like the client's Access prototype: two clean columns, all rows the same height.
 
-Behaviour:
-- The Relationship Manager and Portfolio Manager fields on Customer Info become dropdowns sourced from Data Mart Trial (distinct name+number pairs).
-- Dropdown option LABEL: "NUMBER – NAME" (e.g. "43724 – Geoffrey Houlditch").
-- On save, BOTH the name and the number must persist to their respective columns.
-- The saved value must display correctly on reload (if a saved value is no longer in the list, keep it visible — use the existing ensureIncludesSelected-style fallback rather than showing blank).
+ISSUE 3 — The closed control shows the full "CODE - Description" label.
+Client: "When selected and Saved, the Finding Code field shows the Finding Code and Description - We only need to see the Finding Code."
+- The CLOSED SearchableSelect trigger must display ONLY the code (e.g. "CS-104"), never the description.
+- The description must appear ONLY in the open dropdown list.
+- Check the renderSelected prop — it should return just the code.
 
-YOUR TASK — report FIRST (read-only, no edits), then propose the plan:
+Constraints:
+- Option value stays the raw finding code — save path unchanged.
+- No new API calls.
 
-1. Frontend: show how the Relationship Manager and Portfolio Manager fields currently render in CustomerInfoSection.tsx, and what they are currently bound to (the CAS Users library). Show the exact JSX and the save staging.
-
-2. Backend: 
-   a. Confirm the exact column names and data types on dbo.[01_DATA_01_Data Mart Trial] for OfficerName/OfficerNumber/PMName/[PM Number] — give me the SQL to verify.
-   b. Confirm the target columns Relationship_mgr_name / Relationship_mgr_number / Portfolio_mgr_name / Portfolio_mgr_number — which table are they on, and are they already in the review GET payload and the SAVE path? Show the current read and write for them.
-   c. We need a new lookup endpoint returning distinct RM and PM name+number pairs. REUSE the existing LookupsController / ReportingService pipeline (the same pattern used for the distribution-party-names and relationship segments/units/markets endpoints) rather than building a new controller. Show me how those existing endpoints are wired so we follow the same pattern.
-
-3. Propose the implementation plan file by file, in the ORDER to apply it (backend first, then frontend), so I can test incrementally.
-
-Report findings and plan. STOP and wait for approval.
+Report what you find for Issue 1 first (which query feeds the dropdown), then apply all three fixes. Show me the diffs.

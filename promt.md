@@ -1,37 +1,7 @@
-Backend only. File: backend/src/Casrr.Infrastructure/SqlServer/SqlReviewStatusRepository.cs
-Do not read other files. Do not plan. Do not explain. Just apply these SQL WHERE-clause edits.
+Frontend only, single file: the Review Status page component (frontend/src/app/review-status/page.tsx). Do not read other files. Do not plan. Just apply.
 
-1) GetInProgressAsync — delete these lines from the WHERE clause:
-     AND r.Review_distributed_date IS NULL
-     AND r.Completed_date IS NULL
-     AND r.Review_finalized_date IS NULL
-     AND r.Review_approval_date IS NULL
-     AND (r.Cancelled IS NULL OR r.Cancelled = 0)
-   Keep only: r.Start_date IS NOT NULL   (plus the Samples join, @sampleId filter, Start_date range filter)
+1) LAYOUT: On the Review Status page only, the page content is horizontally compressed / narrower than the other pages (Review Queue, Review History). Compare the outer container/wrapper classes on this page with those on frontend/src/app/review-queue/page.tsx and make the Review Status page use the same width, max-width, and horizontal padding so it fills the content area identically. Do not change any shared layout component — fix it on this page only.
 
-2) GetFinalizedAsync — delete:
-     AND r.Review_approval_date IS NULL
-     AND (r.Cancelled IS NULL OR r.Cancelled = 0)
-   Keep only: r.Review_finalized_date IS NOT NULL
+2) FIELD SIZE: The "Select Sample Name" dropdown is visually smaller (shorter height and smaller font) than the "Sample Start Date" / "Sample End Date" inputs beside it. Make the dropdown match those date inputs exactly: same height, same font size, same border radius, same vertical padding, so all three controls line up on the same baseline.
 
-3) GetUnopenedOrCancelledAsync — replace the entire predicate with exactly:
-     (r.Start_date IS NULL OR r.Cancelled = 1)
-   Remove the checks on Review_distributed_date, Completed_date, Review_finalized_date, Review_approval_date.
-
-4) GetApprovedAsync — delete (r.Cancelled IS NULL OR r.Cancelled = 0) if present.
-     Keep only: r.Review_approval_date IS NOT NULL
-
-5) GetDistributedAsync — delete these if present:
-     AND r.Completed_date IS NULL
-     AND r.Review_finalized_date IS NULL
-     AND r.Review_approval_date IS NULL
-     AND (r.Cancelled IS NULL OR r.Cancelled = 0)
-   Keep only: r.Review_distributed_date IS NOT NULL
-
-6) GetCompletedDraftsAsync — leave as-is (already fixed).
-
-In every helper keep: INNER JOIN dbo.[02_CORE_01_Samples] s ON s.Sample_id = r.Sample_id AND s.Closed = 0, the (@sampleId IS NULL OR r.Sample_id = @sampleId) filter, and that helper's own date-range filter (Unopened/Cancelled has none).
-
-Do NOT change borrowersSampled. Do NOT change the statusCounts list. Do NOT touch any other file.
-
-Expected after fix (Select All, no date filter): 264 / 112 / 158 / 136 / 118 / 0 / 116
+Do not change the counts, the status squares, the grid, the Bucket filter, or pagination.

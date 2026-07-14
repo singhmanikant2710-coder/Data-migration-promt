@@ -1,13 +1,12 @@
-Apply this edit now. Do not read other files. Do not plan. Just apply.
+Apply this edit now. Do not read other files beyond what you need. Do not plan. Just apply.
 
-FILE: backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
+FILE: frontend/src/app/review/[ecif]/review-info/components/sections/CrmFindingsAndRatingsSection.tsx
 
-In the method GetFindingCodesLookupAsync (the query that populates response.lookups.findingCodes, which feeds the Finding Code dropdown options), add a filter so only active findings are returned:
+Problem: when a Finding Code is selected and saved, the CLOSED dropdown field shows the full "CS-104 - Covenant compliance monitoring lacks timeliness..." label. The client only wants the code.
 
-  WHERE [Active] = 1
+Fix: on the SearchableSelect used for Finding Code, pass a renderSelected prop that returns ONLY the raw code (e.g. "CS-104") — never the description.
 
-Table: dbo.[03_LIBRARY_01_CAS Findings]. The [Active] column is BIT (65 rows are 1, 2 rows are 0 — including the legacy CS-116OLD which must disappear from the dropdown).
-
-Use the LIVE DB. Ignore columns.csv — it is stale.
+The description must still appear in the OPEN dropdown list (do not change that).
+The option VALUE stays the raw finding code — the save path must not change.
 
 Apply this single edit and show me the diff. STOP.

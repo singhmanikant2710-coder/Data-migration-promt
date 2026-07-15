@@ -1,15 +1,13 @@
-Read-only. No edits. No plan. Just report with file paths + exact code.
+Frontend only. File: frontend/src/app/review/[ecif]/review-info/components/sections/CrmRatingsSection.tsx
+Single edit. Do not plan. Just apply.
 
-The info (ℹ️) "Review Tip" popup on the Review Form shows "No help tip available", but the data exists in dbo.[03_LIBRARY_06_Help Tips] (verified: Help_tip_id 12, Help_tip_topic 'Unsatisfactory Ratings'). Trace the full path and report:
+In handleOpenRatingsTip, the help-tip lookup uses the wrong topic string. The DB row for this button is Help_tip_id 12, Help_tip_topic = "Unsatisfactory Ratings", but the code passes topic = "CRM Ratings", so no row matches and the dialog shows "No help tip available".
 
-1) Frontend: the component rendering the info button + "Review Tip" dialog (CRM Ratings section, "Unsatisfactory Ratings"). Show the exact topic/key string it passes on click, and how it reads the tip from the API response.
+Change the topic constant from:
+  const topic = "CRM Ratings";
+to:
+  const topic = "Unsatisfactory Ratings";
 
-2) Backend: the controller + service + repository method serving help tips. Show the exact query against dbo.[03_LIBRARY_06_Help Tips], its WHERE filter, and the exact column names used.
+Leave the form constant ("04_REVIEW FORM"), the three-step fetch fallback, and everything else exactly as it is.
 
-3) State clearly WHERE the match fails — one of:
-   (a) frontend passes a topic string that doesn't exactly equal DB Help_tip_topic (case/spacing/trailing space),
-   (b) API filters by Help_tip_id but frontend sends topic (or vice-versa),
-   (c) API returns the row but frontend reads the wrong field name,
-   (d) the help-tips endpoint isn't called at all for this button.
-
-Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+Note: the topic must match the DB Help_tip_topic value exactly (case and spacing). Do not add trimming or lowercasing to the primary exact-match call.

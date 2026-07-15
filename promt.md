@@ -1,2 +1,7 @@
-Request to Create Jira Ticket for CPAT Bug (Assigned to Me)
-Hi, I had a discussion with the client regarding my role and responsibilities. My role will primarily involve maintaining the CPAT application, investigating and resolving production bugs/issues, implementing CRs (Change Requests) as they come in, and developing or adding new features and enhancements based on business requirements.
+Hi Nikita,
+
+I am currently working on the CPAT bug, however there is no Jira ticket created against my name for this task yet. As a result, my work on this is not visible on the Jira board.
+
+Could you please create a Jira ticket and assign it to me so that my contribution on the CPAT bug is properly tracked and reflected on the board?
+
+Please let me know if you need any details about the bug to create the ticket.

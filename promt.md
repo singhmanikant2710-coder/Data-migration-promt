@@ -1,11 +1,12 @@
-Read-only. No edits. No plan. Just report with file paths + code.
+Read-only. No edits. No plan. Just report with exact code.
 
-Issue: In the Customer Background / Customer Info Comments rich-text field, users insert tables (built or pasted from Excel). The table HTML saves fine and renders in the web UI, but in the generated CAS Linesheet PDF the table collapses into a single wrapped line of text instead of rendering as a table.
+File: frontend/src/components/ui/RichTextEditor.tsx
 
 Report:
-1) Which component/service generates the CAS Linesheet PDF? Server-side (e.g. a .NET PDF library, headless browser, ReportLab, wkhtmltopdf) or client-side? Give the file path and library.
-2) How does the PDF pipeline consume the comments field — does it receive raw HTML, plain text, or a stripped/sanitised version? Show the exact code that reads the comments HTML and passes it into the PDF.
-3) Is there any HTML sanitisation / tag-stripping step that removes <table>/<tr>/<td> before rendering? Show it.
-4) Does the PDF renderer support HTML tables at all with the current setup?
+1) Is this a custom-built editor or does it wrap a library (TipTap, Quill, Slate, Lexical, contenteditable, etc.)? Name it and show the import/init code.
+2) How does the "Table" toolbar button insert a table? Show the exact handler and the HTML it produces.
+3) Does the editor currently support any table editing after insertion — add/delete rows, add/delete columns, resize column widths by dragging? Show any related code, or state clearly that none exists.
+4) If it's a library, does that library have a table plugin/extension available that supports row/column add-delete and column resize? Name the plugin.
+5) Roughly how invasive would it be to add row/column add-delete and column drag-resize with the current editor?
 
-Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+Output findings only. Change nothing.

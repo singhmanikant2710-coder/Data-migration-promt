@@ -1,33 +1,24 @@
-Backend only. Add a read-only "Distribution Parties" maintenance list, mirroring the Loan Codes pattern exactly. Use LIVE DB, ignore columns.csv. Read-only diagnostics before edits. Single file per edit. Do not add POST/PUT/DELETE — read-only list only.
+Frontend only. Add a read-only "Distribution Parties" maintenance list page, mirroring the Loan Codes page pattern but WITHOUT any add/edit/delete (read-only). Single file per edit. Do not plan. Just apply.
 
-Table: dbo.[03_LIBRARY_10_Distribution Parties]
-Columns: [Recipient_name] nvarchar, [Recipient_email] nvarchar, [Recipient_role] nvarchar. No primary key column. 5 rows.
+The backend endpoint already exists: GET /api/v1/distribution-parties returns an array of { recipientName, recipientEmail, recipientRole }.
 
-Create these files, following the exact patterns already used by Loan Codes (LoanCodesController.cs, ILoanCodeRepository.cs, SqlLoanCodeRepository.cs, and its domain entity):
+Create these files:
 
-1) Domain entity: backend/src/Casrr.Domain/Entities/DistributionParty.cs
-   Properties (trimmed strings, same style as other entities):
-     string RecipientName
-     string RecipientEmail
-     string RecipientRole
+1) API client: frontend/src/services/api/distributionParties.ts
+   Follow the style of frontend/src/services/api/loanCodes.ts.
+   export interface DistributionParty {
+     recipientName: string;
+     recipientEmail: string;
+     recipientRole: string;
+   }
+   export async function listDistributionParties(): Promise<DistributionParty[]> {
+     return await get<DistributionParty[]>('/api/v1/distribution-parties');
+   }
 
-2) Repository interface: backend/src/Casrr.Application/IDistributionPartiesRepository.cs
-   Method (read-only):
-     Task<IReadOnlyList<DistributionParty>> GetAllAsync(CancellationToken ct);
+2) Page: frontend/src/app/maintenance/distribution-parties/page.tsx
+   Copy the visual pattern from frontend/src/app/maintenance/loan-codes/page.tsx — same header (title "Distribution Parties" + subtitle), same dark-navy table header, same alternating rows, same skeleton loader while loading, same pagination bar with "Rows per page", same toast style for load errors, same "Filter rows" search box that filters client-side across all three columns.
+   BUT read-only: NO Add button, NO edit/save/cancel, NO delete, NO delete-confirm modal, NO inline add row. Just display the rows.
+   Columns: Recipient Name | Recipient Email | Recipient Role.
+   Fetch via listDistributionParties() on mount.
 
-3) Repository impl: backend/src/Casrr.Infrastructure/SqlServer/SqlDistributionPartiesRepository.cs
-   Use the same ADO.NET pattern as SqlLoanCodeRepository (SqlConnectionFactory, parameterized, WITH (NOLOCK), LTRIM/RTRIM, DBNull-safe reads). SQL:
-     SELECT LTRIM(RTRIM([Recipient_name]))  AS [Recipient_name],
-            LTRIM(RTRIM([Recipient_email])) AS [Recipient_email],
-            LTRIM(RTRIM([Recipient_role]))  AS [Recipient_role]
-     FROM dbo.[03_LIBRARY_10_Distribution Parties] WITH (NOLOCK)
-     ORDER BY [Recipient_role], [Recipient_name];
-
-4) Controller: backend/src/Casrr.Api/Controllers/DistributionPartiesController.cs
-   [Route("api/v1/distribution-parties")], [Authorize(Policy = "RequireActiveUser")] — same auth/telemetry style as LoanCodesController.
-   Single endpoint: GET /api/v1/distribution-parties → returns IReadOnlyList of a DistributionPartyContract { recipientName, recipientEmail, recipientRole }. Include the ToContract mapping like LoanCodesController does.
-
-5) DI wiring: edit backend/src/Casrr.Api/Extensions/StartupExtensions.cs
-   Register IDistributionPartiesRepository → SqlDistributionPartiesRepository inside AddDataProviders() (same place Loan Codes is registered).
-
-Do not create any frontend files in this step. After edits, report the files changed.
+Do not modify the sidebar in this step. Do not touch any other maintenance page.

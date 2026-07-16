@@ -27,3 +27,13 @@ WHERE LTRIM(RTRIM([PMName])) IN (
     'SUSAN F HOLMES','HOLMES, SUSAN F','TERENCE J DOLCH'
 )
 ORDER BY [PMName];
+
+
+SELECT DISTINCT '[' + [PMName] + ']' AS PMName_WithBrackets, [PM Number]
+FROM dbo.[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
+WHERE [PMName] LIKE '%HOWELL%'
+   OR [PMName] LIKE '%BURRIS%'
+   OR [PMName] LIKE '%NORMAN%'
+   OR [PMName] LIKE '%HOLMES%'
+   OR [PMName] LIKE '%DOLCH%'
+ORDER BY PMName_WithBrackets;

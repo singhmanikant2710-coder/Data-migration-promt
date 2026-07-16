@@ -1,23 +1,29 @@
-Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify or revert anyone's existing work (including any code authored by Jothi) — this is inspection only.
+Read-only. No edits. No plan. Do NOT modify or revert anyone's work (including Jothi's). Just OPEN these files and paste the EXACT relevant code. Do not summarise — paste actual lines.
 
-UAT #29: On Review Form → Customer Info → Relationship Overview, the "Relationship Manager" and "Portfolio Manager" dropdowns currently source their options from the CAS Users library. They must instead be sourced from dbo.[01_DATA_01_Data Mart Trial]:
-- RM: options from DISTINCT [OfficerNumber] + [OfficerName] where both are NOT NULL. Label = "OfficerNumber - OfficerName", value = OfficerNumber. On save: Relationship_mgr_name = OfficerName, Relationship_mgr_number = OfficerNumber.
-- PM: options from DISTINCT [PM Number] + [PMName] where both are NOT NULL. Label = "PM Number - PMName", value = PM Number. On save: Portfolio_mgr_name = PMName, Portfolio_mgr_number = PM Number.
-Store columns already confirmed on dbo.[02_CORE_02_Reviews]: Relationship_mgr_name (nvarchar), Relationship_mgr_number (int), Portfolio_mgr_name (nvarchar), Portfolio_mgr_number (int).
+Context: I need to know whether the RM/PM save path already persists BOTH name and number, or only names, for these dbo.[02_CORE_02_Reviews] columns: Relationship_mgr_name, Relationship_mgr_number, Portfolio_mgr_name, Portfolio_mgr_number.
 
-Report the following, with file paths and exact code snippets:
+Open and paste:
 
-1) The Customer Info section component that renders the RM and PM dropdowns. Show the JSX for both dropdowns and where their current options come from (the hook/service/state).
+1) frontend/src/app/review/[ecif]/review-info/components/sections/CustomerInfoSection.tsx
+   - Paste the SelectField component's props/signature usage AND find the SelectField definition file. What does SelectField accept for `options` — a string[] or an array of {value,label} objects? Paste the SelectField definition (frontend/src/components/... — locate it).
+   - How does SelectField write to form state (setField/setSection via FormChangesContext)? Does it store a single string, or can it store a value + label separately?
 
-2) The current API endpoint + controller + repository that supplies the RM/PM options (the CAS Users source). Show the file paths and the exact SQL/EF query.
+2) frontend/src/services/api/reviews.ts (or wherever CustomerInfoSection type is defined)
+   - Paste the type definition for the customerInfo section / relationshipManager / portfolioManager fields. Are there existing fields for the manager NUMBER, or only the name/string?
 
-3) On save, how are the RM and PM values currently persisted? Trace the full path: the save DTO → the ReviewController postedSections guard → ReviewService.SaveAsync guard → the repository write. State clearly whether all FOUR columns (Relationship_mgr_name, Relationship_mgr_number, Portfolio_mgr_name, Portfolio_mgr_number) are already handled on save, or only the name columns. Show the exact code for these four columns.
+3) backend/src/Casrr.Application/Reviews/Contracts/ReviewFormSaveModels.cs
+   - Paste the exact fields in the customer-info / relationship save model. List every property related to relationshipManager / portfolioManager (name and number).
 
-4) Is there an existing LookupsController → IReportingService → IReportingRepository pattern (e.g. used for distribution-party-names, relationship segments/units/markets) that I can reuse to add two new lookups sourced from Data Mart Trial? Show that pattern (controller method, service method, repository method + SQL) for one existing lookup so it can be copied.
+4) backend/src/Casrr.Application/Services/ReviewService.cs
+   - Paste the SaveAsync section that handles customer-info / relationship manager fields, including the postedSections guard around line 72.
 
-5) List exactly what must change, and in how many files, to:
-   (a) add the two new Data Mart lookups — RM from [OfficerNumber]/[OfficerName], PM from [PM Number]/[PMName], both with a "both NOT NULL" filter and DISTINCT,
-   (b) point the RM and PM dropdowns at these new lookups, with label "Number - Name" and option VALUE = the Number (do NOT parse the label string apart to get the number),
-   (c) ensure BOTH name and number are saved for RM and PM (all four columns).
+5) backend/src/Casrr.Api/Controllers/ReviewController.cs
+   - Paste the postedSections guard and any handling of relationship manager fields.
 
-Use the LIVE DB, ignore columns.csv. Output findings only. Do not change any file. Do not alter existing logic authored by anyone.
+6) The IReviewRepository implementation in backend/src/Casrr.Infrastructure/SqlServer/ (find the SQL that writes to dbo.[02_CORE_02_Reviews])
+   - Paste the exact UPDATE/INSERT statement and parameter mapping for Relationship_mgr_name, Relationship_mgr_number, Portfolio_mgr_name, Portfolio_mgr_number. If only name columns are written, say so explicitly.
+
+7) backend/src/Casrr.Api/Controllers/LookupsController.cs + its ReportingService + IReportingRepository implementation
+   - Paste ONE complete existing lookup end-to-end (e.g. relationship/segments): controller method, service method, repository method + SQL. This is the template I'll copy for the two new Data Mart lookups.
+
+Paste raw code for each. Change nothing.

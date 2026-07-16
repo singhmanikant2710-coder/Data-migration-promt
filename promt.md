@@ -1,14 +1,8 @@
-SELECT DISTINCT [OfficerNumber], [OfficerName]
-FROM dbo.[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
-WHERE [OfficerName] IS NOT NULL AND [OfficerNumber] IS NOT NULL
-ORDER BY [OfficerName];
-
-SELECT DISTINCT [PM Number], [PMName]
-FROM dbo.[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
-WHERE [PMName] IS NOT NULL AND [PM Number] IS NOT NULL
-ORDER BY [PMName];
-
-SELECT COLUMN_NAME, DATA_TYPE
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = '02_CORE_02_Reviews'
-  AND COLUMN_NAME IN ('Relationship_mgr_name','Relationship_mgr_number','Portfolio_mgr_name','Portfolio_mgr_number');
+Hi Geoffrey, update on UAT #29 (RM/PM dropdowns from Data Mart Trial):
+Relationship Manager is good to go — OfficerName and OfficerNumber both have data (2,356 entries), so we can populate the dropdown as "Number - Name" and store both fields as you specified.
+One blocker on Portfolio Manager: in 01_DATA_01_Data Mart Trial, PMName has data but the PM Number column is entirely empty (all NULL). So we can populate the PM dropdown by name, but there's no number to capture or store.
+Could you confirm how you'd like to handle PM:
+Is the PM associate number available from another field/table we should use instead?
+Or should we proceed with PM name only for now, and add the number once that data is populated?
+I'll build Relationship Manager fully in the meantime.
+Thanks, Manikant

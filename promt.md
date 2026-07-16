@@ -37,3 +37,10 @@ WHERE [PMName] LIKE '%HOWELL%'
    OR [PMName] LIKE '%HOLMES%'
    OR [PMName] LIKE '%DOLCH%'
 ORDER BY PMName_WithBrackets;
+
+SELECT 
+  COUNT(*) AS TotalRows,
+  COUNT([PMName]) AS HasName,
+  COUNT([PM Number]) AS HasNumber,
+  SUM(CASE WHEN [PMName] IS NOT NULL AND [PM Number] IS NULL THEN 1 ELSE 0 END) AS NameButNoNumber
+FROM dbo.[01_DATA_01_Data Mart Trial] WITH (NOLOCK);

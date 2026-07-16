@@ -1,13 +1,14 @@
-Frontend only. File: frontend/src/app/review/[ecif]/review-info/components/sections/CrmRatingsSection.tsx
-Single edit. Do not plan. Just apply.
+SELECT DISTINCT [OfficerNumber], [OfficerName]
+FROM dbo.[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
+WHERE [OfficerName] IS NOT NULL AND [OfficerNumber] IS NOT NULL
+ORDER BY [OfficerName];
 
-In handleOpenRatingsTip, the help-tip lookup uses the wrong topic string. The DB row for this button is Help_tip_id 12, Help_tip_topic = "Unsatisfactory Ratings", but the code passes topic = "CRM Ratings", so no row matches and the dialog shows "No help tip available".
+SELECT DISTINCT [PM Number], [PMName]
+FROM dbo.[01_DATA_01_Data Mart Trial] WITH (NOLOCK)
+WHERE [PMName] IS NOT NULL AND [PM Number] IS NOT NULL
+ORDER BY [PMName];
 
-Change the topic constant from:
-  const topic = "CRM Ratings";
-to:
-  const topic = "Unsatisfactory Ratings";
-
-Leave the form constant ("04_REVIEW FORM"), the three-step fetch fallback, and everything else exactly as it is.
-
-Note: the topic must match the DB Help_tip_topic value exactly (case and spacing). Do not add trimming or lowercasing to the primary exact-match call.
+SELECT COLUMN_NAME, DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = '02_CORE_02_Reviews'
+  AND COLUMN_NAME IN ('Relationship_mgr_name','Relationship_mgr_number','Portfolio_mgr_name','Portfolio_mgr_number');

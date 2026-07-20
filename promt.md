@@ -43,3 +43,8 @@ Changes:
 Note: ensureIncludesSelected keeps any previously saved legacy value visible even if it is not in the new list — that behaviour must be preserved.
 
 Report the file changed and run read-only TypeScript diagnostics on that file only.
+
+
+SELECT [Relationship_mgr_name], [Relationship_mgr_number],
+       [Portfolio_mgr_name], [Portfolio_mgr_number]
+FROM dbo.[02_CORE_02_Reviews] WHERE [Review_id] = 21592;

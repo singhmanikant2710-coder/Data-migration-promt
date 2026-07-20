@@ -1,50 +1,16 @@
 Frontend only. Single file: frontend/src/app/review/[ecif]/review-info/components/sections/CustomerInfoSection.tsx
-Do NOT modify SelectField, ui.tsx, lookups.ts, or any shared component. Do NOT change any other dropdown on this page. Do not plan. Just apply.
+Do NOT modify SelectField, ui.tsx, or any shared component. Do not plan. Just apply.
 
-Goal: point ONLY the "Relationship Manager" and "Portfolio Manager" dropdowns at the new Data Mart lookups. All other dropdowns (Portfolio Manager Lead, Executive Credit Officer, Senior Credit Officer, Segment, Unit, Market, etc.) must keep their current sources untouched.
+Issue: The Relationship Manager dropdown now loads Data Mart options formatted "Number - Name" (e.g. "48191 - LEO MUTCHLER"), but the saved value from the DB is only the name ("LEO MUTCHLER"), because the name and number are stored in separate columns. As a result ensureIncludesSelected() appends a duplicate bare-name entry to the list instead of matching the existing "Number - Name" option. Same for Portfolio Manager.
 
-New backend endpoints (already built, both return string[] formatted "Number - Name"):
-  GET /api/v1/lookups/data-mart/relationship-managers
-  GET /api/v1/lookups/data-mart/portfolio-managers
+Fix: compute a display value that matches the option format, using the saved name plus the saved number when both are available.
 
-Changes:
+1) Check whether the review payload already exposes the manager numbers to the frontend (e.g. r?.relationshipManagerNumber / r?.portfolioManagerNumber, or similar). Report what you find.
 
-1) Add two new state arrays alongside the existing ones:
-     const [rmOptions, setRmOptions] = useState<string[]>([]);
-     const [pmOptions, setPmOptions] = useState<string[]>([]);
+2) If the numbers ARE available in the payload:
+   Build the display value as `${number} - ${name}` when the number exists, otherwise fall back to the bare name. Pass that computed value as the SelectField `value` and into ensureIncludesSelected, for both Relationship Manager and Portfolio Manager.
 
-2) Add ONE new useEffect (do not modify the existing getCasUserNameOptions effect — leave it exactly as is, since userOptionsAll/userOptionsCRO are still used by the other dropdowns). The new effect fetches both lists on mount, following the same style as the existing relationship segments fetch:
+3) If the numbers are NOT available in the payload:
+   Do not guess. Stop and report that the backend read path (the review GET response) needs to also return Relationship_mgr_number and Portfolio_mgr_number before this can be fixed.
 
-     useEffect(() => {
-       let cancelled = false;
-       (async () => {
-         try {
-           const [rm, pm] = await Promise.all([
-             get<string[]>("/api/v1/lookups/data-mart/relationship-managers"),
-             get<string[]>("/api/v1/lookups/data-mart/portfolio-managers"),
-           ]);
-           if (cancelled) return;
-           setRmOptions(Array.isArray(rm) ? rm : []);
-           setPmOptions(Array.isArray(pm) ? pm : []);
-         } catch (e) {
-           if (typeof console !== "undefined" && console.debug)
-             console.debug("[CustomerInfo] failed to load Data Mart RM/PM options", e);
-           if (!cancelled) { setRmOptions([]); setPmOptions([]); }
-         }
-       })();
-       return () => { cancelled = true; };
-     }, []);
-
-3) Change ONLY these two SelectField option sources:
-     Relationship Manager: options={ensureIncludesSelected(rmOptions, r?.relationshipManager)}
-     Portfolio Manager:    options={ensureIncludesSelected(pmOptions, r?.portfolioManager)}
-   Keep every other prop on those two SelectFields exactly as it is (label, value, className, section, name).
-
-Note: ensureIncludesSelected keeps any previously saved legacy value visible even if it is not in the new list — that behaviour must be preserved.
-
-Report the file changed and run read-only TypeScript diagnostics on that file only.
-
-
-SELECT [Relationship_mgr_name], [Relationship_mgr_number],
-       [Portfolio_mgr_name], [Portfolio_mgr_number]
-FROM dbo.[02_CORE_02_Reviews] WHERE [Review_id] = 21592;
+Change nothing else on the page.

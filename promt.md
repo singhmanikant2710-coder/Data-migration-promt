@@ -1,22 +1,21 @@
-Frontend only. Single file: frontend/src/components/pdf/InitialMemoPDF.tsx
-Do NOT modify HtmlRichText.tsx, ReviewPDF.tsx, FinalMemoPDF.tsx, or any other file. Do not plan. Just apply.
+Frontend only. Single file: frontend/src/components/pdf/FinalMemoPDF.tsx
+Do NOT modify HtmlRichText.tsx, ReviewPDF.tsx, InitialMemoPDF.tsx, or any other file except the type file noted below. Do not plan. Just apply.
 
-The Initial Memo API response now includes a `customerBackground` field containing raw HTML from the Customer Background comments (may contain tables and images). Add a Customer Background section to the Initial Memo PDF that renders it using the existing HtmlRichText component.
+Mirror exactly what was just done for the Initial Memo.
 
-1) Add the type field. In frontend/src/services/api/reporting.ts, add to the InitialMemoResponse type (do not change any existing field):
+1) In frontend/src/services/api/reporting.ts, add to the FinalMemoResponse type (do not change any existing field):
      customerBackground?: string | null;
 
-2) In InitialMemoPDF.tsx:
-   - Add the import: import HtmlRichText from "../HtmlRichText";  (adjust the relative path if the component lives elsewhere; adjust to a named import if it was exported as named)
-   - Add a new section rendered in the same visual style as the existing narrative sections (e.g. the Risk Rating Justification section — same sectionTitle style, same wrapper View):
+2) In FinalMemoPDF.tsx:
+   - Add the import: import HtmlRichText from "./HtmlRichText";
+   - If FinalMemoPDF.tsx declares its own local FinalMemoResponse type, add customerBackground?: string | null; there too, matching what was done in InitialMemoPDF.tsx.
+   - Add a new section in the same visual style as the existing narrative sections, placed immediately BEFORE the Risk Rating Justification section:
 
        <View style={styles.section}>
          <Text style={styles.sectionTitle}>Customer Background</Text>
          <HtmlRichText html={data?.customerBackground} fallback="-" />
        </View>
 
-   - Place it immediately BEFORE the Risk Rating Justification section (or, if a more logical position exists in the document order, place it there and state where you put it).
-
-Do NOT change any existing section, the Paragraphs helper, or any other field. Do not convert other narratives to HtmlRichText in this step.
+Do NOT change any existing section, the narrative paragraph-splitting logic, or any other field.
 
 Run read-only TypeScript diagnostics on the changed files only.

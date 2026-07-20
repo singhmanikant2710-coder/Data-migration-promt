@@ -1,34 +1,41 @@
-Frontend only. Do NOT modify SelectField, ui.tsx, or any shared component. Do not plan. Just apply.
+Frontend only. Create ONE new file. Do NOT modify any existing file in this step. Do not plan. Just create the component.
 
-The backend review GET response now returns relationshipManagerNumber and portfolioManagerNumber alongside relationshipManager and portfolioManager. Wire them through so the RM/PM dropdowns show the saved value in the same "Number - Name" format as the options, instead of appending a duplicate bare-name entry.
+Create: frontend/src/components/pdf/HtmlRichText.tsx
 
-1) frontend/src/services/api/reviews.ts
-   In the CustomerInfoSection type, ADD two optional fields (do not change any existing field):
-     relationshipManagerNumber?: number | null;
-     portfolioManagerNumber?: number | null;
+Purpose: convert a safe subset of HTML (from our RichTextEditor) into @react-pdf/renderer components, so tables and images render in generated PDFs instead of being flattened to text.
 
-2) The hook that maps the API payload to the section (frontend/src/app/review/[ecif]/review-info/components/sections/hooks/useCustomerInfo.ts — locate it)
-   Map the two new fields through to the section object, following the exact style used for relationshipManager and portfolioManager. Do not change any existing mapping.
+Requirements:
 
-3) frontend/src/app/review/[ecif]/review-info/components/sections/CustomerInfoSection.tsx
-   Add a small local helper above the JSX:
+- Props: { html?: string | null; fallback?: string }
+- Import { View, Text, Image, StyleSheet } from "@react-pdf/renderer"
+- Parse the HTML WITHOUT adding any new npm dependency. Use a dependency-free approach: since @react-pdf renders in the browser here, you may use DOMParser (new DOMParser().parseFromString(html, "text/html")) guarded with a typeof window check, falling back to plain stripped text if unavailable.
+- If html is empty/blank after parsing, render <Text>{fallback ?? "-"}</Text>
 
-     const toNumberName = (name?: string | null, num?: number | null) => {
-       const n = (name ?? "").trim();
-       if (!n) return "";
-       return num != null ? `${num} - ${n}` : n;
-     };
+Supported tags (ignore everything else, never throw):
+  p, div, br            -> block paragraphs / line breaks
+  strong, b             -> fontWeight 700
+  em, i                 -> fontStyle italic
+  u                     -> textDecoration underline
+  h1, h2                -> larger bold block text
+  ul, ol, li            -> bulleted / numbered list rows with indent
+  table, thead, tbody, tr, th, td -> rebuilt as View rows/cells
+  img                   -> <Image> using the src attribute
+  a                     -> render its text content only
 
-   Then compute:
-     const rmDisplay = toNumberName(r?.relationshipManager, r?.relationshipManagerNumber);
-     const pmDisplay = toNumberName(r?.portfolioManager, r?.portfolioManagerNumber);
+Table rendering (this is the key requirement — the client said borders are optional but ROW AND COLUMN SPACING is essential):
+  - Table container: View { flexDirection: "column", borderWidth: 1, borderColor: "#cbd5e1", borderStyle: "solid", marginBottom: 6 }
+  - Row: View { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#cbd5e1", borderBottomStyle: "solid" } — last row no bottom border
+  - Cell: View { flexGrow: 1, flexBasis: 0, minWidth: 0, padding: 4, borderRightWidth: 1, borderRightColor: "#cbd5e1", borderRightStyle: "solid" } — last cell in each row no right border
+  - Cell content in <Text style={{ fontSize: 9 }}>
+  - th cells: backgroundColor "#f1f5f9", fontWeight 700
+  - Distribute cells evenly (equal flexBasis). Ignore colspan/rowspan for now — do not attempt to merge cells.
 
-   Use these for ONLY the two SelectFields:
-     Relationship Manager: value={rmDisplay}  options={ensureIncludesSelected(rmOptions, rmDisplay)}
-     Portfolio Manager:    value={pmDisplay}  options={ensureIncludesSelected(pmOptions, pmDisplay)}
+Image rendering:
+  - <Image src={src} style={{ maxWidth: "100%", height: 120, objectFit: "contain", marginBottom: 4 }} />
+  - Accept data: URLs and absolute http(s) URLs. If src is missing or the tag fails, render nothing rather than throwing.
 
-   Keep every other prop unchanged. Do not touch any other dropdown on the page.
+Text styling defaults: fontSize 9, lineHeight 1.4, paragraph marginBottom 4, list indent 12.
 
-Note: legacy records saved before this change have a name but no number — toNumberName falls back to the bare name for those, which is correct.
+Robustness: wrap the whole parse in try/catch. On ANY error, fall back to rendering the plain text with tags stripped (same behaviour as today), so the PDF never fails to generate.
 
-Run read-only TypeScript diagnostics on the changed files only.
+Export as a default or named React component. Do not modify ReviewPDF.tsx, the memos, or anything else in this step.

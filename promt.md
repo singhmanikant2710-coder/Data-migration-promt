@@ -1,41 +1,22 @@
-Frontend only. Create ONE new file. Do NOT modify any existing file in this step. Do not plan. Just create the component.
+Frontend only. Single file: frontend/src/components/pdf/ReviewPDF.tsx
+Do NOT modify HtmlRichText.tsx or any other file. Do not plan. Just apply.
 
-Create: frontend/src/components/pdf/HtmlRichText.tsx
+Wire the new HtmlRichText component into the Customer Background section ONLY, so tables and images from the comments field render in the CAS Linesheet PDF instead of being flattened.
 
-Purpose: convert a safe subset of HTML (from our RichTextEditor) into @react-pdf/renderer components, so tables and images render in generated PDFs instead of being flattened to text.
+1) Add the import at the top, alongside the existing imports:
+     import HtmlRichText from "./HtmlRichText";
+   (adjust to a named import if the component was exported as named)
 
-Requirements:
+2) Find this line:
+     const borrowerInformation = stripHtml(ci?.backgroundNarrative || "");
+   Replace it with:
+     const borrowerInformationHtml = ci?.backgroundNarrative || "";
 
-- Props: { html?: string | null; fallback?: string }
-- Import { View, Text, Image, StyleSheet } from "@react-pdf/renderer"
-- Parse the HTML WITHOUT adding any new npm dependency. Use a dependency-free approach: since @react-pdf renders in the browser here, you may use DOMParser (new DOMParser().parseFromString(html, "text/html")) guarded with a typeof window check, falling back to plain stripped text if unavailable.
-- If html is empty/blank after parsing, render <Text>{fallback ?? "-"}</Text>
+3) In the "Customer Background" section, find:
+     <Text style={styles.longText}>{borrowerInformation || "-"}</Text>
+   Replace it with:
+     <HtmlRichText html={borrowerInformationHtml} fallback="-" />
 
-Supported tags (ignore everything else, never throw):
-  p, div, br            -> block paragraphs / line breaks
-  strong, b             -> fontWeight 700
-  em, i                 -> fontStyle italic
-  u                     -> textDecoration underline
-  h1, h2                -> larger bold block text
-  ul, ol, li            -> bulleted / numbered list rows with indent
-  table, thead, tbody, tr, th, td -> rebuilt as View rows/cells
-  img                   -> <Image> using the src attribute
-  a                     -> render its text content only
+DO NOT change any other field. Leave stripHtml itself in place and leave every other narrative field (psorInfo, ssorInfo, transactionInformation, keyRisks, riskRatingJustification, collateralInformation, covenantInformation, policyExceptionInformation, scorecardInformation) exactly as they are — they must keep using stripHtml and <Text> as today.
 
-Table rendering (this is the key requirement — the client said borders are optional but ROW AND COLUMN SPACING is essential):
-  - Table container: View { flexDirection: "column", borderWidth: 1, borderColor: "#cbd5e1", borderStyle: "solid", marginBottom: 6 }
-  - Row: View { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#cbd5e1", borderBottomStyle: "solid" } — last row no bottom border
-  - Cell: View { flexGrow: 1, flexBasis: 0, minWidth: 0, padding: 4, borderRightWidth: 1, borderRightColor: "#cbd5e1", borderRightStyle: "solid" } — last cell in each row no right border
-  - Cell content in <Text style={{ fontSize: 9 }}>
-  - th cells: backgroundColor "#f1f5f9", fontWeight 700
-  - Distribute cells evenly (equal flexBasis). Ignore colspan/rowspan for now — do not attempt to merge cells.
-
-Image rendering:
-  - <Image src={src} style={{ maxWidth: "100%", height: 120, objectFit: "contain", marginBottom: 4 }} />
-  - Accept data: URLs and absolute http(s) URLs. If src is missing or the tag fails, render nothing rather than throwing.
-
-Text styling defaults: fontSize 9, lineHeight 1.4, paragraph marginBottom 4, list indent 12.
-
-Robustness: wrap the whole parse in try/catch. On ANY error, fall back to rendering the plain text with tags stripped (same behaviour as today), so the PDF never fails to generate.
-
-Export as a default or named React component. Do not modify ReviewPDF.tsx, the memos, or anything else in this step.
+Run read-only TypeScript diagnostics on this file only.

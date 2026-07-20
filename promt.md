@@ -1,18 +1,59 @@
-Read-only. No edits. No plan. Just report with exact code. Do NOT modify or revert anyone's existing work (including Jothi's).
+Frontend only. Single file: frontend/src/components/ui/RichTextEditor.tsx
+Do NOT modify any other file. Do NOT change any existing function, button, or behaviour — only ADD. This is a shared component used across many screens, so nothing existing may break. Do not plan. Just apply.
 
-File: frontend/src/components/ui/RichTextEditor.tsx
+Goal (UAT #65): let users edit a table AFTER it has been inserted — add row, delete row, add column, delete column. Column resize is NOT required.
 
-Goal: add toolbar actions to edit a table AFTER it has been inserted — add row, delete row, add column, delete column. Column resize is NOT required.
+1) Add a helper (place it near the other helpers, above the component's return):
 
-Report:
-1) Paste the existing selection/caret tracking code: saveCurrentSelection, restoreSelection, lastRangeRef, caretIndexRef, focusEditor, and getCaretCharacterOffsetWithin. Show how the current selection is stored and restored around toolbar actions.
+   const findAncestorTag = (node: Node | null, tag: string): HTMLElement | null => {
+     const el = editorRef.current;
+     let cur: Node | null = node;
+     while (cur && cur !== el) {
+       if (cur.nodeType === 1 && (cur as HTMLElement).tagName.toLowerCase() === tag) {
+         return cur as HTMLElement;
+       }
+       cur = cur.parentNode;
+     }
+     return null;
+   };
 
-2) Paste the ToolbarButton component definition and one example of how a toolbar button is wired (e.g. the Table button), so new buttons can follow the same pattern.
+   const getCurrentCell = (): HTMLTableCellElement | null => {
+     focusEditor();
+     const sel = window.getSelection();
+     if (!sel || sel.rangeCount === 0) return null;
+     const node = sel.getRangeAt(0).startContainer;
+     return (findAncestorTag(node, "td") ?? findAncestorTag(node, "th")) as HTMLTableCellElement | null;
+   };
 
-3) Paste insertTable() and insertHtmlAtSelection() in full (already partly seen) plus handleInput() — I need to know exactly what must be called after a DOM mutation so the editor's value/state and onChange are updated correctly.
+2) Add these four handlers, each following the SAME post-mutation pattern already used by execCmd: mutate the DOM, then call handleInput(), then setTimeout(() => restoreSelection(), 0). If getCurrentCell() returns null, show a brief alert("Place the cursor inside a table cell first.") and return without changing anything.
 
-4) Confirm: after a direct DOM mutation inside editorRef.current (e.g. appending a <tr>), what is the correct sequence to (a) persist the change to component state/onChange, and (b) keep the caret in a sensible place? Show the existing pattern used elsewhere in this file.
+   const cellStyle = 'border:1px solid #cbd5e1;padding:4px;';
 
-5) Is there any existing helper that, given the current selection, finds the nearest ancestor element of a given tag (e.g. closest <td> / <table>)? If not, say so.
+   addTableRow():
+     - get current cell -> its parent <tr> -> clone the row structure: create a new <tr> with the same number of <td> cells as the current row, each with cellStyle and &nbsp;
+     - insert the new row immediately AFTER the current row (row.parentNode.insertBefore(newRow, row.nextSibling))
 
-Output only the code and answers. Change nothing.
+   deleteTableRow():
+     - get current cell -> its parent <tr> -> its <table>
+     - if the table has only ONE row, remove the whole <table> instead
+     - otherwise remove just that <tr>
+
+   addTableColumn():
+     - get current cell -> its cellIndex -> its <table>
+     - for EVERY <tr> in that table, insert a new <td> (cellStyle, &nbsp;) immediately AFTER the cell at that same index. If a row is shorter than the index, append at the end.
+
+   deleteTableColumn():
+     - get current cell -> its cellIndex -> its <table>
+     - if every row has only ONE cell, remove the whole <table> instead
+     - otherwise remove the cell at that index from every <tr> that has one
+
+3) Add four ToolbarButtons using the exact existing ToolbarButton pattern, placed immediately AFTER the existing "Table" button:
+
+     <ToolbarButton onClick={addTableRow} label="+Row" ariaLabel="Add table row" />
+     <ToolbarButton onClick={deleteTableRow} label="-Row" ariaLabel="Delete table row" />
+     <ToolbarButton onClick={addTableColumn} label="+Col" ariaLabel="Add table column" />
+     <ToolbarButton onClick={deleteTableColumn} label="-Col" ariaLabel="Delete table column" />
+
+Do NOT touch insertTable, insertHtmlAtSelection, handleInput, execCmd, focusEditor, saveCurrentSelection, restoreSelection, or any existing toolbar button. Do NOT add any new dependency.
+
+Run read-only TypeScript diagnostics on this file only.

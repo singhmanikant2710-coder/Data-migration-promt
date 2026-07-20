@@ -1,20 +1,34 @@
-Backend only. Add the two manager number columns to the review GET response so the frontend can display "Number - Name". Use LIVE DB, ignore columns.csv. Single file per edit. Do NOT modify or revert any existing logic authored by anyone (including Jothi) — only ADD. Every existing field must keep behaving exactly as it does.
+Frontend only. Do NOT modify SelectField, ui.tsx, or any shared component. Do not plan. Just apply.
 
-Context: dbo.[02_CORE_02_Reviews] already stores Relationship_mgr_number (int) and Portfolio_mgr_number (int). The save path writes them. The GET/read path does not return them.
+The backend review GET response now returns relationshipManagerNumber and portfolioManagerNumber alongside relationshipManager and portfolioManager. Wire them through so the RM/PM dropdowns show the saved value in the same "Number - Name" format as the options, instead of appending a duplicate bare-name entry.
 
-1) Find the repository method that READS the customer-info section for the review form (in backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs — the SELECT that populates the customer info part of the review payload, reading columns like Relationship_mgr_name, Portfolio_mgr_name, ECO_name, SCO_name).
-   ADD [Relationship_mgr_number] and [Portfolio_mgr_number] to that SELECT list, and read them as nullable ints (DBNull-safe) into the domain/DTO object. Do not remove or reorder existing columns.
+1) frontend/src/services/api/reviews.ts
+   In the CustomerInfoSection type, ADD two optional fields (do not change any existing field):
+     relationshipManagerNumber?: number | null;
+     portfolioManagerNumber?: number | null;
 
-2) Find the domain model / DTO that carries the customer-info read data up to the API contract.
-   ADD two nullable properties:
-     int? RelationshipManagerNumber
-     int? PortfolioManagerNumber
-   Do not rename or remove any existing property.
+2) The hook that maps the API payload to the section (frontend/src/app/review/[ecif]/review-info/components/sections/hooks/useCustomerInfo.ts — locate it)
+   Map the two new fields through to the section object, following the exact style used for relationshipManager and portfolioManager. Do not change any existing mapping.
 
-3) Find the API contract returned by the review GET endpoint for the customerInfo section (the one whose fields map to the frontend CustomerInfoSection type: relationshipManager, portfolioManager, executiveCreditOfficer, etc.).
-   ADD two nullable properties so they serialise as:
-     relationshipManagerNumber
-     portfolioManagerNumber
-   And map them from the domain/DTO in whatever mapping method already maps relationshipManager and portfolioManager.
+3) frontend/src/app/review/[ecif]/review-info/components/sections/CustomerInfoSection.tsx
+   Add a small local helper above the JSX:
 
-Do not touch the frontend in this step. Do not change the save path. Report the files changed and the exact new SELECT column lines.
+     const toNumberName = (name?: string | null, num?: number | null) => {
+       const n = (name ?? "").trim();
+       if (!n) return "";
+       return num != null ? `${num} - ${n}` : n;
+     };
+
+   Then compute:
+     const rmDisplay = toNumberName(r?.relationshipManager, r?.relationshipManagerNumber);
+     const pmDisplay = toNumberName(r?.portfolioManager, r?.portfolioManagerNumber);
+
+   Use these for ONLY the two SelectFields:
+     Relationship Manager: value={rmDisplay}  options={ensureIncludesSelected(rmOptions, rmDisplay)}
+     Portfolio Manager:    value={pmDisplay}  options={ensureIncludesSelected(pmOptions, pmDisplay)}
+
+   Keep every other prop unchanged. Do not touch any other dropdown on the page.
+
+Note: legacy records saved before this change have a name but no number — toNumberName falls back to the bare name for those, which is correct.
+
+Run read-only TypeScript diagnostics on the changed files only.

@@ -1,19 +1,24 @@
-SELECT DISTINCT [Finding_level]
-FROM dbo.[02_CORE_02_Reviews] WITH (NOLOCK)
-WHERE [Finding_level] IS NOT NULL;
+Koi baat nahi, text yahan hai — copy kar lo:
 
+---
 
-Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify or revert anyone's existing work (including Jothi's).
+Hi Geoffrey,
 
-Context (UAT #108): On Review Form → CRM Findings, when the Finding Code is "CRM-00", the Severity (Finding_level) must automatically default to "N/A".
+Thanks for the note on #65 — happy to extend the table and image rendering to all rich text comment fields in the CAS Linesheet. Before I do, I wanted to quickly confirm what I completed yesterday so we're aligned on what's already in place and what's still outstanding.
 
-A very similar rule already exists (UAT #55): Severity defaults AND locks to "Observation" when the Finding CRM component is "06-Servicing Systems" or "07-Data Integrity".
+Here's what I did yesterday for #65:
 
-Report:
-1) The component rendering the CRM Findings rows and the Severity field. File path + the exact JSX for the Severity control.
-2) The existing UAT #55 logic — where Severity is defaulted and/or locked based on the component value. Paste that code exactly, including where it lives (component, hook useCrmFindings.ts, or elsewhere) and when it fires (on finding code change, on row click, on mount).
-3) What are the available Severity options and where do they come from? Is "N/A" one of them, and what is its exact string?
-4) How is the Finding Code stored on a findings row — the raw code (e.g. "CRM-00"), or a composite label? Show the field name and an example value.
-5) State exactly what must change, and in how many files, to add the CRM-00 rule following the same pattern as #55.
+1. Tables and images now render (instead of collapsing to a single line) in the Customer Background comments, across three reports: the CAS Linesheet, the Initial Memo, and the Final Memo. Row and column spacing is preserved, as you'd asked.
 
-Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+2. Tables can now be edited after insertion — I added +Row, -Row, +Col and -Col buttons to the comments toolbar so rows and columns can be added or deleted. (Column drag-resize was the one item dropped from scope earlier.)
+
+Could you confirm two things for me:
+
+1. Is the above what you expected, or is any part of it different from what you had in mind?
+
+2. For your latest request — extending this to "all rich text comment fields" in the CAS Linesheet — I want to make sure I cover the right ones. The rich text comment fields I can see are: PSOR discussion, SSOR discussion, Transaction Information, Risk Rating Justification, Scorecard narrative, Collateral, Covenants, and Policy Exceptions. Should I apply the table/image rendering to all of these, and is it the CAS Linesheet only for now, or the Memos as well?
+
+Once you confirm, I'll get it done and share it back for your review.
+
+Thanks,
+Manikant

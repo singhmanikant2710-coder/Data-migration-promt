@@ -1,45 +1,16 @@
-Frontend only. Two files. Do NOT modify any other file. Do NOT change any existing behaviour — the new prop must default to showing all buttons, so all OTHER editors (Customer Background, Covenants, Policy Exceptions, Scorecard, Risk Rating Justification) are completely unaffected. Do not plan. Just apply.
+Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
 
-UAT #109: hide Img URL, Upload, Table, +Row, -Row, +Col, -Col buttons ONLY in the CRM Findings comments editor.
+Context (UAT #111): On the Review Status screen grid, the "Completed" column must dynamically change its label AND the date it shows, based on the selected Bucket/status:
+  In Progress      -> label "Started",     date Start_date
+  Draft Completed  -> label "Completed",   date Completed_date
+  Approved         -> label "Approved",    date Review_approval_date
+  Draft Distributed-> label "Distributed", date Review_distributed_date
+  Finalized        -> label "Finalized",   date Review_finalized_date
 
-FILE 1: frontend/src/components/ui/RichTextEditor.tsx
+Report:
+1) The Review Status page component (frontend/src/app/review-status/page.tsx). Paste the grid column definition/header for the current "Completed" column and how each row's completed date value is rendered.
+2) What determines the current view — is there a single active Bucket value in state (e.g. selectedBucket) that already drives the grid filter? Show it. Note: the column label/date should follow the SELECTED bucket, per the requirement.
+3) The backend Review Status response DTO and repository (SqlReviewStatusRepository.cs). Which date fields does each grid row currently return? Does the row already include Start_date, Completed_date, Review_approval_date, Review_distributed_date, Review_finalized_date, or only one "completed" date? Show the SELECT and the row DTO.
+4) State exactly what must change and in how many files to implement the dynamic label + date. Note whether the backend must return additional date fields per row, or whether they are already present.
 
-1) Add an optional prop to RichTextEditorProps (below showToolbar):
-     hideButtons?: {
-       imgUrl?: boolean;
-       upload?: boolean;
-       table?: boolean;
-       rowAdd?: boolean;
-       rowDelete?: boolean;
-       colAdd?: boolean;
-       colDelete?: boolean;
-     };
-
-2) Destructure hideButtons in the component signature (add it alongside the other props).
-
-3) Wrap exactly these seven existing toolbar buttons in conditional rendering (leave every OTHER button — B, I, U, P, H1, H2, DIV, List, Link, Clear — untouched):
-     {!hideButtons?.imgUrl && (<ToolbarButton onClick={insertImageFromUrl} label="Img URL" ariaLabel="Insert image from URL" />)}
-     {!hideButtons?.upload && (<ToolbarButton onClick={triggerImageFilePicker} label="Upload" ariaLabel="Upload image file" />)}
-     {!hideButtons?.table && (<ToolbarButton onClick={insertTable} label="Table" ariaLabel="Insert table" />)}
-     {!hideButtons?.rowAdd && (<ToolbarButton onClick={addTableRow} label="+Row" ariaLabel="Add table row" />)}
-     {!hideButtons?.rowDelete && (<ToolbarButton onClick={deleteTableRow} label="-Row" ariaLabel="Delete table row" />)}
-     {!hideButtons?.colAdd && (<ToolbarButton onClick={addTableColumn} label="+Col" ariaLabel="Add table column" />)}
-     {!hideButtons?.colDelete && (<ToolbarButton onClick={deleteTableColumn} label="-Col" ariaLabel="Delete table column" />)}
-
-   Do NOT remove or change any handler (insertImageFromUrl, insertTable, addTableRow, etc.) — only wrap the button rendering.
-
-FILE 2: frontend/src/app/review/[ecif]/review-info/components/sections/CrmFindingsAndRatingsSection.tsx
-
-4) On the CRM Findings comments RichTextEditor instance ONLY (the one with ariaLabel="Finding Comments"), add:
-     hideButtons={{
-       imgUrl: true,
-       upload: true,
-       table: true,
-       rowAdd: true,
-       rowDelete: true,
-       colAdd: true,
-       colDelete: true,
-     }}
-   Keep all its other props exactly as they are. Do NOT touch any other RichTextEditor instance in this or any other file.
-
-Run read-only TypeScript diagnostics on both files only.
+Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.

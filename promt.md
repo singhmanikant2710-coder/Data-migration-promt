@@ -1,16 +1,25 @@
-Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
+Two files. Do NOT modify anyone's existing logic (including Jothi's). Only the two specific changes below. Use LIVE DB, ignore columns.csv. Do not plan. Just apply.
 
-Context (UAT #111): On the Review Status screen grid, the "Completed" column must dynamically change its label AND the date it shows, based on the selected Bucket/status:
-  In Progress      -> label "Started",     date Start_date
-  Draft Completed  -> label "Completed",   date Completed_date
-  Approved         -> label "Approved",    date Review_approval_date
-  Draft Distributed-> label "Distributed", date Review_distributed_date
-  Finalized        -> label "Finalized",   date Review_finalized_date
+UAT #111: On the Review Status grid, the "Completed" column must dynamically change its label based on the selected bucket, and In Progress rows must show the Start_date.
 
-Report:
-1) The Review Status page component (frontend/src/app/review-status/page.tsx). Paste the grid column definition/header for the current "Completed" column and how each row's completed date value is rendered.
-2) What determines the current view — is there a single active Bucket value in state (e.g. selectedBucket) that already drives the grid filter? Show it. Note: the column label/date should follow the SELECTED bucket, per the requirement.
-3) The backend Review Status response DTO and repository (SqlReviewStatusRepository.cs). Which date fields does each grid row currently return? Does the row already include Start_date, Completed_date, Review_approval_date, Review_distributed_date, Review_finalized_date, or only one "completed" date? Show the SELECT and the row DTO.
-4) State exactly what must change and in how many files to implement the dynamic label + date. Note whether the backend must return additional date fields per row, or whether they are already present.
+FILE 1 (backend): backend/src/Casrr.Infrastructure/SqlServer/SqlReviewStatusRepository.cs
+In the In Progress bucket method (GetInProgressAsync), the SELECT already includes r.[Start_date] at index 11, but the mapping currently sets Completed = "". Change ONLY that mapping to format the Start_date into Completed, exactly like the other buckets do:
+     var startDt = rdr.IsDBNull(11) ? (DateTime?)null : rdr.GetDateTime(11);
+     ...
+     Completed = startDt.HasValue ? startDt.Value.ToString("M/d/yyyy", us) : ""
+Do not change the SQL, the WHERE clause, or any other bucket method.
 
-Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+FILE 2 (frontend): frontend/src/app/review-status/page.tsx
+Replace the static "Completed" column header with a dynamic label derived from selectedBucket:
+     const completedColLabel =
+       selectedBucket === "In Progress"     ? "Started" :
+       selectedBucket === "Draft Completed" ? "Completed" :
+       selectedBucket === "Approved"        ? "Approved" :
+       selectedBucket === "Distributed"     ? "Distributed" :
+       selectedBucket === "Finalized"       ? "Finalized" :
+       "Completed";   // default for All Statuses / Unopened-Cancelled
+Then use {completedColLabel} in place of the hardcoded "Completed" in the column <th>. Keep the cell rendering as {r.completed} unchanged.
+
+Do not change any other column, the bucket filter logic, the counts, or anything else.
+
+Run read-only TypeScript diagnostics on the frontend file only.

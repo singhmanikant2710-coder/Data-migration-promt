@@ -1,25 +1,17 @@
-Two files. Do NOT modify anyone's existing logic (including Jothi's). Only the two specific changes below. Use LIVE DB, ignore columns.csv. Do not plan. Just apply.
+SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = '02_CORE_02_Reviews'
+  AND (COLUMN_NAME LIKE '%approver%' OR COLUMN_NAME LIKE '%approval%');
 
-UAT #111: On the Review Status grid, the "Completed" column must dynamically change its label based on the selected bucket, and In Progress rows must show the Start_date.
 
-FILE 1 (backend): backend/src/Casrr.Infrastructure/SqlServer/SqlReviewStatusRepository.cs
-In the In Progress bucket method (GetInProgressAsync), the SELECT already includes r.[Start_date] at index 11, but the mapping currently sets Completed = "". Change ONLY that mapping to format the Start_date into Completed, exactly like the other buckets do:
-     var startDt = rdr.IsDBNull(11) ? (DateTime?)null : rdr.GetDateTime(11);
-     ...
-     Completed = startDt.HasValue ? startDt.Value.ToString("M/d/yyyy", us) : ""
-Do not change the SQL, the WHERE clause, or any other bucket method.
+  Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
 
-FILE 2 (frontend): frontend/src/app/review-status/page.tsx
-Replace the static "Completed" column header with a dynamic label derived from selectedBucket:
-     const completedColLabel =
-       selectedBucket === "In Progress"     ? "Started" :
-       selectedBucket === "Draft Completed" ? "Completed" :
-       selectedBucket === "Approved"        ? "Approved" :
-       selectedBucket === "Distributed"     ? "Distributed" :
-       selectedBucket === "Finalized"       ? "Finalized" :
-       "Completed";   // default for All Statuses / Unopened-Cancelled
-Then use {completedColLabel} in place of the hardcoded "Completed" in the column <th>. Keep the cell rendering as {r.completed} unchanged.
+Context (UAT #112): On the Review Status grid, the "Manager" column must change its header to "Approver" and display [Review_approver_name] instead of the current manager value.
 
-Do not change any other column, the bucket filter logic, the counts, or anything else.
+Report:
+1) In frontend/src/app/review-status/page.tsx: the "Manager" column header and the row cell that renders the manager value. Paste both. What field on the row DTO does it read (e.g. r.manager)?
+2) In backend/src/Casrr.Infrastructure/SqlServer/SqlReviewStatusRepository.cs and the ReviewStatusRow DTO: which column currently feeds the "manager" value in each bucket's SELECT? Show the SELECT column and the mapping.
+3) Does dbo.[02_CORE_02_Reviews] have a column [Review_approver_name]? If the exact name differs, report the actual approver-name column.
+4) State exactly what to change and in how many files: (a) header label Manager -> Approver, (b) row value -> Review_approver_name. Note whether the backend SELECT/DTO must change to return the approver name, or whether only the frontend header needs changing.
 
-Run read-only TypeScript diagnostics on the frontend file only.
+Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.

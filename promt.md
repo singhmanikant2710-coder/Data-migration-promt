@@ -1,12 +1,14 @@
-Hi Ashok, sure, I’ll follow up on this task and coordinate with Aditya as needed.
-Just to highlight, I currently have access to the CAS TEST database, but I don’t have the required write/execute permissions. We had previously tried to execute the view scripts shared by Aditya, but were unable to do so due to the same access restriction.
-I’ll coordinate with Aditya and the DBA team to get the required support and will keep you updated on the progress.
+DECLARE @sql NVARCHAR(MAX) = '';
+SELECT @sql = @sql + 
+  'SELECT ''' + COLUMN_NAME + ''' AS ColumnName, COUNT([' + COLUMN_NAME + ']) AS NonNullCount FROM dbo.[01_DATA_01_Data Mart Trial] WITH (NOLOCK) UNION ALL '
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = '01_DATA_01_Data Mart Trial';
 
-Haan, Ashok ka reference add karna better hoga, kyunki unhone hi task highlight/follow-up karne ko bola hai. Isse Lekkala aur Vinod ko context clear rahega. Aise likho:
+SET @sql = LEFT(@sql, LEN(@sql) - 10); -- remove trailing UNION ALL
+SET @sql = 'SELECT * FROM (' + @sql + ') t WHERE NonNullCount = 0 ORDER BY ColumnName;';
 
-> Hi Lekkala and Vinod,
-Ashok highlighted this task for follow-up regarding DBA-17221 – Migration of CAS views from DEV to TEST.
+EXEC sp_executesql @sql;
 
-I have access to the CAS TEST database; however, I don’t have the required permissions to execute/create the views. We had previously tried to execute the view scripts shared by Aditya as well, but couldn’t proceed due to the access restrictions.
-
-Could you please help us with the required access or assist with executing the scripts in TEST? Please let me know if anything is needed from my side. Thank you!
+SELECT [Review_id], [CRO_name], [Relationship_mgr_name], [Reviewer_name]
+FROM dbo.[02_CORE_02_Reviews] WITH (NOLOCK)
+WHERE [Sample_id] = 363;

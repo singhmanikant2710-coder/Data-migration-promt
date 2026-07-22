@@ -1,16 +1,23 @@
-Task: READ-ONLY investigation for UAT Bug #128.
+Task: Implement UAT Bug #128 with the MINIMUM SAFE CHANGE based on the completed read-only investigation.
 
-STRICT INSTRUCTIONS:
-- READ ONLY.
-- DO NOT edit, create, delete, rename, reformat, or modify any file.
-- DO NOT modify anyone's work, including Jothi's changes.
-- DO NOT implement a fix.
-- DO NOT refactor or clean up code.
-- DO NOT modify database objects, stored procedures, views, tables, APIs, or configuration.
-- Do not run destructive commands.
-- Findings only, with exact file paths and exact relevant code excerpts.
+STRICT SAFETY RULES:
 
-UAT BUG #128
+- Make ONLY the changes strictly required for Bug #128.
+- Do NOT modify, refactor, reformat, rename, or clean up unrelated code.
+- Do NOT modify anyone else's work, including Jothi's changes.
+- Preserve all existing business logic outside the FHN NAICS Industry lookup data source.
+- Do NOT change frontend code unless code evidence proves it is necessary.
+- Do NOT create a new endpoint.
+- Do NOT change save/edit behavior, DTOs, form bindings, or unrelated lookup behavior.
+- Do NOT modify database objects/tables/views/stored procedures.
+- Do NOT commit or push.
+- Do not overwrite or revert pre-existing local changes.
+- Inspect current/latest code before editing.
+- Make the smallest possible diff.
+
+==================================================
+BUG #128
+==================================================
 
 Screen/Tab:
 Review Form / Customer Info
@@ -18,186 +25,225 @@ Review Form / Customer Info
 Section/Field:
 Customer Profile
 
-Issue Description:
-The "FHN NAICS INDUSTRY" dropdown values should be populated based on a DISTINCT SELECT of:
+Field:
+FHN NAICS INDUSTRY
+
+UAT Requirement:
+
+The dropdown values must come from a DISTINCT SELECT of:
 
 [01_DATA_01_Data Mart Trial].[IntRepCM].[SubCategory]
 
-Currently, the dropdown is not connected to any selections / is not correctly populated from the required source.
+The dropdown should contain unique SubCategory values from this required source.
 
-GOAL OF THIS INVESTIGATION:
-Trace the complete existing data flow for the "FHN NAICS INDUSTRY" dropdown from frontend -> API/service -> backend/repository -> database, and determine the smallest safe change required to fix Bug #128.
+==================================================
+READ-ONLY INVESTIGATION FINDINGS
+==================================================
 
-REPORT THE FOLLOWING:
+The frontend is already correctly wired.
 
-1. FRONTEND LOCATION AND DROPDOWN IMPLEMENTATION
+Frontend file:
 
-Find the Review Form / Customer Info screen and locate the exact implementation of the "FHN NAICS INDUSTRY" field/dropdown.
+frontend/src/app/review/[ecif]/review-info/components/sections/CustomerInfoSection.tsx
 
-Report:
-- Exact file path(s)
-- Exact JSX/TSX for the label and dropdown/select control
-- The state/form field bound to the selected value
-- Where the dropdown options currently come from
-- Whether options are:
-  - hardcoded
-  - empty
-  - loaded from an API
-  - derived from another field
-  - incorrectly mapped
+It already loads:
 
-Paste the exact relevant code.
+getLookupOptions("fhn-naics-industries")
 
-2. FRONTEND DATA LOADING
+which calls:
 
-Trace how dropdown/reference/master data is loaded for this page.
+GET /api/v1/lookups/fhn-naics-industries
 
-Report:
-- useEffect/hooks/functions involved
-- API client/service calls
-- endpoint URL/path used
-- response property used for options
-- TypeScript interfaces/types involved
+The dropdown is already bound to the existing NAICS Industry form field.
 
-Paste exact relevant code with file paths.
+Therefore:
 
-Determine specifically why "FHN NAICS INDUSTRY" is currently not populated/connected correctly.
+DO NOT change CustomerInfoSection.tsx.
+DO NOT change frontend dropdown binding.
+DO NOT change save/edit behavior.
 
-3. BACKEND/API INVESTIGATION
+Existing API endpoint:
 
-Search for any existing API, controller, endpoint, service, handler, repository, or query that provides:
-- NAICS Industry
-- SubCategory
-- IntRepCM
-- Customer Profile dropdown/master/reference data
+backend/src/Casrr.Api/Controllers/LookupsController.cs
 
-Report exact file paths and code.
+GET /api/v1/lookups/{name}
 
-Determine whether an existing endpoint/query can already provide the required values.
+This already delegates lookup resolution through the existing Reporting service.
 
-Do NOT assume a new endpoint is required.
+DO NOT create a new endpoint.
 
-4. DATABASE SOURCE
+ROOT CAUSE:
 
-Required source is:
+The existing backend lookup for:
+
+"fhn-naics-industries"
+
+currently ultimately reads DISTINCT values from:
+
+IntRepCMLSubCategory
+
+This does NOT match Bug #128.
+
+The required source is:
 
 [01_DATA_01_Data Mart Trial].[IntRepCM].[SubCategory]
 
-Find any existing code/query that accesses:
+Therefore the issue is a BACKEND LOOKUP DATA-SOURCE MISMATCH, not a frontend binding issue.
+
+==================================================
+REQUIRED IMPLEMENTATION
+==================================================
+
+Before changing anything:
+
+1. Trace the existing mapping for:
+   "fhn-naics-industries"
+
+2. Confirm which existing repository method it calls.
+
+Likely existing method:
+
+GetDistinctFhnNaicsIndustriesAsync(...)
+
+3. If the service mapping already correctly routes
+   "fhn-naics-industries"
+   to that repository method:
+
+   DO NOT modify ReportingService.cs.
+
+4. If the repository interface signature does not need to change:
+
+   DO NOT modify IReportingRepository.cs.
+
+5. Modify ONLY the repository SQL implementation necessary to make the existing lookup return DISTINCT SubCategory values from:
+
 [01_DATA_01_Data Mart Trial].[IntRepCM]
 
-Show the exact existing SQL/query if found.
+Required column:
 
-Determine whether DISTINCT SubCategory values are already queried anywhere.
+[SubCategory]
 
-The expected logical dataset is equivalent to:
+The logical query must follow the requirement:
 
 SELECT DISTINCT [SubCategory]
 FROM [01_DATA_01_Data Mart Trial].[IntRepCM]
-WHERE [SubCategory] IS NOT NULL
 
-Do NOT implement this query.
-
-Also report whether existing project conventions normally:
-- exclude NULL values,
-- exclude blank/empty strings,
-- trim values,
-- sort dropdown values.
-
-Do not invent additional filtering if it does not already follow project conventions.
-
-5. DEPENDENCIES / CASCADING DROPDOWNS
-
-Check whether "FHN NAICS INDUSTRY" is supposed to depend on another Customer Profile selection, or whether any other dropdown depends on it.
-
-Specifically identify:
-- parent dropdown, if any
-- child/dependent dropdown, if any
-- existing onChange behavior
-- filtering logic
-- whether changing this dropdown affects any other fields
-
-This is important to avoid breaking existing Customer Profile behavior.
-
-6. SAVE/EDIT BEHAVIOR
-
-Trace how the selected FHN NAICS INDUSTRY value is:
-- loaded for an existing review
-- stored in frontend state
-- submitted/saved
-- mapped in backend/DTO/database
-
-Confirm whether Bug #128 concerns ONLY populating dropdown options or whether changing the option source would require changes to save/load behavior.
-
-Do NOT change anything.
-
-7. SIMILAR DROPDOWN PATTERN
-
-Find one existing working dropdown on the same screen/application that loads DISTINCT/reference values from the database.
-
-Show:
-- frontend code
-- API call
-- backend/repository query
-
-Use this only to identify the existing project pattern.
-
-8. LIVE DB / SCHEMA VALIDATION
-
-Use the project's actual/live configured database/schema information where safely available.
-
-Ignore columns.csv or stale generated schema documentation.
-
-Verify:
-- exact database/schema/table reference for IntRepCM
-- exact column name SubCategory
-- data type if discoverable safely
-- whether duplicate, NULL, or blank values exist if this can be checked read-only
-
-READ-ONLY queries only.
-
-9. ROOT CAUSE
-
-State the exact root cause of Bug #128 based only on code evidence.
-
-Clearly state whether the issue is:
-- frontend binding/options issue,
-- missing API call,
-- backend query issue,
-- incorrect DB source,
-- or a combination.
-
-10. MINIMAL FIX IMPACT ANALYSIS
-
-Without changing anything, state:
-
-- Exact file(s) that would need modification
-- Expected number of files
-- Whether frontend change is required
-- Whether backend change is required
-- Whether a new endpoint is required or an existing endpoint can be reused
-- Whether SQL/repository change is required
-- Whether any DTO/interface changes are required
-- Any regression risk to other Customer Profile fields/dropdowns
+Preserve existing project conventions for:
+- trimming values
+- excluding NULL values
+- excluding blank/empty values
+- ordering, if the existing lookup convention uses deterministic ordering.
 
 IMPORTANT:
-Do not implement the solution.
+Use the project's existing database connection/query conventions.
 
-OUTPUT FORMAT:
+Do NOT blindly introduce a cross-database reference if the repository connection is already connected to [01_DATA_01_Data Mart Trial].
 
-A. Root Cause
-B. Current Data Flow
-C. Frontend Findings + exact code/file paths
-D. Backend/API Findings + exact code/file paths
-E. Database Findings
-F. Save/Edit Impact
-G. Dependencies
-H. Existing Similar Pattern
-I. Exact Minimal Change Required
-J. Files That Would Need Modification
-K. Risks / Regression Areas
+Inspect the actual connection/query pattern first and use the safest existing convention.
 
-End with:
-"READ-ONLY INVESTIGATION COMPLETE — NO FILES MODIFIED"
+==================================================
+CRITICAL SCOPE CONTROL
+==================================================
 
-Before finishing, run git diff/status only to confirm that this investigation itself made no changes. Do not modify or revert any pre-existing changes.
+Expected minimal change:
+
+Preferably ONLY:
+
+backend/src/Casrr.Infrastructure/SqlServer/SqlReportingRepository.cs
+
+Do NOT automatically modify 2–3 files just because the investigation estimated 2–3 files.
+
+Only modify ReportingService.cs if the existing
+"fhn-naics-industries"
+mapping is actually incorrect.
+
+Only modify IReportingRepository.cs if a signature change is genuinely required.
+
+No frontend files should be changed.
+
+No DTO changes should be required.
+
+No controller changes should be required.
+
+No new API endpoint should be created.
+
+No database object changes.
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+Do not affect any other lookup, including:
+
+- Relationship Segment
+- Unit
+- Market
+- Relationship Managers
+- Portfolio Managers
+- any other Customer Profile dropdown
+
+Do not change:
+
+- selected value handling
+- existing saved NAICS Industry values
+- FormChangesContext behavior
+- save/update APIs
+- CustomerInfoFields DTO
+- HasNaicsIndustry logic
+- unrelated reporting/PDF behavior
+
+This bug is specifically about the OPTIONS SOURCE for the FHN NAICS INDUSTRY dropdown.
+
+==================================================
+VALIDATION
+==================================================
+
+After implementing:
+
+1. Confirm:
+
+GET /api/v1/lookups/fhn-naics-industries
+
+now obtains its values from:
+
+[01_DATA_01_Data Mart Trial].[IntRepCM].[SubCategory]
+
+2. Confirm returned values are DISTINCT.
+
+3. Confirm NULL/blank handling follows existing project conventions.
+
+4. Confirm the existing frontend still consumes the same endpoint with NO frontend modification.
+
+5. Confirm no other lookup query or behavior changed.
+
+6. Run relevant build/compile checks for modified code if safely available.
+
+7. Show the exact git diff.
+
+8. Report every modified file.
+
+If more than ONE file needs modification:
+
+STOP BEFORE modifying additional files and explain exactly why each additional file is technically necessary.
+
+Do not proceed with unnecessary changes.
+
+==================================================
+FINAL REPORT
+==================================================
+
+Provide:
+
+A. Root cause confirmed
+B. Exact change made
+C. Old query/source
+D. New query/source
+E. Files modified
+F. Why each modified file was necessary
+G. Validation performed
+H. Regression impact assessment
+I. Exact git diff summary
+
+Do NOT commit or push.
+
+Implement Bug #128 now using the smallest safe change.

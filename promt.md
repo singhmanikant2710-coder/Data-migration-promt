@@ -16,3 +16,4 @@ Report:
 5) State exactly what must change and in how many files to: (a) leave CRO name empty when not provided (remove the Relationship_mgr_name fallback), (b) populate Internal_portfolio from the first applicable Data Mart column, (c) populate NAICS_industry from the first applicable Data Mart column. Note the join key used to match a customer to their Data Mart Trial row.
 
 Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+STRICT NOTICE: Do not break, remove, or alter any existing working functionality or business logic. Make only the minimum changes required for the requested task. Preserve all existing behavior, dependencies, validations, and integrations. Ensure no regression or impact on other screens, modules, or workflows.

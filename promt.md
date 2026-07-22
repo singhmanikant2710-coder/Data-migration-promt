@@ -1,14 +1,3 @@
-DECLARE @sql NVARCHAR(MAX) = '';
-SELECT @sql = @sql + 
-  'SELECT ''' + COLUMN_NAME + ''' AS ColumnName, COUNT([' + COLUMN_NAME + ']) AS NonNullCount FROM dbo.[01_DATA_01_Data Mart Trial] WITH (NOLOCK) UNION ALL '
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = '01_DATA_01_Data Mart Trial';
-
-SET @sql = LEFT(@sql, LEN(@sql) - 10); -- remove trailing UNION ALL
-SET @sql = 'SELECT * FROM (' + @sql + ') t WHERE NonNullCount = 0 ORDER BY ColumnName;';
-
-EXEC sp_executesql @sql;
-
-SELECT [Review_id], [CRO_name], [Relationship_mgr_name], [Reviewer_name]
-FROM dbo.[02_CORE_02_Reviews] WITH (NOLOCK)
-WHERE [Sample_id] = 363;
+Hi Geoffrey, attached is the list of columns in the Data Mart Trial table that are completely empty (NULL across all 86,875 rows). You can share these with John for population.
+I checked every column and counted its non-NULL values — the attached file lists each column with its count, and the ones showing 0 have no data in any row. The two relevant to UAT #127, InternalPortCat and IntRepCMLSubCategory, are both in this list, which confirms why FHN Portfolio and FHN NAICS Industry load blank. Once John populates them, those fields will load correctly with no code change needed.
+Thanks, Manikant

@@ -1,14 +1,30 @@
-Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
+Frontend only. Single file: frontend/src/app/review-queue/page.tsx
+Do NOT modify any other file. Do NOT change any existing state, effect, filtering, or backend call. Do not plan. Just apply.
 
-Context (UAT #141): On the Review Queue page, add a Sample Name dropdown filter. Currently there is only a free-text search bar which can't do combination filters (e.g. Sample AND Reviewer). The dropdown should let the user filter the grid to a selected sample, and the existing search should further narrow within that (AND behaviour).
+UAT #141: Add a visible "Sample Name" dropdown filter to the Review Queue page. All the wiring already exists — state (sampleSelected, sampleOptions), the API call that passes sampleId, and the search box that AND-filters within the selected sample. The ONLY thing missing is the dropdown control itself.
 
-A very similar Sample Name dropdown already exists on the Review Status page (UAT #77) — it lists open samples and filters the grid.
+Add a "Sample Name" dropdown in the existing controls area, next to the "My View" dropdown (same visual grouping/styling as the other controls). It must:
+- bind its value to the existing sampleSelected state (value={sampleSelected ?? ""})
+- populate options from the existing sampleOptions state
+- have a default first option "All Samples" with value ""
+- onChange call setSampleSelected(e.target.value || null)
 
-Report:
-1) The Review Queue page component (frontend/src/app/review-queue/page.tsx). Paste: the grid data source, how rows are currently filtered by the search box, and the existing filter controls (My View dropdown, search box, page size). What field on each row holds the sample name/id?
-2) Does the Review Queue row data already include the sample name / sample id per row? Show the row type and where it comes from (API service + backend).
-3) On the Review Status page (frontend/src/app/review-status/page.tsx), show how its Sample Name dropdown is built: where it gets the options (the samples lookup API), and how selecting a sample filters the grid. This is the pattern to reuse.
-4) Is there an existing samples lookup the Review Queue can reuse to populate the dropdown (e.g. the one Review Status uses)? Show it.
-5) State exactly what must change and in how many files to add a Sample Name dropdown to Review Queue that filters the grid by the selected sample, combined (AND) with the existing search box. Prefer client-side filtering if the row data already contains the sample name; note if a backend change is needed.
+Use this control (match the styling/label pattern of the existing My View select — adjust className to be consistent with the other controls on the page):
 
-Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+  <div className="w-full md:w-80">
+    <label className="block text-xs text-slate-600 mb-1">Sample Name</label>
+    <select
+      className="bg-white w-full border-2 border-[#1F3864] rounded-md px-2 py-2 text-sm"
+      value={sampleSelected ?? ""}
+      onChange={(e) => setSampleSelected(e.target.value || null)}
+    >
+      <option value="">All Samples</option>
+      {sampleOptions.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  </div>
+
+Do NOT change the search box, My View, page size, the load effect, or getReviewQueuePage. The existing effect already re-fetches when sampleSelected changes, and the search box already ANDs within the selected sample.
+
+Run read-only TypeScript diagnostics on this file only.

@@ -1,9 +1,2 @@
--- Ek row mein test value daalo (dev DB, transaction ke saath)
-BEGIN TRAN;
-UPDATE TOP (1) dbo.[01_DATA_01_Data Mart Trial]
-SET [IntRepCMLSubCategory] = 'TEST INDUSTRY'
-WHERE [IntRepCMLSubCategory] IS NULL;
-
--- endpoint dobara hit karo -> "TEST INDUSTRY" aana chahiye dropdown mein
--- confirm hone ke baad:
-ROLLBACK;  -- test data hata do
+UAT #128 (FHN NAICS Industry dropdown) is confirmed working. The dropdown is already wired to a DISTINCT select of [IntRepCMLSubCategory] from the Data Mart Trial table — endpoint, query, and save path all in place. I verified it by temporarily inserting a test value, which appeared correctly in the dropdown (screenshot attached), then removed it.
+It currently shows no real options only because [IntRepCMLSubCategory] is one of the empty columns John is populating (same as #127). Once that data lands, the dropdown will show the real industries automatically — no further code changes needed.

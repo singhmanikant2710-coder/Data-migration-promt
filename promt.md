@@ -1,9 +1,35 @@
-Hi Geoffrey, quick confirmation on UAT #127 (point 1) before I make the change.
-I traced the issue. Using Review 21882 as the example: in the database, CRO_name is NULL (no CRO assigned), and Relationship_mgr_name is "KEVIN M BRISKE". The backend correctly returns the CRO field as empty — but the UI has a fallback that substitutes the Relationship Manager name when the CRO is blank. The same fallback applies to Manager (falls back to Portfolio Manager) and Examiner in Charge.
-So on the Review Info → Assignments panel for that review you currently see:
-Reviewer Name — blank (correct)
-Manager — "GARY L MILLER Jr" (this is the Portfolio Manager, not a CRO manager)
-Examiner in Charge — "KEVIN M BRISKE" (this is the Relationship Manager)
-Just confirming before I remove the fallback: when no CRO is assigned, should all three — Reviewer Name, Manager, and Examiner in Charge — display as blank? And the same for Reviewer Email / Manager Email?
-Once you confirm I'll make the change straight away.
-Thanks, Manikant
+Frontend only. Single file: frontend/src/app/review/[ecif]/review-info/components/sections/hooks/useReviewInfo.ts
+Function: mapReviewToReviewInfo
+
+STRICT SCOPE — apply ONLY the exact edits listed below. Do NOT touch any other line, variable, mapping, import, or function. Do NOT refactor or reformat anything. Do NOT change examinerInCharge in this step. Do not plan. Just apply.
+
+Context (UAT #127, confirmed by client): when a review is loaded without an assigned CRO, Reviewer Name and Manager must display as blank until assigned later in the Review Form. They currently fall back to the Customer Info Relationship Manager / Portfolio Manager, which is incorrect.
+
+EDIT 1 — reviewerName. Replace:
+    const reviewerName =
+      (review.reviewerName as string | null | undefined) ??
+      (ci.reviewerName as string | null | undefined) ??
+      (ci.relationshipManager as string | null | undefined) ??
+      (ci.primaryRelationshipManager as string | null | undefined) ??
+      "";
+With:
+    const reviewerName = (review.reviewerName as string | null | undefined) ?? "";
+
+EDIT 2 — managerName. Replace:
+    const managerName =
+      (review.managerName as string | null | undefined) ??
+      (ci.managerName as string | null | undefined) ??
+      (ci.portfolioManager as string | null | undefined) ??
+      "";
+With:
+    const managerName = (review.managerName as string | null | undefined) ?? "";
+
+EDIT 3 — reviewerEmailRaw. Remove ONLY the `(ci.reviewerEmail ...)` fallback so it becomes:
+    const reviewerEmailRaw = (review.reviewerEmail as string | null | undefined) ?? "";
+
+EDIT 4 — managerEmailRaw. Remove ONLY the `(ci.managerEmail ...)` fallback so it becomes:
+    const managerEmailRaw = (review.managerEmail as string | null | undefined) ?? "";
+
+Leave examinerInCharge, cleanEmail(), the Dates section, and everything else exactly as-is.
+
+After applying, run read-only TypeScript diagnostics on this file only and report the 4 changed lines.

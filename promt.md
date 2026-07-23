@@ -1,18 +1,39 @@
-Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
+Frontend only. Single file: frontend/src/app/review/[ecif]/review-info/components/sections/hooks/useReviewInfo.ts
+Do NOT modify any other file. Do NOT change the backend or the API types. Do not plan. Just apply.
 
-Context (UAT #127, point 1): On Review Form -> Review Info -> Assignments, for Review 21882 the UI shows:
-  REVIEWER NAME = blank (correct — CRO_name is NULL in DB)
-  MANAGER = "GARY L MILLER Jr"
-  EXAMINER IN CHARGE = "KEVIN M BRISKE"
+UAT #127 (point 1): In mapReviewToReviewInfo, the Assignments fields fall back to Customer Info values when the CRO fields are null, causing Review 21882 (CRO_name NULL) to display the Relationship Manager name in "Examiner in Charge" and the Portfolio Manager name in "Manager". These fields must be blank when the corresponding CRO fields are null.
 
-In the DB for that review: CRO_name = NULL, CRO_manager_name = NULL, Relationship_mgr_name = 'KEVIN M BRISKE', Portfolio_mgr_name = 'GARY L MILLER Jr'. There is NO EIC / examiner / charge column on dbo.[02_CORE_02_Reviews].
+Change the three mappings as follows — remove ALL fallbacks to Customer Info:
 
-So the UI's "Examiner in Charge" appears to be showing the Relationship Manager name, and "Manager" appears to be showing the Portfolio Manager name — both incorrect. They should be blank when the corresponding CRO fields are null.
+1) reviewerName — currently:
+     const reviewerName =
+       (review.reviewerName as string | null | undefined) ??
+       (ci.reviewerName as string | null | undefined) ??
+       (ci.relationshipManager as string | null | undefined) ??
+       (ci.primaryRelationshipManager as string | null | undefined) ??
+       "";
+   Change to bind only to the CRO name from the review:
+     const reviewerName = (review.reviewerName as string | null | undefined) ?? "";
 
-Report:
-1) The component rendering the Assignments panel on Review Info (likely ReviewInfoSection.tsx under frontend/src/app/review/[ecif]/review-info/components/sections/). Paste the JSX for REVIEWER NAME, MANAGER, REVIEWER EMAIL, MANAGER EMAIL and EXAMINER IN CHARGE, showing exactly which field each binds to.
-2) In frontend/src/services/api/reviews.ts, paste the type for the review-info section showing the reviewer/manager/EIC fields.
-3) In the backend read path (SqlReviewRepository.cs, the SELECT that builds the review-info section), paste the exact columns that feed reviewerName, managerName, and examinerInCharge. Is there a COALESCE/ISNULL fallback from CRO_name to Relationship_mgr_name, or from CRO_manager_name to Portfolio_mgr_name? Show the exact SQL.
-4) State exactly where the incorrect mapping/fallback is, and what must change (and in how many files) so that Manager and Examiner in Charge are blank when the corresponding CRO fields are null, instead of showing the Relationship/Portfolio Manager names.
+2) managerName — currently:
+     const managerName =
+       (review.managerName as string | null | undefined) ??
+       (ci.managerName as string | null | undefined) ??
+       (ci.portfolioManager as string | null | undefined) ??
+       "";
+   Change to:
+     const managerName = (review.managerName as string | null | undefined) ?? "";
 
-Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+3) examinerInCharge — currently falls back to the Executive Credit Officer:
+     const examinerInCharge =
+       (reviewerName as string | null | undefined) ??
+       (ci.executiveCreditOfficer as string | null | undefined) ??
+       "";
+   Change to:
+     const examinerInCharge = reviewerName;
+
+Do NOT change reviewerEmail / managerEmail unless they use the same Customer Info fallback pattern — if they do, apply the same rule (bind only to the review's CRO email fields, blank otherwise) and report it.
+
+Do NOT touch any other mapping in this hook, and do NOT change any other section.
+
+Run read-only TypeScript diagnostics on this file only.

@@ -1,10 +1,23 @@
-Hi Geoffrey, thanks — those screenshots are really helpful, and they narrow things down.
-Two observations:
-The upload clearly ran against the Test environment and reported "Saved 86,875 rows to Data Mart Trial" — and 86,875 is exactly the row count I see in the table. So the load definitely landed in the right place and the rows are there.
-That means the issue isn't a missing or rolled-back load — it's that specific columns came through empty while others (like InterestType, which we can see had values) came through fine.
-The most likely cause is at the CSV-to-column mapping step. The upload screen lists the expected headers, and they must match exactly. Notably, the expected header is spelled InternalPortcat (lowercase "c"), whereas the field is often written as InternalPortCat. If the CSV header differs from the expected header even by case or spacing, that column would be skipped and land as NULL while every other column loads normally.
-Could you ask John to check two things in the source CSV he uploaded:
-Do the header names for InternalPortcat and IntRepCMLSubCategory match the expected headers exactly as listed on the upload screen?
-Do those two columns actually contain values in the source file, or are they empty there too?
-That should tell us quickly whether it's a header mismatch or simply missing source data. Happy to verify from my side once he confirms.
-Thanks, Manikant
+SELECT COLUMN_NAME, DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = '02_CORE_01_Samples'
+  AND COLUMN_NAME LIKE '%arget%';
+
+  SELECT [Sample_id], [Sample_name], [EIC_Name], [<Target column>]
+FROM dbo.[02_CORE_01_Samples] WITH (NOLOCK)
+WHERE [Sample_id] IN (354, 363, 371);
+
+Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
+
+Context (UAT #148 item 1): On Review Form → Review Info → Review Details, the "SAMPLE TARGET" field is blank. It should display dbo.[02_CORE_01_Samples].[Sample Target] for the review's sample.
+
+Note: the three header queries in SqlReviewRepository.cs (GetReviewHeaderByIdAsync, GetLatestReviewHeaderForSampleAndEcifAsync, GetLatestReviewHeaderForEcifAsync) already have a LEFT JOIN to dbo.[02_CORE_01_Samples] AS smp (added recently for EIC_Name).
+
+Report:
+1) In the ReviewInfoSection contract (backend) and in frontend/src/services/api/reviews.ts — is there already a SampleTarget / sampleTarget field? Paste the relevant lines.
+2) In SqlReviewRepository.cs — is [Sample Target] (or equivalent) already selected in any of the three header queries? Paste the SELECT lines for the sample-related columns, and show how SampleTarget (if present) is currently mapped into ReviewInfoSection.
+3) In frontend ReviewInfoSection.tsx — paste the JSX for the "SAMPLE TARGET" field and show which field it binds to.
+4) In useReviewInfo.ts — paste the current sampleTarget mapping.
+5) State exactly what must change and in how many files to populate SAMPLE TARGET from the sample's Target column, reusing the existing smp join.
+
+Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.

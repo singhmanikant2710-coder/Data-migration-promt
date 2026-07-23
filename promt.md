@@ -1,7 +1,11 @@
-Hi Geoffrey, I've checked both environments and the fields are still empty in each — the update doesn't appear to have landed anywhere yet.
-I queried the Data Mart Trial table in both the Dev and the QA/Test databases. In both, InternalPortCat and IntRepCMLSubCategory show 0 populated rows.
-In total, these 14 columns are still completely empty in both environments (TermAmort included, which you noted should stay NULL):
-AccountType, CIConcentration, Conversion, CorporateRegionalBanking, CorporateSpecialty, Days Past Due, DaysPastDueType, DelinquentID, InterestType, InternalPortCat, IntRepCMLSubCategory, LimitGroup2, PortfolioLimitCategory, TermAmort
-Could you check with John which environment he applied the update to? It's possible it went to a different database than the one you're testing against.
-Once the data is in, both #127 (FHN Portfolio / NAICS on sample load) and #128 (NAICS Industry dropdown) should work with no code change — I've already verified the wiring is correct on both, including testing #128 with a temporary value to confirm the dropdown populates.
-Thanks, Manikant
+Frontend only. Single file: frontend/src/app/review-queue/page.tsx. Do not plan. Just apply.
+
+The "Sample Name" dropdown has no visible box border, while the "My View" dropdown on the left renders as a bordered box. The client (UAT #141) asked for the Sample Name control to use the same border as My View.
+
+1) Read the exact className currently applied to the "My View" <select> element in this file.
+2) Apply the identical border-related classes (border width, border colour, border radius, background, padding) to the "Sample Name" <select> so both controls look visually identical as bordered boxes.
+3) Do NOT change the My View control itself. Do NOT change the Sample Name control's width, its label, its options, or its onChange handler.
+
+If the Sample Name select is currently rendered by a different component (e.g. SearchableSelect) than My View (a plain <select>), report that instead of guessing, and state what would be needed to match them.
+
+Run read-only TypeScript diagnostics on this file only.

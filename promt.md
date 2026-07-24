@@ -1,15 +1,12 @@
-Frontend only. Single file: frontend/src/app/review-queue/page.tsx
-Do NOT modify any other file. Do not plan. Read the current controls-row JSX first and report what the current layout classes are, then apply the fix.
+Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
 
-Problem: The "My View" and "Sample Name" filter controls at the top of the Review Queue page are misaligned. The "My View" label wraps onto two lines and its select is squeezed to almost zero width (only the dropdown arrow is visible), while the "Sample Name" select stretches too wide. They previously rendered as two evenly sized, bordered controls sitting side by side.
+Context (UAT #151): On Review Form → Review Info → Review Status, the "CRO START" field should lock once it has been initially edited, for CRO and CRA roles.
 
-Fix the layout so that:
+Report:
+1) In frontend/src/app/review/[ecif]/review-info/components/sections/ReviewInfoSection.tsx — paste the JSX for the "CRO START" field. Which value does it bind to, is it editable, and is there any existing lock/disabled/readOnly logic on it?
+2) Are there any other fields on this page that already implement a "lock once set" or role-based lock? If yes, paste that pattern (e.g. the reviewerLocked / severityLocked style logic) so it can be reused.
+3) How does the app know the current user's role? Show where the role is read on the frontend (a hook, context, or the user object), and list the possible role values (e.g. CRO, CRA, ECO, SCO, Admin). Paste the exact code.
+4) Which DB column does CRO START map to — is it dbo.[02_CORE_02_Reviews].[Start_date]? Show the read mapping and the save mapping for this field (backend and frontend).
+5) Is there an existing "Unlock Review" capability on this page (I can see an Unlock Review button in the UI)? Show what it unlocks and which roles can use it.
 
-1) Each control sits in its own container with a fixed, comfortable width — "My View" around w-48, "Sample Name" around w-80. Neither should collapse or stretch to fill.
-2) Each label ("My View" and "Sample Name") sits on a SINGLE line above its select — add whitespace-nowrap to the labels so they cannot wrap.
-3) Both selects keep the identical bordered box styling: same border width, border colour, border radius, padding and background. Read the classes currently on the two selects and make them match each other exactly.
-4) The two controls are laid out side by side in the controls row with sensible spacing, with "Sample Name" positioned on the right side of the row (as it was before).
-
-Do NOT change either select's value, options, or onChange handler. Do NOT touch the status tiles, the search box, page size, the grid, or anything else on the page.
-
-After applying, report the before/after of the changed container and label classes, and run read-only TypeScript diagnostics on this file only.
+Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.

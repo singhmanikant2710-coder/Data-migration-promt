@@ -1,26 +1,36 @@
--- Cancellation rationale column dhundo
-SELECT COLUMN_NAME, DATA_TYPE
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = '02_CORE_02_Reviews'
-  AND (COLUMN_NAME LIKE '%cancel%' OR COLUMN_NAME LIKE '%rational%');
+Backend only. Use LIVE DB, ignore columns.csv. Single file per edit. Do NOT modify or revert any existing logic authored by anyone (including Jothi) — only remove the specific WHERE lines named below and ADD new columns. Do not plan. Just apply.
 
-  -- Ek cancelled review dekho
-SELECT TOP 5 [Review_id], [Sample_id], [Customer_name], [Cancelled],
-       [Start_date], [Completed_date]
-FROM dbo.[02_CORE_02_Reviews] WITH (NOLOCK)
-WHERE [Cancelled] = 1;
+UAT #159: Cancelled reviews open in the Review Form with all NULL values, because the three header queries exclude cancelled rows. They must load normally, and the Cancellation Rationale must be returned.
 
-Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
+DB confirmed on dbo.[02_CORE_02_Reviews]: [Cancelled] bit, [Cancelled_date] datetime2, [Cancelled_reason] nvarchar.
 
-Context (UAT #159): Cancelled reviews open in the Review Form with all NULL values. The client needs to be able to locate cancelled reviews from Review Queue and Review Status, open them, and see the Cancellation Rationale and other populated fields.
+FILE: backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
 
-Report:
-1) In backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs — the three header query methods (GetReviewHeaderByIdAsync, GetLatestReviewHeaderForSampleAndEcifAsync, GetLatestReviewHeaderForEcifAsync). Paste each WHERE clause. Do they exclude cancelled reviews (e.g. AND (r.[Cancelled] IS NULL OR r.[Cancelled] = 0))? This would explain the all-NULL form.
-2) In the same file, GetQueueRowsAsync — paste its WHERE clause. Does it exclude cancelled reviews from the Review Queue grid?
-3) In SqlReviewStatusRepository.cs — does the Unopened/Cancelled bucket return cancelled reviews, and are they clickable through to the Review Form? Paste the relevant predicate.
-4) Is there a Cancellation Rationale field anywhere in the codebase — in the ReviewInfoSection contract, the frontend types, or rendered on the Review Form? Search for "cancel", "rationale", "cancellationRationale". Paste anything found, or state that none exists.
-5) State exactly what must change and in how many files so that: (a) cancelled reviews are reachable from Review Queue and Review Status, (b) opening a cancelled review loads its populated data rather than NULLs, and (c) the Cancellation Rationale is displayed.
+1) In ALL THREE header query methods — GetReviewHeaderByIdAsync, GetLatestReviewHeaderForSampleAndEcifAsync, GetLatestReviewHeaderForEcifAsync — REMOVE only this cancellation exclusion from the WHERE clause:
+     (r.[Cancelled] IS NULL OR r.[Cancelled] = 0)
+   Keep every other WHERE condition, the joins, ORDER BY, and the SELECT column order exactly as they are. If removing that line leaves a dangling AND, fix the syntax without changing any other condition.
 
-Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+2) In the private ReviewHeader record/class, ADD three properties:
+     public bool? Cancelled { get; init; }
+     public DateTime? CancelledDate { get; init; }
+     public string? CancelledReason { get; init; }
 
+3) In ALL THREE header queries, APPEND these three columns to the END of the SELECT list (do not reorder existing columns):
+     r.[Cancelled],
+     r.[Cancelled_date],
+     r.[Cancelled_reason]
+   Read them DBNull-safe using NAME-BASED ordinal lookups (not hardcoded indexes), following the same pattern already used for EIC_Name:
+     var ordCancelled       = rdr.GetOrdinal("Cancelled");
+     var ordCancelledDate   = rdr.GetOrdinal("Cancelled_date");
+     var ordCancelledReason = rdr.GetOrdinal("Cancelled_reason");
 
+4) In BOTH GetReviewByEcifAsync and GetReviewByKeysAsync, where ReviewInfoSection is constructed, ADD:
+     Cancelled = row?.Cancelled,
+     CancelledDate = row?.CancelledDate,
+     CancellationRationale = row?.CancelledReason,
+   And ADD the matching properties to the ReviewInfoSection contract (the file where ReviewerName / ExaminerInCharge are declared), placed after the existing fields:
+     public bool? Cancelled { get; init; }
+     public DateTime? CancelledDate { get; init; }
+     public string? CancellationRationale { get; init; }
+
+Do not touch the frontend in this step. Do not change GetQueueRowsAsync or SqlReviewStatusRepository.cs. Report the files changed and the exact removed WHERE lines and new SELECT columns.

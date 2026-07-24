@@ -1,17 +1,15 @@
-Frontend only. Single file: frontend/src/app/review/[ecif]/review-info/components/sections/hooks/useReviewInfo.ts
-Do NOT modify any other file. Do NOT change the backend. Do not plan. Just apply.
+Frontend only. Single file: frontend/src/app/review-queue/page.tsx
+Do NOT modify any other file. Do not plan. Read the current controls-row JSX first and report what the current layout classes are, then apply the fix.
 
-UAT #148 (item 1): The "Sample Target" field on Review Info renders blank. The API response is correct — for Review 21640 the review-info payload contains "sampleTarget": "Enterprise" — so the bug is in the hook's mapping.
+Problem: The "My View" and "Sample Name" filter controls at the top of the Review Queue page are misaligned. The "My View" label wraps onto two lines and its select is squeezed to almost zero width (only the dropdown arrow is visible), while the "Sample Name" select stretches too wide. They previously rendered as two evenly sized, bordered controls sitting side by side.
 
-The current mapping is:
-    nz(review?.sampleTarget as string | null | undefined) ||
-      sampleTarget?.sampleName,
+Fix the layout so that:
 
-This has two problems: it falls back to `sampleTarget?.sampleName` (which is a sample NAME, not the target), and `sampleTarget` there appears to reference a different object than the string field.
+1) Each control sits in its own container with a fixed, comfortable width — "My View" around w-48, "Sample Name" around w-80. Neither should collapse or stretch to fill.
+2) Each label ("My View" and "Sample Name") sits on a SINGLE line above its select — add whitespace-nowrap to the labels so they cannot wrap.
+3) Both selects keep the identical bordered box styling: same border width, border colour, border radius, padding and background. Read the classes currently on the two selects and make them match each other exactly.
+4) The two controls are laid out side by side in the controls row with sensible spacing, with "Sample Name" positioned on the right side of the row (as it was before).
 
-Replace that mapping so sampleTarget binds ONLY to the value returned by the backend:
-    sampleTarget: (review?.sampleTarget as string | null | undefined) ?? "",
+Do NOT change either select's value, options, or onChange handler. Do NOT touch the status tiles, the search box, page size, the grid, or anything else on the page.
 
-Remove the `|| sampleTarget?.sampleName` fallback entirely. Do NOT change any other mapping, the nz() helper, or anything else in this file.
-
-After applying, report the exact changed line and run read-only TypeScript diagnostics on this file only.
+After applying, report the before/after of the changed container and label classes, and run read-only TypeScript diagnostics on this file only.

@@ -1,6 +1,12 @@
-Hi Geoffrey, quick clarification on UAT #151 (CRO START lock) before I build it.
-I've traced how the field works — CRO START maps to [02_CORE_02_Reviews].[Start_date], and the page already has both patterns I'd need: a "lock once set" behaviour (used for Reviewer Name, which locks once CRO Complete is populated) and role-based gating (used for MGR Approval, which only Directors and Managers can edit). So this is straightforward to implement.
-One thing to confirm — the scope of the lock:
-Once CRO START has been set, should it lock only for CRO and CRA users, with Directors and Managers still able to change it (the same way MGR Approval works today)? Or should it lock for all roles once set, with changes only possible via the Unlock Review flow?
-I want to make sure we don't lock Directors and Managers out of correcting a date if it's entered wrongly.
-Thanks, Manikant
+Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
+
+Context (UAT #157): On the Review Status page, the same review appears under multiple status buckets (e.g. review 21664 shows under both "Draft Completed" and "Finalized"), which inflates the sub-totals. The client says the status workflow should be sequential — Unopened > In Progress > Draft Completed > Approved > Distributed > Finalized — and a review should appear under only ONE status. He notes this works correctly on the Review Queue page, which uses essentially the same data but is filtered to the current user.
+
+Report:
+1) How does the Review Queue derive a single status per row? In frontend/src/app/review-queue/page.tsx show getRowStatus() (or equivalent) and any backend status expression in SqlReviewRepository.GetQueueRowsAsync. Paste the exact logic that resolves ONE status per review.
+2) How does Review Status currently produce its buckets? In SqlReviewStatusRepository.cs, paste the WHERE predicate of each of the six bucket methods (GetUnopenedOrCancelledAsync, GetInProgressAsync, GetCompletedDraftsAsync, GetApprovedAsync, GetDistributedAsync, GetFinalizedAsync) as they exist right now.
+3) Confirm whether those predicates are currently INDEPENDENT (a review satisfying several milestones appears in several buckets) or MUTUALLY EXCLUSIVE.
+4) On the Review Status page, are the tile counts and the grid rows both derived from these same six datasets? Show where the counts come from.
+5) State exactly what would change, and in how many files, to make Review Status behave like Review Queue: each review resolved to a single status using the sequential precedence Finalized > Distributed > Approved > Draft Completed > In Progress > Unopened/Cancelled, with the tile counts following the same rule.
+
+Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.

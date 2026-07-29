@@ -1,14 +1,3 @@
-Dear [Manager's Name],
-
-I sincerely apologize for the short notice.
-
-My elder uncle (Bade Papa) has been diagnosed with kidney cancer, and his surgery has been scheduled for tomorrow at Rajiv Gandhi Cancer Institute & Research Centre, Delhi. We received the appointment confirmation only today, so I was unable to inform you in advance.
-
-My presence at the hospital is essential during this time. Therefore, I kindly request emergency leave for Monday and Tuesday.
-
-I apologize for any inconvenience this may cause and truly appreciate your understanding and support during this difficult situation.
-
-Thank you for your consideration.
-
-Kind regards,
-Manikant Singh
+Hi Sagar, Good Morning.
+I raised the RW access request because I expected I might need database write/execute permissions while working on the CAS activities. Earlier, when I was working on the CAS task, Jyothi had informed Aditya that I would need TEST database access to execute the required scripts. However, I didn't have the necessary permissions, and because of that we were unable to execute the scripts in the TEST database.
+To avoid similar delays in future tasks, I proactively requested the required access. If this level of access is not required for my current responsibilities, please feel free to reject the request. Thank you.

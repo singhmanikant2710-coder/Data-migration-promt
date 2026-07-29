@@ -1,15 +1,16 @@
-READ-ONLY. Do not edit anything yet.
+Single-file edit only: frontend/src/app/review-history/page.tsx
 
-In frontend/src/app/review-history/page.tsx, locate the table that renders 
-Review History rows. Identify the exact cell/column that renders the 
-"SAMPLE / REVIEW NAME" values (the sample name string like 
-"311 - 3/1/2024 - Continuous Review - Enterprise").
+In the column definition where key === "sampleName" 
+(header "SAMPLE / REVIEW NAME"), edit the cellClassName ONLY.
 
-Report back:
-1. The exact JSX line(s) rendering that column's cell value
-2. Any className, style, or CSS (font-weight / bold / <strong> / <b>) 
-   applied to that specific cell that makes it bold
-3. Confirm whether the bold comes from an inline style, a Tailwind class 
-   (e.g. font-bold / font-semibold), a CSS module, or a wrapping tag
+Current:
+  cellClassName: "text-slate-800 text-sm font-medium",
 
-Do not touch any other column or file.
+Change to:
+  cellClassName: "text-slate-800 text-sm",
+
+Remove the font-medium class so the cell renders at normal font-weight (400), 
+matching the other columns.
+
+Do NOT change key, header, sortable, or render. Do NOT touch any other 
+column, row, header, file, or styling. This is a pure cosmetic un-bold change.

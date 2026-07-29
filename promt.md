@@ -1,3 +1,1 @@
-Hi Sagar, Good Morning.
-I raised the RW access request because I expected I might need database write/execute permissions while working on the CAS activities. Earlier, when I was working on the CAS task, Jyothi had informed Aditya that I would need TEST database access to execute the required scripts. However, I didn't have the necessary permissions, and because of that we were unable to execute the scripts in the TEST database.
-To avoid similar delays in future tasks, I proactively requested the required access. If this level of access is not required for my current responsibilities, please feel free to reject the request. Thank you.
+

@@ -1,3 +1,2 @@
-Hi Geoffrey,
-Thank you so much for the wonderful LinkedIn recommendation. I truly appreciate your kind words and your support.
-It was a pleasure working with you, and I'm grateful for the opportunity to contribute to the project. Thank you once again for your trust and encouragement.
+SELECT COUNT(*) FROM dbo.[02_CORE_02_Reviews] r JOIN dbo.[02_CORE_01_Samples] s ON s.[Sample_id]=r.[Sample_id]
+WHERE r.[Sample_id]=354 AND s.[Closed]=0 AND r.[Review_finalized_date] IS NOT NULL AND r.[Review_id]=20120;

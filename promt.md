@@ -13,3 +13,10 @@ In the filteredRows useMemo:
 Do NOT change: the switch on selectedBucket that picks the dataset, the byText function, the tile counts, pagination (pagedRows), or the startDate/endDate state and their date input fields (they stay visible and are still passed to the API). Only stop using them to filter grid rows on the client.
 
 Run read-only TypeScript diagnostics on this file only.
+
+
+
+Read-only. No edits. Just report. In frontend/src/app/review-status/page.tsx:
+1) Search the entire file for every usage of: byDate, parseMDY, parseInput. List each line where they appear. Are they used ONLY inside the filteredRows useMemo, or anywhere else too?
+2) Search for every usage of startDate and endDate in the file. List each — are they used outside filteredRows (e.g. in the date input fields, or passed to the API load function)?
+Output the line references only. Change nothing.

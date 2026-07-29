@@ -1,12 +1,56 @@
-Read-only. No edits. No plan. Just report with file paths + exact code. Do NOT modify anyone's work (including Jothi's).
+Frontend only. Single file: frontend/src/app/review-status/page.tsx
+Do NOT modify the backend or any other file. Do NOT switch to the DataTable component — keep the existing plain <table>. Do not plan. Just apply.
 
-Context (UAT #165): Add ascending/descending column sorting to the Review Status table, matching how Review Queue and Review History already do it (clicking a column header sorts the rows).
+UAT #165: Add ascending/descending column sorting to the Review Status table, matching Review Queue's behaviour (click a header to sort; click again to flip direction).
 
-Report:
-1) How does Review Queue implement column sorting? In frontend/src/app/review-queue/page.tsx, paste: the sort state (sortBy / sortDir or similar), the handleSort function, and how sorted rows are computed (the useMemo that sorts). Also show how the table component receives sortBy/sortDir/onSort.
-2) What table component does Review Queue use (e.g. DataTable) and does it render clickable sortable headers? Paste the component usage showing the sortable props.
-3) In Review Status (frontend/src/app/review-status/page.tsx), how is the table currently rendered? Is it a plain <table> with hardcoded <th> headers, or the same DataTable component? Paste the current header row and the rows binding (pagedRows).
-4) What columns does the Review Status grid show, and what field does each bind to on the row object (reviewId, borrower, reviewer, exposure, bankPd, casPd, status, completed, manager)?
-5) State exactly what must change and in how many files to add ascending/descending sorting to the Review Status table, reusing the Review Queue pattern. Note whether Review Status can switch to the same DataTable component or needs sort state + a sorted useMemo added to its existing table.
+1) Add sort state near the other state (e.g. next to selectedBucket / currentPage):
+     const [sortBy, setSortBy] = React.useState<string>("borrower");
+     const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
 
-Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+2) Add a handleSort function (same pattern as Review Queue):
+     const handleSort = (key: string) => {
+       if (key === sortBy) {
+         setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+       } else {
+         setSortBy(key);
+         setSortDir("asc");
+       }
+     };
+
+3) Add a sortedRows useMemo that sorts filteredRows (do NOT change filteredRows itself). Use these field keys and normalisation:
+   - "reviewId" -> Number
+   - "exposure" -> numeric (strip any currency/commas then Number; fall back to 0)
+   - "bankPd", "casPd" -> Number
+   - "completed" -> new Date(String(val)).getTime()
+   - "borrower", "reviewer", "status", "manager" -> String(val).toLowerCase()
+   Sort ascending/descending per sortDir. Signature:
+     const sortedRows = React.useMemo(() => {
+       const arr = [...filteredRows];
+       const key = sortBy;
+       const norm = (val: any) => { /* the switch above */ };
+       arr.sort((a, b) => {
+         const na = norm((a as any)[key]);
+         const nb = norm((b as any)[key]);
+         if (na < nb) return sortDir === "asc" ? -1 : 1;
+         if (na > nb) return sortDir === "asc" ? 1 : -1;
+         return 0;
+       });
+       return arr;
+     }, [filteredRows, sortBy, sortDir]);
+
+4) Change pagedRows to slice from sortedRows instead of filteredRows (so sorting applies before pagination). Update its dependency array accordingly.
+
+5) Make each column header clickable. For each <th>, add an onClick calling handleSort with the matching field key, a cursor-pointer class, and a small asc/desc indicator (▲/▼) shown only on the active sort column. Header-to-key mapping:
+   - "Review Id" -> "reviewId"
+   - "Borrower Name / Linesheet" -> "borrower"
+   - "Reviewer" -> "reviewer"
+   - "Exposure" -> "exposure"
+   - "Bank PD" -> "bankPd"
+   - "CAS PD" -> "casPd"
+   - "Review Status" -> "status"
+   - the {completedColLabel} column -> "completed"
+   - "Approver" -> "manager"
+
+Do NOT change the row rendering (the DocIcon links, the reviewId/borrower links, the ${r.reviewId}-${r.ecif} row key), the tile counts, the bucket switch, byText, or the empty-state row. Only add sorting.
+
+Run read-only TypeScript diagnostics on this file only.

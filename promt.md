@@ -1,1 +1,2 @@
-Thank you so much, Geoffrey. I truly appreciate your kind words and support. It means a lot to me and my family. On Monday, my uncle had emergency surgery after he was diagnosed with kidney cancer. The doctors had to remove one of his kidneys. It has been a very difficult time for our family, but thankfully the surgery went well, and he is now recovering. Thank you again for keeping us in your thoughts.
+SELECT COUNT(*) FROM dbo.[02_CORE_02_Reviews] r JOIN dbo.[02_CORE_01_Samples] s ON s.[Sample_id]=r.[Sample_id]
+WHERE r.[Sample_id]=354 AND s.[Closed]=0 AND r.[Review_finalized_date] IS NOT NULL AND r.[Review_id]=20120;

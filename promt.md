@@ -37,3 +37,9 @@ Report:
 5) State exactly what must change and in how many files to add Font Color and Font Highlight buttons to the shared editor.
 
 Use LIVE DB, ignore columns.csv. Output findings only. Change nothing.
+
+
+SELECT TOP 5 [Review_id], [Facility_number_calc], [Facility_number]
+FROM dbo.[02_CORE_04_Accounts] WITH (NOLOCK)
+WHERE [Facility_number_calc] IS NULL
+  AND [Facility_number] IS NOT NULL;

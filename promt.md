@@ -1,19 +1,10 @@
-SELECT r.[Review_id], r.[Customer_name]
-FROM dbo.[02_CORE_02_Reviews] r JOIN dbo.[02_CORE_01_Samples] s ON s.[Sample_id]=r.[Sample_id]
-WHERE r.[Sample_id]=354 AND s.[Closed]=0 
-  AND r.[Review_finalized_date] IS NOT NULL 
-  AND r.[Review_id]=20120;
+SELECT r.[Review_id], r.[Review_finalized_date], s.[Sample_start_date], s.[Sample_end_date]
+FROM dbo.[02_CORE_02_Reviews] r 
+JOIN dbo.[02_CORE_01_Samples] s ON s.[Sample_id]=r.[Sample_id]
+WHERE r.[Sample_id]=354 AND s.[Closed]=0
+  AND r.[Review_finalized_date] IS NOT NULL
+  AND (r.[Review_finalized_date] < s.[Sample_start_date] 
+       OR r.[Review_finalized_date] >= DATEADD(day,1,s.[Sample_end_date]));
 
-  SELECT r.[Review_id], r.[Customer_name]
-FROM dbo.[02_CORE_02_Reviews] r JOIN dbo.[02_CORE_01_Samples] s ON s.[Sample_id]=r.[Sample_id]
-WHERE r.[Sample_id]=354 AND s.[Closed]=0 
-  AND r.[Review_distributed_date] IS NOT NULL 
-  AND r.[Review_finalized_date] IS NULL
-  AND r.[Review_id]=20120;
 
-  SELECT r.[Review_id], r.[Customer_name]
-FROM dbo.[02_CORE_02_Reviews] r JOIN dbo.[02_CORE_01_Samples] s ON s.[Sample_id]=r.[Sample_id]
-WHERE r.[Sample_id]=354 AND s.[Closed]=0 
-  AND r.[Start_date] IS NOT NULL AND r.[Completed_date] IS NULL AND r.[Cancelled]=0
-  AND r.[Review_approval_date] IS NULL AND r.[Review_distributed_date] IS NULL AND r.[Review_finalized_date] IS NULL
-  AND r.[Review_id]=20120;
+       Thank you, Geoffrey. I truly appreciate your kind words and your confidence in me. It has been a pleasure working with you, and I'm grateful for the opportunity. I'll continue giving my best to help ensure a smooth UAT rollout and successful delivery. Looking forward to working together over the coming weeks.

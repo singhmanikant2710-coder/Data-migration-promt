@@ -1,6 +1,38 @@
-Re: #170 — confirmations
-Thanks Geoff, Option A it is. Answers to your questions:
-1. Selections maintenance screen ordering — no impact. That screen's main grid is driven by a separate query and is sorted client-side by Tab → Section → Selection ID. My change only touches the per-(tab, section) values query, which feeds the value dropdowns during edit/add. So the Selections screen will keep its current Tab → Section → Selection ID order exactly as-is.
-2. FHN Portfolio Segment — noted, we're good.
-3. PD Grade / LGD Grade — confirmed, no impact to grade order. I verified against the Selections table: for both Scorecard → PD Grade and Scorecard → LGD Grade, the Selection_id sequence already matches the numerical grade order (1, 2, 3 …). Since the new sort is by Selection_id ascending, these dropdowns will render in the same numerical order they do today. You're right — no real change there.
-So the only visible reordering will be the Report Name Selection dropdown (and it now matches the intended Selection_id sequence). I'll implement and let you know once it's ready for QA.
+Single-file edit only:
+backend/src/Casrr.Infrastructure/Repositories/SelectionRepository.cs
+
+Method: GetSelectionsByTabAndSectionAsync (class SqlSelectionRepository)
+
+GOAL (issue #170, Option A approved by Geoff): Order the returned selection 
+values by Selection_id ascending instead of alphabetically by Selection.
+
+CONSTRAINT: Current query uses SELECT DISTINCT [Selection], so 
+ORDER BY [Selection_id] is invalid directly. Refactor DISTINCT to GROUP BY 
+and order by MIN(Selection_id) per Selection.
+
+Current SQL:
+    SELECT DISTINCT LTRIM(RTRIM([Selection])) AS [Selection]
+    FROM dbo.[03_LIBRARY_09_Selections] WITH (NOLOCK)
+    WHERE LTRIM(RTRIM([Tab])) = LTRIM(RTRIM(@tab))
+      AND LTRIM(RTRIM([Section])) = LTRIM(RTRIM(@section))
+      AND [Selection] IS NOT NULL AND LTRIM(RTRIM([Selection])) <> ''
+    ORDER BY [Selection];
+
+Change to:
+    SELECT LTRIM(RTRIM([Selection])) AS [Selection]
+    FROM dbo.[03_LIBRARY_09_Selections] WITH (NOLOCK)
+    WHERE LTRIM(RTRIM([Tab])) = LTRIM(RTRIM(@tab))
+      AND LTRIM(RTRIM([Section])) = LTRIM(RTRIM(@section))
+      AND [Selection] IS NOT NULL AND LTRIM(RTRIM([Selection])) <> ''
+    GROUP BY LTRIM(RTRIM([Selection]))
+    ORDER BY MIN([Selection_id]);
+
+CONSTRAINTS:
+- Edit ONLY this SQL string in this one method. Do NOT change the method 
+  signature, return type (IReadOnlyList<string>), parameter binding, the 
+  single-[Selection]-column reader logic, or WITH (NOLOCK).
+- Do NOT touch GetAllAsync, GetByIdAsync, the controller, the frontend, the 
+  fallback array, or any other file.
+
+After edit, show the final SQL and confirm the C# reader still maps only 
+the [Selection] column.

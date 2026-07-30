@@ -1,37 +1,6 @@
--- PD Grade: kya Selection_id order = intended numerical grade order?
-SELECT Selection_id, Selection
-FROM dbo.[03_LIBRARY_09_Selections]
-WHERE LTRIM(RTRIM(Tab)) = 'Scorecard' 
-  AND LTRIM(RTRIM(Section)) = 'PD Grade'
-ORDER BY Selection_id;
-
--- LGD Grade: same check
-SELECT Selection_id, Selection
-FROM dbo.[03_LIBRARY_09_Selections]
-WHERE LTRIM(RTRIM(Tab)) = 'Scorecard' 
-  AND LTRIM(RTRIM(Section)) = 'LGD Grade'
-ORDER BY Selection_id;
-
--- Report Selections: expected order for #170
-SELECT Selection_id, Selection
-FROM dbo.[03_LIBRARY_09_Selections]
-WHERE LTRIM(RTRIM(Tab)) = 'Reporting' 
-  AND LTRIM(RTRIM(Section)) = 'Report Selections'
-ORDER BY Selection_id;
-
-
-READ-ONLY. Diagnostics only.
-
-The Maintenance → Selections screen (frontend/src/app/maintenance/selections/page.tsx) 
-shows a full "Values" list currently ordered by Tab, then Section, then 
-Selection_id. 
-
-Confirm: does the MAIN grid/list on that screen (the full multi-row table 
-of all selections) come from GetSelectionsByTabAndSectionAsync, or from a 
-DIFFERENT method (e.g. GetAllAsync)? 
-
-I need to know whether changing GetSelectionsByTabAndSectionAsync's ORDER BY 
-would affect that screen's Tab→Section→Selection_id ordering, or only the 
-per-(tab,section) value dropdown within it.
-
-Do not edit anything. Findings only.
+Re: #170 — confirmations
+Thanks Geoff, Option A it is. Answers to your questions:
+1. Selections maintenance screen ordering — no impact. That screen's main grid is driven by a separate query and is sorted client-side by Tab → Section → Selection ID. My change only touches the per-(tab, section) values query, which feeds the value dropdowns during edit/add. So the Selections screen will keep its current Tab → Section → Selection ID order exactly as-is.
+2. FHN Portfolio Segment — noted, we're good.
+3. PD Grade / LGD Grade — confirmed, no impact to grade order. I verified against the Selections table: for both Scorecard → PD Grade and Scorecard → LGD Grade, the Selection_id sequence already matches the numerical grade order (1, 2, 3 …). Since the new sort is by Selection_id ascending, these dropdowns will render in the same numerical order they do today. You're right — no real change there.
+So the only visible reordering will be the Report Name Selection dropdown (and it now matches the intended Selection_id sequence). I'll implement and let you know once it's ready for QA.

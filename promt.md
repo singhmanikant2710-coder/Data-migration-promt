@@ -1,38 +1,8 @@
-Single-file edit only:
-backend/src/Casrr.Infrastructure/Repositories/SelectionRepository.cs
-
-Method: GetSelectionsByTabAndSectionAsync (class SqlSelectionRepository)
-
-GOAL (issue #170, Option A approved by Geoff): Order the returned selection 
-values by Selection_id ascending instead of alphabetically by Selection.
-
-CONSTRAINT: Current query uses SELECT DISTINCT [Selection], so 
-ORDER BY [Selection_id] is invalid directly. Refactor DISTINCT to GROUP BY 
-and order by MIN(Selection_id) per Selection.
-
-Current SQL:
-    SELECT DISTINCT LTRIM(RTRIM([Selection])) AS [Selection]
-    FROM dbo.[03_LIBRARY_09_Selections] WITH (NOLOCK)
-    WHERE LTRIM(RTRIM([Tab])) = LTRIM(RTRIM(@tab))
-      AND LTRIM(RTRIM([Section])) = LTRIM(RTRIM(@section))
-      AND [Selection] IS NOT NULL AND LTRIM(RTRIM([Selection])) <> ''
-    ORDER BY [Selection];
-
-Change to:
-    SELECT LTRIM(RTRIM([Selection])) AS [Selection]
-    FROM dbo.[03_LIBRARY_09_Selections] WITH (NOLOCK)
-    WHERE LTRIM(RTRIM([Tab])) = LTRIM(RTRIM(@tab))
-      AND LTRIM(RTRIM([Section])) = LTRIM(RTRIM(@section))
-      AND [Selection] IS NOT NULL AND LTRIM(RTRIM([Selection])) <> ''
-    GROUP BY LTRIM(RTRIM([Selection]))
-    ORDER BY MIN([Selection_id]);
-
-CONSTRAINTS:
-- Edit ONLY this SQL string in this one method. Do NOT change the method 
-  signature, return type (IReadOnlyList<string>), parameter binding, the 
-  single-[Selection]-column reader logic, or WITH (NOLOCK).
-- Do NOT touch GetAllAsync, GetByIdAsync, the controller, the frontend, the 
-  fallback array, or any other file.
-
-After edit, show the final SQL and confirm the C# reader still maps only 
-the [Selection] column.
+7/30 UPDATE — Resolved (pending QA verification):
+Root cause identified in the backend. Each Review Status bucket query was applying a start/end date-range filter on its milestone date column (Start_date, Completed_date, etc.), which the Review Queue does not apply. Reviews whose milestone date fell outside the sample window were being dropped from the Status buckets, causing sub-totals to run short (e.g., Sample 354 In Progress showed 14 vs the correct 15). Verified via SQL: the same In Progress query returns 15 without the date-range filter and 14 with it.
+Fix: removed the date-range predicates from all six Review Status bucket queries so classification matches Review Queue (by milestone-date presence only, not by a date window). No other logic changed. Since Dev and Test data differ, final count verification will be confirmed on the Test environment after deployment.
+#170 — Report Name Selection dropdown sort order
+Response/Update column ke liye:
+7/30 UPDATE — Resolved:
+The Report Name Selection dropdown was ordered alphabetically. Updated the backend query so the report names are returned ordered by Selection_id ascending, per the requirement. Confirmed on Dev — the dropdown now displays in Selection_id order (Checklist Questionnaire correctly appears in position 10 rather than at the top).
+Per the follow-up discussion: this change also applies Selection_id ordering to the FHN Portfolio Segment, PD Grade, and LGD Grade dropdowns (Option A, approved by Geoff). Verified there is no impact to PD/LGD grade order (Selection_id already matches numerical sequence) and no impact to the Selections maintenance screen (which is sorted separately by Tab → Section → Selection_id).

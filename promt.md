@@ -1,31 +1,52 @@
-READ-ONLY. Do not edit anything. Diagnostics only.
+Single-file edit only:
+backend/src/Casrr.Infrastructure/Repositories/SelectionRepository.cs
 
-Context: The "Report Name Selection" dropdown on the Reporting screen 
-(localhost:3100/reports) currently lists report names in what appears to be 
-alphabetical order. Geoff wants them ordered by [Selection_id] ascending 
-instead.
+Method: GetSelectionsByTabAndSectionAsync
 
-Report back — DO NOT change any code:
+GOAL: The "Report Name Selection" dropdown must return report names ordered 
+by Selection_id ASC (per Geoff, issue #170), not alphabetically. Currently 
+the query does ORDER BY [Selection] (alphabetical).
 
-1. Locate the Reporting page component (likely frontend, e.g. 
-   frontend/src/app/reports/page.tsx or a ReportSelection component). 
-   Identify where the "Report Name Selection" dropdown options come from — 
-   a static array, a backend API call, or a DB-backed list.
+CONSTRAINT: The query uses SELECT DISTINCT [Selection], so ORDER BY 
+[Selection_id] is not directly valid (DISTINCT requires ORDER BY columns to 
+be in the SELECT list). Refactor to GROUP BY instead of DISTINCT, ordering 
+by the minimum Selection_id per Selection.
 
-2. If backend-backed: find the repository method + SQL that returns the 
-   report names. Show its SELECT, the columns returned (confirm whether a 
-   Selection_id column exists), and its current ORDER BY (if any).
+Current SQL:
+    SELECT DISTINCT LTRIM(RTRIM([Selection])) AS [Selection]
+    FROM dbo.[03_LIBRARY_09_Selections] WITH (NOLOCK)
+    WHERE LTRIM(RTRIM([Tab])) = LTRIM(RTRIM(@tab))
+      AND LTRIM(RTRIM([Section])) = LTRIM(RTRIM(@section))
+      AND [Selection] IS NOT NULL AND LTRIM(RTRIM([Selection])) <> ''
+    ORDER BY [Selection];
 
-3. If frontend static/array or frontend-sorted: show the array definition 
-   or any .sort() applied to the options before rendering, and confirm 
-   whether each option carries a Selection_id field.
+Change to:
+    SELECT LTRIM(RTRIM([Selection])) AS [Selection]
+    FROM dbo.[03_LIBRARY_09_Selections] WITH (NOLOCK)
+    WHERE LTRIM(RTRIM([Tab])) = LTRIM(RTRIM(@tab))
+      AND LTRIM(RTRIM([Section])) = LTRIM(RTRIM(@section))
+      AND [Selection] IS NOT NULL AND LTRIM(RTRIM([Selection])) <> ''
+    GROUP BY LTRIM(RTRIM([Selection]))
+    ORDER BY MIN([Selection_id]);
 
-4. Report exactly:
-   a. The source of the dropdown options (file + method/array).
-   b. Whether a Selection_id field/column is available on each option.
-   c. The current ordering logic (explicit ORDER BY, a JS .sort(), or 
-      default/insertion order).
-   d. The single place where changing the sort to Selection_id ASC would 
-      take effect.
+This preserves the distinct-by-Selection behavior (via GROUP BY), still 
+returns only the trimmed Selection string, and orders by Selection_id ASC.
 
-Do not edit any file. Output findings only.
+CONSTRAINTS:
+- Edit ONLY this SQL string in this one method. Do NOT change the method 
+  signature, return type (still IReadOnlyList<string>), parameter binding, 
+  the row-reading logic (still reads a single [Selection] column), or 
+  WITH (NOLOCK).
+- Do NOT touch the controller, the frontend, the fallback array, or any 
+  other file.
+- Keep the same @tab/@section parameters and trimming logic.
+
+After edit, show the final SQL and confirm the C# reader still maps the 
+single [Selection] column.
+
+
+SELECT [Selection_id], [Selection]
+FROM dbo.[03_LIBRARY_09_Selections]
+WHERE LTRIM(RTRIM([Tab])) = 'Reporting'
+  AND LTRIM(RTRIM([Section])) = 'Report Selections'
+ORDER BY [Selection_id];

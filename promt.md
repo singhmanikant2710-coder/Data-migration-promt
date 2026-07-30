@@ -1,15 +1,37 @@
-Re: Issue #170 — Report Name Selection sort order
-Hi Geoff,
-Quick heads-up before I implement this. The dropdown you want sorted by Selection_id is powered by a shared backend query that also feeds several other dropdowns in the app. So I want to confirm the intended scope.
-The same data source currently drives these dropdowns (all sorted alphabetically today):
-Report Name Selection (Reporting page) — the one you flagged
-FHN Portfolio Segment — Customer Info section
-PD Grade — Scorecards & Transactions sections
-LGD Grade — Scorecards & Transactions sections
-Values list — Maintenance → Selections screen
-Two ways I can do this:
-Option A (global): Change the sort to Selection_id ascending everywhere. This is a clean one-line change and would also reorder the other four dropdowns above. For fields like PD Grade / LGD Grade this is arguably better, since Selection_id usually reflects the intended grade order rather than alphabetical.
-Option B (Reporting only): Sort only the Report Name dropdown by Selection_id and leave the other four exactly as they are today. This keeps the change isolated but requires a bit more work on the backend.
-Could you confirm which you'd prefer — should all these dropdowns move to Selection_id order, or only the Report Name Selection dropdown?
-Thanks,
-Manikant
+-- PD Grade: kya Selection_id order = intended numerical grade order?
+SELECT Selection_id, Selection
+FROM dbo.[03_LIBRARY_09_Selections]
+WHERE LTRIM(RTRIM(Tab)) = 'Scorecard' 
+  AND LTRIM(RTRIM(Section)) = 'PD Grade'
+ORDER BY Selection_id;
+
+-- LGD Grade: same check
+SELECT Selection_id, Selection
+FROM dbo.[03_LIBRARY_09_Selections]
+WHERE LTRIM(RTRIM(Tab)) = 'Scorecard' 
+  AND LTRIM(RTRIM(Section)) = 'LGD Grade'
+ORDER BY Selection_id;
+
+-- Report Selections: expected order for #170
+SELECT Selection_id, Selection
+FROM dbo.[03_LIBRARY_09_Selections]
+WHERE LTRIM(RTRIM(Tab)) = 'Reporting' 
+  AND LTRIM(RTRIM(Section)) = 'Report Selections'
+ORDER BY Selection_id;
+
+
+READ-ONLY. Diagnostics only.
+
+The Maintenance → Selections screen (frontend/src/app/maintenance/selections/page.tsx) 
+shows a full "Values" list currently ordered by Tab, then Section, then 
+Selection_id. 
+
+Confirm: does the MAIN grid/list on that screen (the full multi-row table 
+of all selections) come from GetSelectionsByTabAndSectionAsync, or from a 
+DIFFERENT method (e.g. GetAllAsync)? 
+
+I need to know whether changing GetSelectionsByTabAndSectionAsync's ORDER BY 
+would affect that screen's Tab→Section→Selection_id ordering, or only the 
+per-(tab,section) value dropdown within it.
+
+Do not edit anything. Findings only.

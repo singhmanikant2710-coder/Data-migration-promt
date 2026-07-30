@@ -1,40 +1,31 @@
-Single-file edit only:
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewStatusRepository.cs
+READ-ONLY. Do not edit anything. Diagnostics only.
 
-ROOT CAUSE (confirmed via SQL): Each Review Status bucket applies a 
-@startDate/@endDate range filter on its milestone date column. Review Queue 
-applies NO such date filter. This drops boundary reviews (whose milestone 
-date falls outside the sample window) from Status buckets, causing counts 
-to be short by 1 in In Progress, Distributed, Finalized, etc. Verified: 
-In Progress for Sample 354 returns 15 without the date range, 14 with it.
+Context: The "Report Name Selection" dropdown on the Reporting screen 
+(localhost:3100/reports) currently lists report names in what appears to be 
+alphabetical order. Geoff wants them ordered by [Selection_id] ascending 
+instead.
 
-FIX: Remove the @startDate/@endDate WHERE predicates from ALL bucket 
-queries so Review Status classifies reviews the same way Review Queue does 
-(by milestone-date NULL/NOT-NULL state only, never by a date window).
+Report back — DO NOT change any code:
 
-In each of these methods, delete the two lines matching this pattern from 
-the WHERE clause (the column name varies per bucket):
+1. Locate the Reporting page component (likely frontend, e.g. 
+   frontend/src/app/reports/page.tsx or a ReportSelection component). 
+   Identify where the "Report Name Selection" dropdown options come from — 
+   a static array, a backend API call, or a DB-backed list.
 
-    AND (@startDate IS NULL OR r.[<DateColumn>] >= @startDate)
-    AND (@endDate IS NULL OR r.[<DateColumn>] < DATEADD(day, 1, @endDate))
+2. If backend-backed: find the repository method + SQL that returns the 
+   report names. Show its SELECT, the columns returned (confirm whether a 
+   Selection_id column exists), and its current ORDER BY (if any).
 
-Methods and their date columns:
-- GetInProgressAsync      -> Start_date
-- GetCompletedDraftsAsync -> Completed_date
-- GetApprovedAsync        -> Review_approval_date
-- GetDistributedAsync     -> Review_distributed_date
-- GetFinalizedAsync       -> Review_finalized_date
-(GetUnopenedOrCancelledAsync has no date-range predicate — leave as-is.)
+3. If frontend static/array or frontend-sorted: show the array definition 
+   or any .sort() applied to the options before rendering, and confirm 
+   whether each option carries a Selection_id field.
 
-CONSTRAINTS:
-- Remove ONLY the two date-range predicate lines per method. Do NOT touch 
-  the milestone-date NULL/NOT-NULL conditions, Cancelled conditions, 
-  s.Closed = 0, @sampleId filter, SELECT lists, JOINs, or ORDER BY.
-- If @startDate/@endDate parameters become unused, leave the parameters in 
-  the method signature (do NOT change signatures or callers) to keep this 
-  a single-file change. Only their WHERE usage is removed.
-- Do NOT touch any other file, the frontend, the Review Queue repository, 
-  or the Borrowers Sampled query.
-- Do NOT revert the prior frontend byDate fix.
+4. Report exactly:
+   a. The source of the dropdown options (file + method/array).
+   b. Whether a Selection_id field/column is available on each option.
+   c. The current ordering logic (explicit ORDER BY, a JS .sort(), or 
+      default/insertion order).
+   d. The single place where changing the sort to Selection_id ASC would 
+      take effect.
 
-After edit, list exactly which lines were removed in each method.
+Do not edit any file. Output findings only.

@@ -1,11 +1,32 @@
-Subject: CRM PD Grade Migration report — label clarification (Number of Accounts change)
-Hi Geoff,
-I'm working through your edits on the CRM PD Grade Migration report and wanted to confirm one point before I finalize the labels, so I get the wording exactly right.
-For your note "Update query parameters to report Number of Accounts (count) instead of Scorecard count" — I checked the underlying data. The report already counts the number of accounts (it pulls from the Accounts table; there is no separate scorecards table), so the values themselves are correct. The issue is purely the label wording, which I'll update.
-You highlighted three labels, and I want to confirm how you'd like each to read:
-"PD Distribution by Scorecard Count" (left chart, count-based) → I'll change to "PD Distribution by Number of Accounts".
-"PD Grade Migration by Scorecard Count" (matrix heading, count-based) → I'll change to "PD Grade Migration by Number of Accounts".
-"PD Distribution by Scorecard Commitment" (right chart) — this one shows dollar amounts ($MM), not a count, so "Number of Accounts" wouldn't fit here. Could you confirm your preferred wording? My suggestion is "PD Distribution by Commitment" (simply dropping "Scorecard"), keeping the dollar values unchanged. Let me know if you'd like it phrased differently.
-Once you confirm #3, I'll apply all three. Thanks!
-Best,
-Manikant
+READ-ONLY. Diagnostics only. Do not change anything.
+
+In frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx (and its backend 
+service if needed), I need to locate all of the following text labels and 
+table structures for a series of upcoming edits. Report each one's exact 
+location (file + line/component) WITHOUT editing:
+
+LABELS TO LOCATE:
+1. Chart title "PD Distribution by Scorecard Count"
+2. Chart title "PD Distribution by Scorecard Commitment"
+3. Matrix heading "PD Grade Migration by Scorecard Count"
+4. Section heading "Migration by From/To (Count)" 
+5. Section heading "Migration by From/To (Commitment)"
+6. Column header "COMMITMENT (USD)" in the From/To commitment table
+7. Section heading "Final PD Distribution (Count)" + its "COUNT" column header
+8. Section heading "Final PD Distribution (Exposure)" + its "EXPOSURE (USD)" 
+   column header
+9. In the DETAIL table (page 6): the column headers "CUSTOMER NAME", 
+   "REVIEW ID", "PD INITIAL", "PD FINAL", "FINALIZED/APPROVED", and the 
+   cell rendering for CUSTOMER NAME and REVIEW ID.
+10. The footer that shows the small FHN logo + "CAS RiskReview" + "Page X of Y".
+
+ALSO REPORT:
+- For all table CELL VALUE text: the shared style (e.g. styles.td) and its 
+  current fontSize, and confirm whether ALL tables use the same cell style 
+  (so one fontSize change fixes all) or each defines its own.
+- Whether the labels/headings are hardcoded strings in this file, or come 
+  from the backend service / constants.
+- The structure of the two "Migration by From/To" tables (columns) so I can 
+  later add a "% OF COUNT" / "% OF COMMITMENT" column.
+
+Do not edit anything. Findings only.

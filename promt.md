@@ -1,51 +1,68 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-This is a batch of pure TEXT LABEL and FONT-SIZE changes for the CRM PD 
-Grade Migration report. NO data, query, calculation, or table structure 
-changes in this batch. Make ONLY these edits:
+Phase 2 for CRM PD Grade Migration report: heading renames + detail table 
+column restructure. Make ONLY these edits:
 
-1. FONT SIZE (all table values -> 10):
-   In the styles.td definition (around lines 199-207), ADD:
-       fontSize: 10,
-   Do not change any other property. This makes all table body cells render 
-   at 10pt (they currently inherit 9pt from styles.page). Do NOT change 
-   styles.page fontSize (headers/other text must stay as-is).
+=== HEADING RENAMES (text only) ===
 
-2. Line ~564, chart title:
-   "PD Distribution by Scorecard Count" 
-   -> "PD Distribution by Number of Accounts"
+1. Line ~384, Subreport01_Count heading:
+   "Migration by From→To (Count)" 
+   -> "PD Migration Totals by Account"
 
-3. Line ~595, matrix heading:
-   "PD Grade Migration by Scorecard Count" 
-   -> "PD Grade Migration by Number of Accounts"
+2. Line ~406, Subreport02_Commitment heading:
+   "Migration by From→To (Commitment)" 
+   -> "PD Migration Totals by Commitment"
 
-4. Line ~411, column header in Subreport02_Commitment:
-   "COMMITMENT (USD)" 
-   -> "COMMITMENT"
+3. Line ~432, Subreport03_DistByCount column header:
+   "COUNT" 
+   -> "# of Accounts"
+   (Only this column header text. Do NOT change the section heading 
+   "Final PD Distribution (Count)" or the data.)
 
-5. Line ~448, section heading in Subreport04_DistByExposure:
-   "Final PD Distribution (Exposure)" 
-   -> "Final PD Distribution (Commitment)"
+=== DETAIL TABLE RESTRUCTURE (page 6) ===
 
-6. Line ~452, column header in Subreport04_DistByExposure:
-   "EXPOSURE (USD)" 
-   -> "COMMITMENT"
+Context: The DETAIL table currently has columns: CUSTOMER NAME | REVIEW ID | 
+BANK PD | CAS PD | DIRECTION | COMMITMENT | FINALIZED/APPROVED.
+Geoff wants: (a) Review ID merged into the Customer Name column, (b) the 
+separate REVIEW ID column removed, (c) the FINALIZED/APPROVED column removed.
 
-7. Line ~885, DETAIL table header:
-   "PD INITIAL" 
-   -> "BANK PD"
+4. CUSTOMER NAME header (line ~883):
+   "CUSTOMER NAME" 
+   -> "CUSTOMER NAME (REVIEW ID)"
 
-8. Line ~886, DETAIL table header:
-   "PD FINAL" 
-   -> "CAS PD"
+5. CUSTOMER NAME cell rendering (line ~899). Currently:
+   <Text style={[styles.td, styles.wCustomer]}>{out(r.customerName)}</Text>
+   Change to concatenate the review id in parentheses:
+   <Text style={[styles.td, styles.wCustomer]}>{out(`${r.customerName ?? ""} (${r.reviewId ?? ""})`)}</Text>
+   (Keep the same style. Only change the displayed value.)
+
+6. REMOVE the REVIEW ID column entirely:
+   - Remove the "REVIEW ID" header <Text> (line ~884) in BOTH DetailTableHeader 
+     definitions (the diagnostics noted the header appears in two places — 
+     remove from both).
+   - Remove the REVIEW ID cell <Text> (line ~900) in DetailTableRows.
+
+7. REMOVE the FINALIZED/APPROVED column entirely:
+   - Remove the "FINALIZED/APPROVED" header <Text> (line ~889) in BOTH 
+     DetailTableHeader definitions.
+   - Remove the corresponding FINALIZED/APPROVED cell <Text> in DetailTableRows 
+     (find the cell that renders the finalized/approved value, matching the 
+     column position).
 
 CONSTRAINTS:
-- These are text-string and one fontSize change ONLY. Do NOT change any 
-  data, values, query, calculation, column widths, table structure, or 
-  other styles.
-- Do NOT touch the "PD Distribution by Scorecard Commitment" chart title 
-  (line ~565) yet — that label is pending clarification.
-- Do NOT touch the "Final PD Distribution (Count)" / "COUNT" header, the 
-  "Migration by From/To" headings, the detail CUSTOMER NAME/REVIEW ID/
-  FINALIZED columns, or the footer — those are separate upcoming batches.
-- Only edit this one file. List every change made with its line.
+- After removing REVIEW ID and FINALIZED/APPROVED columns, the remaining 
+  detail columns are: CUSTOMER NAME (REVIEW ID) | BANK PD | CAS PD | 
+  DIRECTION | COMMITMENT. Ensure header and body cell counts still match 
+  (same number of columns in header row and body row).
+- Do NOT change the concatenation data source — use the existing r.customerName 
+  and r.reviewId fields already available on the row.
+- Do NOT touch the backend, any query, or any other table/section.
+- Do NOT change the "PD Distribution by Scorecard Commitment" chart title 
+  (still pending).
+- Do NOT modify the "% OF COUNT" / "% OF COMMITMENT" columns — those are 
+  Phase 3.
+- If removing columns leaves column widths uneven, you MAY adjust the width 
+  styles of the remaining detail columns so they fill the row cleanly, but 
+  do NOT change widths of any other table.
+- Only edit this one file. List every change with its line, and confirm the 
+  header column count equals the body column count after edits.

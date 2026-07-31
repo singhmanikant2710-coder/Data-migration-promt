@@ -1,17 +1,25 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-GOAL (Geoff comment #3): The header meta text (the run date on the right 
-side of the header bar) currently renders in light blue and looks faded. It 
-should be solid White to match the "CRM PD Grade Migration" title.
+GOAL (Geoff comment #4): Remove the entire "Selection Summary" section from 
+the report. Geoff confirmed the Current Filter Payload at the end of the 
+report is sufficient, so this section is redundant.
 
-In the styles object, the headerMeta style currently has:
-    color: "#BFDBFE"
+The section is rendered on the main page via:
+    {/* Selection Summary */}
+    <FiltersEcho f={filters || {}} />
 
-Change it to:
-    color: "#FFFFFF"
+REMOVE this usage (both the comment line and the <FiltersEcho ... /> render) 
+so the Selection Summary block no longer appears in the output.
 
 CONSTRAINTS:
-- Change ONLY the color value on headerMeta. Do NOT change fontSize, 
-  textAlign, or any other property.
-- Do NOT touch headerTitle or any other style.
-- Only edit this one file. Show the changed line.
+- Remove ONLY the <FiltersEcho> render (and its adjacent comment) from the 
+  page layout. 
+- You may leave the FiltersEcho function definition in the file unused, OR 
+  remove it as well if it is not referenced anywhere else — but do NOT 
+  remove it if it is used elsewhere. Check for other usages first; if the 
+  only usage is the one being removed, removing the definition is fine.
+- Do NOT touch any other section (header, charts, Current Filter Payload at 
+  the end, detail pages).
+- Do NOT remove or alter the Current Filter Payload section that appears at 
+  the end of the report — Geoff wants to keep that.
+- Only edit this one file. Show the changed lines.

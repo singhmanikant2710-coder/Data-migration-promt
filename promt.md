@@ -1,68 +1,18 @@
-Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
-
-Phase 2 for CRM PD Grade Migration report: heading renames + detail table 
-column restructure. Make ONLY these edits:
-
-=== HEADING RENAMES (text only) ===
-
-1. Line ~384, Subreport01_Count heading:
-   "Migration by From→To (Count)" 
-   -> "PD Migration Totals by Account"
-
-2. Line ~406, Subreport02_Commitment heading:
-   "Migration by From→To (Commitment)" 
-   -> "PD Migration Totals by Commitment"
-
-3. Line ~432, Subreport03_DistByCount column header:
-   "COUNT" 
-   -> "# of Accounts"
-   (Only this column header text. Do NOT change the section heading 
-   "Final PD Distribution (Count)" or the data.)
-
-=== DETAIL TABLE RESTRUCTURE (page 6) ===
-
-Context: The DETAIL table currently has columns: CUSTOMER NAME | REVIEW ID | 
-BANK PD | CAS PD | DIRECTION | COMMITMENT | FINALIZED/APPROVED.
-Geoff wants: (a) Review ID merged into the Customer Name column, (b) the 
-separate REVIEW ID column removed, (c) the FINALIZED/APPROVED column removed.
-
-4. CUSTOMER NAME header (line ~883):
-   "CUSTOMER NAME" 
-   -> "CUSTOMER NAME (REVIEW ID)"
-
-5. CUSTOMER NAME cell rendering (line ~899). Currently:
-   <Text style={[styles.td, styles.wCustomer]}>{out(r.customerName)}</Text>
-   Change to concatenate the review id in parentheses:
-   <Text style={[styles.td, styles.wCustomer]}>{out(`${r.customerName ?? ""} (${r.reviewId ?? ""})`)}</Text>
-   (Keep the same style. Only change the displayed value.)
-
-6. REMOVE the REVIEW ID column entirely:
-   - Remove the "REVIEW ID" header <Text> (line ~884) in BOTH DetailTableHeader 
-     definitions (the diagnostics noted the header appears in two places — 
-     remove from both).
-   - Remove the REVIEW ID cell <Text> (line ~900) in DetailTableRows.
-
-7. REMOVE the FINALIZED/APPROVED column entirely:
-   - Remove the "FINALIZED/APPROVED" header <Text> (line ~889) in BOTH 
-     DetailTableHeader definitions.
-   - Remove the corresponding FINALIZED/APPROVED cell <Text> in DetailTableRows 
-     (find the cell that renders the finalized/approved value, matching the 
-     column position).
-
-CONSTRAINTS:
-- After removing REVIEW ID and FINALIZED/APPROVED columns, the remaining 
-  detail columns are: CUSTOMER NAME (REVIEW ID) | BANK PD | CAS PD | 
-  DIRECTION | COMMITMENT. Ensure header and body cell counts still match 
-  (same number of columns in header row and body row).
-- Do NOT change the concatenation data source — use the existing r.customerName 
-  and r.reviewId fields already available on the row.
-- Do NOT touch the backend, any query, or any other table/section.
-- Do NOT change the "PD Distribution by Scorecard Commitment" chart title 
-  (still pending).
-- Do NOT modify the "% OF COUNT" / "% OF COMMITMENT" columns — those are 
-  Phase 3.
-- If removing columns leaves column widths uneven, you MAY adjust the width 
-  styles of the remaining detail columns so they fill the row cleanly, but 
-  do NOT change widths of any other table.
-- Only edit this one file. List every change with its line, and confirm the 
-  header column count equals the body column count after edits.
+Subject: CRM PD Grade Migration — clarification on two chart labels and the % column calculations
+Hi Geoff,
+I've worked through most of your edits on the CRM PD Grade Migration report. Before I implement the last two items, I want to confirm the exact intent so I get the calculations right the first time. I've thought through the logic below and included my recommended interpretation for each.
+1. Commitment distribution chart label
+You asked to move the count chart from "Scorecard Count" to "Number of Accounts," which I've done. The paired chart on the right is currently titled "PD Distribution by Scorecard Commitment." Since that chart shows dollar amounts ($MM), "Number of Accounts" wouldn't fit there. My recommendation is to simply drop "Scorecard" and title it "PD Distribution by Commitment." Please confirm, or let me know your preferred wording.
+2. "% OF COUNT" column — PD Migration Totals by Account table
+This table lists one row per FROM PD → TO PD migration, with a COUNT of accounts for each, and a grand total at the bottom (currently 492 in the sample). You asked to add a "% OF COUNT" column as "Row Total / Column Total."
+Because this is a flat list (not a cross-tab matrix), "Row Total" and "Column Total" can be read two ways, so I want to confirm which you intend:
+Interpretation A (my recommendation): Each row's COUNT ÷ the grand total of all counts. This shows each migration's share of the total. Example: a row with 51 accounts out of 492 total → 51 / 492 = 10.4%. All rows would sum to 100%.
+Interpretation B: Some other row/column relationship (e.g., relative to a subtotal by FROM PD).
+Interpretation A is the standard "% of total" reading and is what I'd expect for a distribution report. Please confirm A, or clarify if you meant B.
+3. "% OF COMMITMENT" column — PD Migration Totals by Commitment table
+Same structure, but the value is a dollar commitment per row, with a grand total (currently $492 in $MM terms in the sample). Applying the same logic:
+Recommended: Each row's COMMITMENT ÷ the grand total commitment, shown as a %. Example: a row of $85.7M out of a $492M total → 17.4%. Rows sum to 100%.
+I'd format both new percentage columns to one decimal place (e.g., 10.4%) and right-align them, consistent with the existing numeric columns.
+Once you confirm these three points, I'll finish the remaining changes and send you an updated report to review. Thanks!
+Best,
+Manikant

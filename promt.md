@@ -1,52 +1,34 @@
-Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-GOAL (Geoff comment): In the CRM PD Grade Migration report footer, remove 
-the small FHN logo on the left, and reformat the footer to mirror the CRM 
-Summary Table report's footer style — a single CENTERED line reading 
-"<Report Name> • Page X of Y", with the top border kept. No logo, no 
-"CAS RiskReview" brand text.
+I need to make 3 changes to the CRO Review Production PDF report (similar to 
+edits already done on the CRM PD Grade Migration report). First locate 
+everything. Report back (no edits):
 
-The current footer (repeated in ~5 places) is:
-    <View style={styles.footerLeft}>
-      <Image src="/assets/FHB_Logo.png" style={styles.footerLogo} />
-      <Text style={styles.footerBrand}>CAS RiskReview</Text>
-    </View>
-    <Text
-      style={styles.footerText}
-      render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
-    />
+1. FIND THE COMPONENT: Locate the CRO Review Production PDF component (likely 
+   frontend/src/components/pdf/CroReviewProductionPDF.tsx or similar). 
+   Confirm the file path.
 
-Replace the footer CONTENT in EVERY footer occurrence in this file (the 
-diagnostics identified 5: CrmPdGradeMigrationPage; the no-items Document 
-Page 1 "No records"; the no-items Document Page 2 "Current Filter Payload"; 
-DetailTablePage; and the has-items Document final "Current Filter Payload" 
-page).
+2. HEADER: Show the header code that renders the title "CRO Review Production" 
+   and the top-right meta text (currently showing a sample number like "356"). 
+   I need to change the meta to show ONLY the run date in MM/DD/YYYY format 
+   (no time, no sample name/number), and ensure the meta font color is White. 
+   Show the current header JSX and the meta text/color styles.
 
-For each footer, remove the logo+brand <View> and the right-aligned page 
-<Text>, and replace with a single centered line:
-    <Text
-      style={{ fontSize: 9, color: "#0F172A", textAlign: "center" }}
-      render={({ pageNumber, totalPages }) => `CRM PD Grade Migration • Page ${pageNumber} of ${totalPages}`}
-    />
+3. REMOVE COLUMN: In the per-reviewer detail table (columns: CUSTOMER NAME 
+   (REVIEW ID), CUSTOMER #, UNIT, COMMITMENT, OUTSTANDING, BANK PD, CAS PD, 
+   and a final "(STATUS NOT SELECTED)" column showing dates) — locate the 
+   "(STATUS NOT SELECTED)" / status column. Show its header <Text> and its 
+   body cell rendering. Confirm whether this header/cell appears in multiple 
+   places (repeated per reviewer, or a shared header/row component). I need 
+   to remove this column entirely.
 
-Report name source per location:
-- In CrmPdGradeMigrationPage: a `title` variable is in scope — use it:
-      `${title} • Page ${pageNumber} of ${totalPages}`
-- In the no-items Document pages: a `t` variable is in scope — use it:
-      `${t} • Page ${pageNumber} of ${totalPages}`
-- In DetailTablePage and any page where no title variable is in scope: use 
-  the literal string "CRM PD Grade Migration" (do NOT thread a new prop):
-      `CRM PD Grade Migration • Page ${pageNumber} of ${totalPages}`
+4. FOOTER: Show the current footer code and all the places it's repeated. 
+   I need to reformat it to mirror the CRM Summary footer: remove any logo, 
+   centered single line reading "<Report Name> • Page X of Y". Confirm how 
+   the report name/title is available in scope for the footer.
 
-CONSTRAINTS:
-- Keep the outer <View style={styles.footer} fixed> wrapper and its 
-  border-top styling exactly as-is — only change the INNER content 
-  (remove logo/brand/right-text, add the centered line).
-- Remove the <Image ... FHB_Logo.png ... /> from ALL footer blocks. Do NOT 
-  remove the logo from the report HEADER (only the footer).
-- Do NOT change styles.footer, page layout, headers, tables, charts, or any 
-  data.
-- styles.footerLeft / footerBrand / footerLogo / footerText tokens may 
-  become unused — that is fine; leave them defined, do not delete.
-- Only edit this one file. List every footer location changed and confirm 
-  the FHN logo no longer appears in any footer.
+5. For the column removal: confirm the header column count and body cell 
+   count so that after removing the status column, header and body still 
+   match.
+
+Do not edit anything. Findings only.

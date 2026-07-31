@@ -1,25 +1,26 @@
-Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-GOAL (Geoff comment #4): Remove the entire "Selection Summary" section from 
-the report. Geoff confirmed the Current Filter Payload at the end of the 
-report is sufficient, so this section is redundant.
+In frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx, after removing 
+the <FiltersEcho> (Selection Summary) section, there is now a large empty 
+gap on page 1: the "PD GRADE MIGRATION BY SCORECARD COUNT" heading appears, 
+then most of the page is blank, and the actual matrix table is pushed to 
+the next page.
 
-The section is rendered on the main page via:
-    {/* Selection Summary */}
-    <FiltersEcho f={filters || {}} />
+Show me:
+1. The JSX from the DistCharts / "PD DISTRIBUTION" charts block down to and 
+   including the "PD GRADE MIGRATION BY SCORECARD COUNT" section and the 
+   matrix table that follows it.
+2. Any of these that could create the gap between the heading and its table:
+   - a <View break /> or `break` prop
+   - a wrapping <Page> boundary (is the heading on one Page and the table 
+     on a different Page component?)
+   - a fixed height, minHeight, marginTop, or paddingTop on the section 
+     wrapper or the heading
+   - a leftover empty <View> where FiltersEcho used to be, still holding 
+     its own height/margin
+3. Confirm whether the "PD GRADE MIGRATION BY SCORECARD COUNT" heading and 
+   its data table are inside the SAME <Page> or split across two <Page> 
+   components (which would force the table to the next page and leave the 
+   heading stranded with whitespace).
 
-REMOVE this usage (both the comment line and the <FiltersEcho ... /> render) 
-so the Selection Summary block no longer appears in the output.
-
-CONSTRAINTS:
-- Remove ONLY the <FiltersEcho> render (and its adjacent comment) from the 
-  page layout. 
-- You may leave the FiltersEcho function definition in the file unused, OR 
-  remove it as well if it is not referenced anywhere else — but do NOT 
-  remove it if it is used elsewhere. Check for other usages first; if the 
-  only usage is the one being removed, removing the definition is fine.
-- Do NOT touch any other section (header, charts, Current Filter Payload at 
-  the end, detail pages).
-- Do NOT remove or alter the Current Filter Payload section that appears at 
-  the end of the report — Geoff wants to keep that.
-- Only edit this one file. Show the changed lines.
+Do not edit anything. Findings only.

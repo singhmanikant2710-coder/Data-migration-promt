@@ -1,21 +1,26 @@
 READ-ONLY. Diagnostics only. Do not change anything.
 
-Two issues in CroProductionSummaryPDF.tsx:
+In CroProductionSummaryPDF.tsx, the footer renders 
+`${title} • Page X of Y` but appears BLANK/empty in the generated PDF. 
+I need to find why `title` is empty.
 
-ISSUE A - Confirm footer status: Show the CURRENT footer JSX (both 
-occurrences) as it exists in the file right now. I need to verify whether 
-the footer was changed to a centered "<title> • Page X of Y" with no logo, 
-or if it still has the FHN logo + right-aligned page number.
+Show me:
+1. In CroProductionSummaryPage: how is `title` received? Show the component 
+   signature/props destructuring. Is `title` a prop, and does it have a 
+   default/fallback if not passed?
 
-ISSUE B - Month header overlap: In the "SUMMARY BY REVIEWER (MONTHLY COUNTS)" 
-table, the month column headers (JAN-2026, FEB-2026, ... DEC-2026, TOTALS) 
-are overlapping / colliding — the text is too wide for the columns. Show:
-  1. The header row JSX for this monthly summary table — the month column 
-     <Text> cells, how the month labels are generated/formatted (e.g. 
-     "JAN-2026"), and their width styles (flexBasis / fixed width).
-  2. The fontSize applied to these header cells.
-  3. How many columns total (reviewer name + 12 months + totals = 14?).
-  4. Whether the month label format is hardcoded or derived (so I could 
-     shorten "JAN-2026" to "Jan" or "Jan '26" if needed).
+2. Where is CroProductionSummaryPage rendered/called (in the default export 
+   CroProductionSummaryPDF or elsewhere)? Show that call site — is the 
+   `title` prop actually being PASSED to CroProductionSummaryPage? If not, 
+   `title` would be undefined and the footer would show " • Page X of Y".
+
+3. In the default export, confirm the `title` variable: 
+   const title = props?.meta?.title || "CRO Review Production"; 
+   — is this in scope for BOTH footer occurrences, or only the second Page? 
+   The first footer (inside CroProductionSummaryPage) may be using a 
+   different/undefined `title`.
+
+4. Show what value `title` resolves to in the CroProductionSummaryPage 
+   footer specifically.
 
 Do not edit anything. Findings only.

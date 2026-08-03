@@ -1,44 +1,30 @@
-Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
+Fix the footer issue in `components/pdf/CroProductionSummaryPDF.tsx`.
 
-The render prop does not fire in CRO footers, but it WORKS in CRM Summary 
-(CrmSummaryPDF.tsx) on all pages. Copy CRM Summary's EXACT working footer 
-structure into CRO — including the inner <View> wrapper that CRM uses.
+Reference file:
+- `CrmSummaryPDF.tsx` (Footer implementation is correct)
 
-First, show me CRM Summary's EXACT footer once more (verbatim) including the 
-inner View and the fontSizes/spacing tokens it uses. Then replicate it 
-EXACTLY in both CRO footers.
+Issue:
+The CRO Review Production PDF footer is not matching the CRM Summary PDF. It is missing the report name and proper page numbering.
 
-CRM's working footer pattern is (confirmed earlier):
-  <View style={styles.footer} fixed>
-    <View style={{ borderTopWidth: 1, borderTopColor: colors.divider, borderTopStyle: "solid", paddingTop: spacing.xs }}>
-      <Text
-        style={{ fontSize: fontSizes.small, color: "#475569", textAlign: "center" }}
-        render={({ pageNumber, totalPages }) =>
-          `${title} • Page ${pageNumber} of ${totalPages}`
-        }
-      />
-    </View>
-  </View>
+Expected Footer:
+CRO Review Production · Page X of Y
+(or use "CRO Production" if that is the official report name used in the application.)
 
-Apply this EXACT structure to BOTH CRO footers, BUT:
-- Check whether CRO's styles.footer matches CRM's styles.footer geometry 
-  (CRM uses FOOTER_BOTTOM = 12, height 48, and styles.page paddingBottom = 
-  FOOTER_BOTTOM + 56). If CRO's styles.footer/page differ, ALSO align CRO's 
-  styles.footer and styles.page paddingBottom to match CRM's EXACT values, 
-  since the working render behavior may depend on the footer geometry / page 
-  padding.
-- Use the CRO in-scope `title` (and `title`/appropriate var in the second 
-  page).
-- Ensure `fontSizes` and `spacing` tokens are imported in CRO (if CRM uses 
-  fontSizes.small / spacing.xs, confirm CRO imports them; if not, use the 
-  literal equivalents: fontSize 8, paddingTop 4).
+Requirements:
+- Compare `CroProductionSummaryPDF.tsx` with `CrmSummaryPDF.tsx`.
+- Reuse the same footer implementation, styling, alignment, spacing, and formatting.
+- Display only:
+  • Report Name
+  • Page X of Y
+- Footer should appear on every page of the PDF.
+- Do not modify the report content, tables, header, or pagination.
+- Reuse existing shared footer/page-number logic if available instead of creating new code.
 
-Report:
-1. CRM's exact footer + its styles.footer + FOOTER_BOTTOM + styles.page 
-   paddingBottom (verbatim).
-2. CRO's current styles.footer + styles.page paddingBottom.
-3. Apply CRM's exact footer structure to both CRO footers and align 
-   styles.footer/page geometry to CRM's.
-4. Show both final CRO footer blocks and the updated styles.
+Acceptance Criteria:
+✔ Footer matches the CRM Summary PDF exactly.
+✔ Report name is displayed on every page.
+✔ Page numbering is shown as "Page X of Y".
+✔ Footer styling and alignment are identical to CRM Summary.
+✔ No layout or pagination regressions.
 
-Do NOT touch pageSetup.ts, page size, orientation, margins, header, or tables.
+Please analyze both files, identify why the footer is missing in `CroProductionSummaryPDF.tsx`, and implement the same footer logic used in `CrmSummaryPDF.tsx`.

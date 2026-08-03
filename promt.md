@@ -1,47 +1,29 @@
-Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
+Single-file edit (DIAGNOSTIC): frontend/src/components/pdf/CroProductionSummaryPDF.tsx
 
-ROOT CAUSE CONFIRMED: The working PD Grade report footer places 
-<Text render={...}> DIRECTLY inside the fixed footer <View> (no inner View). 
-The CRO footer wraps <Text> inside an extra inner <View>, which breaks the 
-render prop's page-number context — so the text doesn't render. Remove the 
-inner <View> to match PD Grade's working structure.
+The footer structure now matches PD Grade exactly, but text still doesn't 
+render. Testing whether the issue is the `title` prop variable inside the 
+render callback.
 
-Replace BOTH CRO footer blocks with this exact structure (Text directly 
-inside the fixed footer View, border back on styles.footer — matching PD 
-Grade):
+In the FIRST footer ONLY, temporarily replace `title` with a LITERAL string 
+and add a yellow background to confirm visibility:
 
-  <View style={styles.footer} fixed>
+  <View style={[styles.footer, { backgroundColor: "#FFFF00" }]} fixed>
     <Text
-      style={{ fontSize: 8, color: "#334155", textAlign: "center" }}
-      render={({ pageNumber, totalPages }) => `${title} • Page ${pageNumber} of ${totalPages}`}
+      style={{ fontSize: 12, color: "#FF0000", textAlign: "center" }}
+      render={({ pageNumber, totalPages }) =>
+        `CRO Review Production • Page ${pageNumber} of ${totalPages}`
+      }
     />
   </View>
 
-AND restore the border on styles.footer (since we removed the inner View that 
-was carrying it). Add back to styles.footer:
-  borderTopWidth: 1,
-  borderTopColor: colors.divider,
-  borderTopStyle: "solid",
+Note: this uses a HARDCODED literal string "CRO Review Production" instead of 
+the ${title} variable — exactly like PD Grade's DetailTablePage footer which 
+works with a literal.
 
-So styles.footer becomes:
-  footer: {
-    position: "absolute",
-    left: MARGINS.left,
-    right: MARGINS.right,
-    bottom: MARGINS.bottom,
-    height: 48,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.divider,
-    borderTopStyle: "solid",
-  }
+Generate/save. 
+- If "CRO Review Production • Page 1 of 5" (red) now appears → the problem 
+  was the `title` prop (undefined at runtime inside render). 
+- If still nothing (only yellow) → the render prop itself is not firing in 
+  this component/page context, unrelated to title.
 
-CONSTRAINTS:
-- The KEY fix: <Text> must be a DIRECT child of <View style={styles.footer} fixed> 
-  with NO inner <View> between them (exactly like the working PD Grade footer).
-- Apply to BOTH footer occurrences.
-- Use `title` in scope in both locations.
-- Do NOT touch pageSetup.ts, page size, orientation, margins, styles.page, 
-  header, or tables.
-- Only edit this one file. Show both final footer blocks and confirm there 
-  is NO inner View between the fixed footer View and the Text.
+Show the changed footer block.

@@ -1,39 +1,26 @@
-Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
+Single-file edit (DIAGNOSTIC TEST): 
+frontend/src/components/pdf/CroProductionSummaryPDF.tsx
 
-PROBLEM: The footer container renders (its border-top line is visible at the 
-bottom of pages), but the footer TEXT does not appear. The <Text> element 
-inside the footer is malformed and not rendering.
+The footer <Text> is well-formed but still not visible. I need to determine 
+whether the footer is (a) not rendering at all, or (b) rendering but 
+positioned off-screen/clipped/invisible.
 
-FIX: Find BOTH occurrences of the footer (the <View style={styles.footer} fixed> 
-blocks — one inside CroProductionSummaryPage, one inside the second Page of 
-the default export CroProductionSummaryPDF). Replace each ENTIRE footer 
-<View> block with this EXACT, well-formed code:
+TEMPORARY DIAGNOSTIC: In the FIRST footer only (inside CroProductionSummaryPage), 
+make it impossible to miss by temporarily:
+- changing the text color to bright red ("#FF0000")
+- increasing fontSize to 16
+- adding a visible background: backgroundColor: "#FFFF00" (yellow) on the 
+  <View style={styles.footer}>
+- adding a static hardcoded prefix so we know it's THIS text:
+  render so it outputs: `FOOTERTEST ${title} • Page ${pageNumber} of ${totalPages}`
 
-  <View style={styles.footer} fixed>
+So the first footer becomes:
+  <View style={[styles.footer, { backgroundColor: "#FFFF00" }]} fixed>
     <Text
-      style={{ fontSize: 8, color: "#334155", textAlign: "center" }}
-      render={({ pageNumber, totalPages }) => `${title} • Page ${pageNumber} of ${totalPages}`}
+      style={{ fontSize: 16, color: "#FF0000", textAlign: "center" }}
+      render={({ pageNumber, totalPages }) => `FOOTERTEST ${title} • Page ${pageNumber} of ${totalPages}`}
     />
   </View>
 
-Requirements:
-- The <Text> must be a properly self-closed element: it has exactly two 
-  props (style and render), and ends with a self-closing "/>". 
-- The render prop must be an arrow function returning a template literal 
-  using backticks: `${title} • Page ${pageNumber} of ${totalPages}`.
-- Do NOT wrap render in extra braces incorrectly. The correct form is:
-  render={({ pageNumber, totalPages }) => `...`}
-- Remove any existing malformed content like `{textRender={...}}` or stray 
-  inner <View> wrappers or leftover fragments inside the footer.
-- `title` is already in scope in both locations (resolves to 
-  "CRO Review Production").
-- Keep <View style={styles.footer} fixed> exactly as the outer wrapper 
-  (its border-top provides the divider line).
-
-CONSTRAINTS:
-- Do NOT touch pageSetup.ts, page size, orientation, margins, styles.page, 
-  styles.footer definition, header, or tables.
-- Only replace the two footer <View> blocks so the <Text> is well-formed 
-  and renders.
-- After editing, print BOTH footer blocks VERBATIM exactly as they now exist 
-  in the file, so I can verify the <Text> is syntactically correct.
+Do NOT change anything else. This is a temporary visibility test — I will 
+revert the colors/size after confirming. Show the changed block.

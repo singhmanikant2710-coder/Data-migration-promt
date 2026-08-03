@@ -1,32 +1,47 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
 
-CRITICAL COMPARISON: The CRM PD Grade Migration report footer 
-(CrmPdGradeMigrationPDF.tsx) WORKS — it shows "CRM PD Grade Migration • Page X of Y". 
-The CRO Review Production footer (CroProductionSummaryPDF.tsx) does NOT render 
-its text, even though we applied a similar fix. Both are PDF reports from the 
-same Reports dropdown. There must be a structural difference. Find it.
+ROOT CAUSE CONFIRMED: The working PD Grade report footer places 
+<Text render={...}> DIRECTLY inside the fixed footer <View> (no inner View). 
+The CRO footer wraps <Text> inside an extra inner <View>, which breaks the 
+render prop's page-number context — so the text doesn't render. Remove the 
+inner <View> to match PD Grade's working structure.
 
-Compare these EXACT things between CrmPdGradeMigrationPDF.tsx (WORKING) and 
-CroProductionSummaryPDF.tsx (NOT working):
+Replace BOTH CRO footer blocks with this exact structure (Text directly 
+inside the fixed footer View, border back on styles.footer — matching PD 
+Grade):
 
-1. The WORKING footer block in CrmPdGradeMigrationPDF.tsx — show it verbatim. 
-   (Note: earlier this footer was changed to a centered "${title} • Page X of Y" 
-   and it renders correctly.) Show its exact structure: is there an inner View? 
-   Is `render` a prop? What is the parent chain?
+  <View style={styles.footer} fixed>
+    <Text
+      style={{ fontSize: 8, color: "#334155", textAlign: "center" }}
+      render={({ pageNumber, totalPages }) => `${title} • Page ${pageNumber} of ${totalPages}`}
+    />
+  </View>
 
-2. How is the footer's `title` / report-name variable obtained in the WORKING 
-   CrmPdGradeMigrationPDF footer vs the CRO footer? Show the exact variable 
-   and where it comes from in EACH. (e.g. is it a prop, a const, a literal?)
+AND restore the border on styles.footer (since we removed the inner View that 
+was carrying it). Add back to styles.footer:
+  borderTopWidth: 1,
+  borderTopColor: colors.divider,
+  borderTopStyle: "solid",
 
-3. The <Page> and <Document> structure around the footer in BOTH files:
-   - In CrmPdGradeMigrationPDF: how is the page component defined, and does 
-     the footer sit inside <Page>...</Page> directly?
-   - In CroProductionSummaryPDF: same — show the <Page> wrapper and where the 
-     footer sits relative to it.
-   - KEY: Is the footer inside the SAME <Page> element that has the content, 
-     or is it structured differently (e.g. CRO uses a separate component 
-     CroProductionSummaryPage that is placed inside a <Page> at the call site, 
-     vs PD Grade defining <Page> inside its page component)?
+So styles.footer becomes:
+  footer: {
+    position: "absolute",
+    left: MARGINS.left,
+    right: MARGINS.right,
+    bottom: MARGINS.bottom,
+    height: 48,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+    borderTopStyle: "solid",
+  }
 
-4. Does the WORKING PD Grade footer <Text> use `render`, or does it use 
-   static children with the
+CONSTRAINTS:
+- The KEY fix: <Text> must be a DIRECT child of <View style={styles.footer} fixed> 
+  with NO inner <View> between them (exactly like the working PD Grade footer).
+- Apply to BOTH footer occurrences.
+- Use `title` in scope in both locations.
+- Do NOT touch pageSetup.ts, page size, orientation, margins, styles.page, 
+  header, or tables.
+- Only edit this one file. Show both final footer blocks and confirm there 
+  is NO inner View between the fixed footer View and the Text.

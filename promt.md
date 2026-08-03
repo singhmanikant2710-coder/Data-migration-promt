@@ -1,34 +1,30 @@
 READ-ONLY. Diagnostics only. Do not change anything.
 
-The footer in CroProductionSummaryPDF.tsx was changed to render 
-`${title} • Page X of Y` (verified in diff), but it still appears blank/missing 
-in the generated PDF. The footer TEXT may be rendering with an empty `title`.
+The footer text `${title} • Page X of Y` is confirmed wired correctly (title 
+is non-empty). But the footer still doesn't appear in the generated PDF. 
+This is likely a positioning/rendering issue, not a title issue.
 
-Check the `title` value specifically in the FIRST footer (inside 
-CroProductionSummaryPage):
+Show me:
 
-1. Show the exact function signature / props destructuring of 
-   CroProductionSummaryPage. Is `title` listed in the destructured props 
-   parameter? Copy the exact signature line.
+1. The exact styles.footer definition (all properties: position, bottom, 
+   left, right, height, paddingTop, border, etc.).
 
-2. Find where CroProductionSummaryPage is rendered (the JSX call site, 
-   likely inside the default export CroProductionSummaryPDF). Show that 
-   exact line — is `title={...}` being passed, and what value/variable is 
-   passed?
+2. The value of MARGINS (from pageSetup) — specifically MARGINS.bottom — and 
+   the styles.page paddingBottom. Does styles.page reserve enough bottom 
+   padding for the footer height? If styles.page paddingBottom is smaller 
+   than the footer height + MARGINS.bottom, the footer could be overlapping 
+   content or pushed off/hidden.
 
-3. In the default export, show the line that defines `title` 
-   (e.g. const title = props?.meta?.title || "CRO Review Production";) and 
-   confirm what `props` is and whether props.meta exists.
+3. Compare to the CRM Summary report (CrmSummaryPDF.tsx) which has a WORKING 
+   footer: show ITS styles.footer, its FOOTER_BOTTOM/height, and its 
+   styles.page paddingBottom. 
 
-4. MOST IMPORTANT: trace whether the `title` referenced INSIDE 
-   CroProductionSummaryPage's footer is:
-   (a) the destructured prop `title`, and 
-   (b) whether that prop is actually passed a non-empty value at the call site.
-   If title is NOT in the destructured params but the footer uses `title`, 
-   it would be undefined → blank footer.
+4. Specifically check: in CroProductionSummaryPDF, does styles.page have a 
+   paddingBottom that accounts for the footer? The CRM Summary uses 
+   paddingBottom: FOOTER_BOTTOM + 56. Does the CRO report have an equivalent 
+   reservation, or is its footer positioned at bottom: MARGINS.bottom with a 
+   height that may render BELOW the page's usable area / get clipped?
 
-5. Also confirm: is there any OTHER `title` variable shadowing in scope? 
-   And does the second footer (in the default export) use the same title?
+5. Confirm the footer <View> still has the `fixed` prop after the edit.
 
-Do not edit anything. Show the actual current signature, call site, and 
-title definition. Findings only.
+Do not edit anything. Compare the two files' footer positioning. Findings only.

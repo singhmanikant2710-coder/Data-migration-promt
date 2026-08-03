@@ -1,40 +1,41 @@
 Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
 
-DIAGNOSIS CONFIRMED: The footer <View> renders (yellow background is visible) 
-but the <Text render={...}> produces NO text. The render prop on <Text> is 
-not outputting in this context.
+ROOT CAUSE FOUND: The CRM footer (which works) wraps its <Text> inside an 
+INNER <View>, while the CRO footer places <Text> directly under the 
+<View style={styles.footer} fixed> with no inner View. In react-pdf, a 
+<Text render={...}> directly under a fixed View can fail to render the 
+page-context text; the inner <View> wrapper (as CRM uses) fixes this.
 
-FIX: In react-pdf, the `render` callback should be used differently. Change 
-BOTH footers to use the render prop as a CHILD of <Text> (function-as-child / 
-render inside), OR move `render` onto the <Text> with children. The reliable 
-pattern that works with page-level pageNumber/totalPages is:
+FIX: Update BOTH CRO footers to match CRM's exact working structure — add an 
+inner <View> wrapper around the <Text>. Also REMOVE the temporary diagnostic 
+yellow background and red/16pt styling, restoring normal footer styling.
 
-Keep the diagnostic first footer for now but change its Text to this form:
-  <View style={[styles.footer, { backgroundColor: "#FFFF00" }]} fixed>
-    <Text
-      render={({ pageNumber, totalPages }) => `FOOTERTEST ${title} • Page ${pageNumber} of ${totalPages}`}
-      style={{ fontSize: 16, color: "#FF0000", textAlign: "center" }}
-    />
+Replace BOTH footer blocks with this final version:
+
+  <View style={styles.footer} fixed>
+    <View style={{ borderTopWidth: 1, borderTopColor: colors.divider, borderTopStyle: "solid", paddingTop: 4 }}>
+      <Text
+        style={{ fontSize: 8, color: "#334155", textAlign: "center" }}
+        render={({ pageNumber, totalPages }) => `${title} • Page ${pageNumber} of ${totalPages}`}
+      />
+    </View>
   </View>
 
-If that STILL shows no text, instead try wrapping render output as children:
-  <View style={[styles.footer, { backgroundColor: "#FFFF00" }]} fixed>
-    <Text style={{ fontSize: 16, color: "#FF0000", textAlign: "center" }}>
-      <Text render={({ pageNumber, totalPages }) => `FOOTERTEST ${title} • Page ${pageNumber} of ${totalPages}`} />
-    </Text>
-  </View>
+Notes:
+- The inner <View> is the key fix (matches CRM's working pattern).
+- Since the inner <View> now carries the top border, and styles.footer ALSO 
+  has a borderTop, remove the borderTop from styles.footer to avoid a double 
+  line — OR remove the border from the inner View and rely on styles.footer's 
+  border. Pick ONE border source (prefer keeping the inner View's border like 
+  CRM, and remove borderTopWidth/borderTopColor/borderTopStyle from 
+  styles.footer). Ensure only ONE border line renders.
+- Restore normal styling: fontSize 8, color #334155, no yellow background, 
+  no FOOTERTEST prefix.
+- Use `title` in scope in both locations.
 
-BEFORE editing, IMPORTANT — investigate the working CRM Summary footer to 
-copy its EXACT working pattern:
-1. Open CrmSummaryPDF.tsx and show the EXACT footer <Text> including whether 
-   `render` is a prop, the order of props, and whether there's anything 
-   different (e.g. `fixed` on the Text itself, or a different react-pdf 
-   import/version).
-2. Check the react-pdf import in both files — are they importing Text from 
-   the same @react-pdf/renderer version? Show both import lines.
-3. Show whether CRM's footer <Text> has `fixed` on it, or only on the 
-   parent View.
-
-Report those findings AND apply whichever pattern matches CRM's working 
-footer to the CRO first footer (keep yellow/red diagnostic styling for now). 
-Show the final first-footer block.
+CONSTRAINTS:
+- Do NOT touch pageSetup.ts, page size, orientation, margins, styles.page, 
+  header, or tables.
+- Apply the inner-View wrapper to BOTH footers.
+- Only edit this one file. Show both final footer blocks verbatim and 
+  confirm the styles.footer border was deduplicated (only one border line).

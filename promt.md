@@ -1,57 +1,39 @@
-Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-Two fixes for the CRO Review Production report. Do NOT touch pageSetup.ts, 
-page size, orientation, or margins.
+Geoff wants: In the "Informational Purposes" table, reduce the Code column 
+width and add that space to the Comments column, in BOTH the Initial Memo 
+and Final Memo reports. The column widths should MIRROR the "Credit Risk 
+Management Findings" table (use that table's widths as the reference).
 
-=== FIX A: Month header overlap (Summary by Reviewer table) ===
+Find and report (no edits):
 
-In the "SUMMARY BY REVIEWER (MONTHLY COUNTS)" table, the month headers 
-(JAN-2026, FEB-2026, ... DEC-2026) overlap because "JAN-2026" is too wide 
-for the narrow month columns. Fix by making the month labels two-line 
-(month on line 1, year on line 2) and reducing the month header font size.
+1. Locate the Initial Memo and Final Memo PDF report components (likely in 
+   frontend/src/components/pdf/, names like InitialMemoPDF.tsx / 
+   FinalMemoPDF.tsx / CasFinalMemoPDF.tsx or similar — the report title 
+   shown is "CAS Final Memo"). Confirm the exact file path(s). Note whether 
+   Initial and Final memos share ONE component or are two separate files.
 
-1. In buildMonthlyMatrix, where labels are built:
-       const labels = MONTH_ABBR.map((abbr) => (y ? `${abbr}-${y}` : abbr));
-   change to:
-       const labels = MONTH_ABBR.map((abbr) => (y ? `${abbr}\n${y}` : abbr));
+2. In each, locate the "Informational Purposes" table. Show its column 
+   definitions / header cells — specifically the widths (flexBasis or fixed 
+   width) for its columns: Code, Observation Type, Comments. Show the header 
+   row JSX and the width styles for each column.
 
-2. In the month header <Text> cells (the ones mapping matrix.labels with 
-   flexBasis: monthColWidth), add a smaller fontSize so they fit. Change:
-       style={[styles.th, styles.tdCenter, { flexBasis: monthColWidth }]}
-   to:
-       style={[styles.th, styles.tdCenter, { flexBasis: monthColWidth, fontSize: 7 }]}
+3. Locate the "Credit Risk Management Findings" table (the reference table 
+   Geoff wants to mirror). Show ITS column definitions and widths for its 
+   columns. Confirm which columns it has and their exact widths, so I can 
+   mirror them onto the Informational Purposes table.
 
-   Apply the smaller fontSize ONLY to the month header cells. Leave the 
-   REVIEWER NAME and TOTALS header cells as-is.
+4. Compare: what are the current Informational Purposes column widths vs the 
+   Credit Risk Management Findings column widths? Are the two tables' column 
+   structures compatible (same number/type of columns: Code, Observation 
+   Type, Comments)?
 
-=== FIX B: Fill the empty space after CAS PD in the reviewer detail table ===
+5. Confirm whether the width styles are shared (a common style object used 
+   by multiple tables) or defined per-table, so I know whether changing them 
+   affects only the Informational Purposes table or others too.
 
-After removing the "(STATUS NOT SELECTED)" column, the reviewer detail table 
-columns (col.d1..col.d7) no longer fill the full row width, leaving empty 
-space after CAS PD. Rebalance the column widths so they sum to 100% and fill 
-the row. Widen COMMITMENT (col.d4) and OUTSTANDING (col.d5) to absorb the 
-freed space (the old status column was ~10%).
+6. Confirm whether Initial Memo and Final Memo use the SAME Informational 
+   Purposes table component/code (so one fix covers both) or duplicate code 
+   in two files (so both need editing).
 
-Show me the current col definition (col.d1..col.d7 with their flexBasis 
-percentages), then adjust so the total is 100%. Suggested approach: increase 
-col.d4 (COMMITMENT) and col.d5 (OUTSTANDING) widths, and if needed col.d1 
-(CUSTOMER NAME), so the 7 columns fill the full 100% width with no trailing 
-gap after CAS PD (col.d7).
-
-Requirements for Fix B:
-- The 7 column widths (d1..d7) must sum to exactly 100%.
-- Distribute the freed width primarily to COMMITMENT (d4) and OUTSTANDING 
-  (d5) so the CAS PD column ends flush with the right edge (no empty space 
-  after it).
-- Apply the SAME widths consistently to the header row, all data rows, and 
-  the reviewer totals row (so columns stay aligned).
-- Keep styles.tdLast on the CAS PD column (d7) as the last column.
-
-CONSTRAINTS:
-- Only edit this one file. Do NOT change page size/orientation/margins or 
-  any other table.
-- For Fix A, only the monthly summary table's labels and month-header font 
-  change.
-- For Fix B, only the reviewer detail table's column widths change.
-- Show: (1) the updated label line, (2) the updated month header cell style, 
-  (3) the old vs new col.d1..d7 widths with confirmation they sum to 100%.
+Do not edit anything. Findings only.

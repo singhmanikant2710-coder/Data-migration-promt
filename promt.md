@@ -1,38 +1,25 @@
-Single-file edit (DIAGNOSTIC): frontend/src/components/pdf/CroProductionSummaryPDF.tsx
+Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
 
-The render prop does not fire in the CRO footer (yellow bg shows, but no 
-text even with a literal string in render). Testing whether <Text> renders 
-static children at all in this footer context.
+CONFIRMED: Static <Text> renders in the CRO footer, but the `render` prop 
+callback (for pageNumber/totalPages) does NOT fire in this document structure. 
+We need the page number without relying on the top-level render prop.
 
-In the FIRST footer ONLY, use STATIC children text (NO render prop):
+Try this pattern in the FIRST footer (keep yellow bg + red for the test): 
+put the static report name as normal text, and use a NESTED <Text> with 
+render ONLY for the page number (react-pdf sometimes fires render on a nested 
+page-number Text even when a top-level render fails):
 
   <View style={[styles.footer, { backgroundColor: "#FFFF00" }]} fixed>
     <Text style={{ fontSize: 12, color: "#FF0000", textAlign: "center" }}>
-      STATIC FOOTER TEXT WORKS
+      CRO Review Production • Page <Text render={({ pageNumber, totalPages }) => `${pageNumber} of ${totalPages}`} />
     </Text>
   </View>
 
 Generate/save.
-- If "STATIC FOOTER TEXT WORKS" (red) appears → <Text> renders fine; ONLY 
-  the `render` prop is broken in this context. We'll switch to a different 
-  page-number approach.
-- If still nothing (only yellow) → <Text> itself doesn't render inside this 
-  fixed footer in the CRO document structure — a deeper Page/Document 
-  structural problem.
+- If it shows "CRO Review Production • Page 1 of 5" → this nested pattern 
+  works; we'll apply it (cleaned up) to both footers.
+- If it shows "CRO Review Production • Page " (page number missing) → even 
+  nested render fails; we'll fall back to static-only footer (report name, 
+  no page number) OR investigate the Page structure further.
 
-ALSO — this is important — show me the EXACT top-level structure of how CRO 
-renders its Document and Pages vs how PD Grade does:
-1. In CroProductionSummaryPDF (default export): show the full <Document> ... 
-   </Document> JSX skeleton — how <CroProductionSummaryPage /> is placed, and 
-   the second <Page>. Is CroProductionSummaryPage returning a <Page> itself, 
-   or a <View>? Show the return statement opening of CroProductionSummaryPage 
-   (does it return <Page ...> or <View ...> or a Fragment?).
-2. In CrmPdGradeMigrationPDF (working): show the same — does 
-   CrmPdGradeMigrationPage return a <Page>? 
-3. KEY: confirm whether CroProductionSummaryPage returns a <Page> as its 
-   ROOT element, or whether it returns something else that is then wrapped 
-   in a <Page> at the call site. The `fixed` + `render` page context only 
-   works when the footer's <View fixed> is a direct child of a <Page>.
-
-Show the changed footer block, the static-text result expectation, and the 
-Document/Page structure comparison.
+Show the changed block and the result.

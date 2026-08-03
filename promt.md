@@ -1,41 +1,39 @@
 Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
 
-The footer text is not rendering in the generated PDF. The title wiring and 
-padding are confirmed correct, but the footer's <Text> element structure 
-appears malformed/broken (it is not rendering). 
+PROBLEM: The footer container renders (its border-top line is visible at the 
+bottom of pages), but the footer TEXT does not appear. The <Text> element 
+inside the footer is malformed and not rendering.
 
-Fix by replacing BOTH footer occurrences with the EXACT working structure 
-used by the CRM Summary report (CrmSummaryPDF.tsx), which renders correctly. 
-Use an inner <View> wrapper containing the <Text>, like this:
+FIX: Find BOTH occurrences of the footer (the <View style={styles.footer} fixed> 
+blocks — one inside CroProductionSummaryPage, one inside the second Page of 
+the default export CroProductionSummaryPDF). Replace each ENTIRE footer 
+<View> block with this EXACT, well-formed code:
 
   <View style={styles.footer} fixed>
-    <View style={{ borderTopWidth: 1, borderTopColor: colors.divider, borderTopStyle: "solid", paddingTop: 4 }}>
-      <Text
-        style={{ fontSize: 8, color: "#334155", textAlign: "center" }}
-        render={({ pageNumber, totalPages }) => `${title} • Page ${pageNumber} of ${totalPages}`}
-      />
-    </View>
+    <Text
+      style={{ fontSize: 8, color: "#334155", textAlign: "center" }}
+      render={({ pageNumber, totalPages }) => `${title} • Page ${pageNumber} of ${totalPages}`}
+    />
   </View>
 
-Apply this EXACT structure to BOTH footer occurrences (the one inside 
-CroProductionSummaryPage and the one inside the second Page of the default 
-export). Ensure:
-- The <Text> is a proper self-closed element with style and render props 
-  (not malformed).
-- Uses the `title` variable already in scope in each location.
-- Move the border from styles.footer's container into this inner <View> 
-  wrapper (matching CRM's approach), OR keep styles.footer's border — but 
-  ensure the <Text> actually renders. If styles.footer already has a 
-  borderTop, you may remove the inner wrapper's borderTop to avoid a double 
-  border; the KEY requirement is that the <Text> renders. Prefer matching 
-  CRM's exact working pattern.
+Requirements:
+- The <Text> must be a properly self-closed element: it has exactly two 
+  props (style and render), and ends with a self-closing "/>". 
+- The render prop must be an arrow function returning a template literal 
+  using backticks: `${title} • Page ${pageNumber} of ${totalPages}`.
+- Do NOT wrap render in extra braces incorrectly. The correct form is:
+  render={({ pageNumber, totalPages }) => `...`}
+- Remove any existing malformed content like `{textRender={...}}` or stray 
+  inner <View> wrappers or leftover fragments inside the footer.
+- `title` is already in scope in both locations (resolves to 
+  "CRO Review Production").
+- Keep <View style={styles.footer} fixed> exactly as the outer wrapper 
+  (its border-top provides the divider line).
 
 CONSTRAINTS:
-- Do NOT touch pageSetup.ts, page size, orientation, margins, styles.page 
-  paddingBottom, or any header/table content.
-- Only fix the two footer blocks so the centered "${title} • Page X of Y" 
-  text actually renders.
-- Verify the JSX is syntactically valid (proper <Text ... /> and closing 
-  </View> tags).
-- Only edit this one file. Show both final footer blocks verbatim so I can 
-  confirm the <Text> is well-formed.
+- Do NOT touch pageSetup.ts, page size, orientation, margins, styles.page, 
+  styles.footer definition, header, or tables.
+- Only replace the two footer <View> blocks so the <Text> is well-formed 
+  and renders.
+- After editing, print BOTH footer blocks VERBATIM exactly as they now exist 
+  in the file, so I can verify the <Text> is syntactically correct.

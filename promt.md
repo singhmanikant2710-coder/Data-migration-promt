@@ -1,41 +1,32 @@
-Single-file edit: frontend/src/components/pdf/CroProductionSummaryPDF.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-ROOT CAUSE FOUND: The CRM footer (which works) wraps its <Text> inside an 
-INNER <View>, while the CRO footer places <Text> directly under the 
-<View style={styles.footer} fixed> with no inner View. In react-pdf, a 
-<Text render={...}> directly under a fixed View can fail to render the 
-page-context text; the inner <View> wrapper (as CRM uses) fixes this.
+CRITICAL COMPARISON: The CRM PD Grade Migration report footer 
+(CrmPdGradeMigrationPDF.tsx) WORKS — it shows "CRM PD Grade Migration • Page X of Y". 
+The CRO Review Production footer (CroProductionSummaryPDF.tsx) does NOT render 
+its text, even though we applied a similar fix. Both are PDF reports from the 
+same Reports dropdown. There must be a structural difference. Find it.
 
-FIX: Update BOTH CRO footers to match CRM's exact working structure — add an 
-inner <View> wrapper around the <Text>. Also REMOVE the temporary diagnostic 
-yellow background and red/16pt styling, restoring normal footer styling.
+Compare these EXACT things between CrmPdGradeMigrationPDF.tsx (WORKING) and 
+CroProductionSummaryPDF.tsx (NOT working):
 
-Replace BOTH footer blocks with this final version:
+1. The WORKING footer block in CrmPdGradeMigrationPDF.tsx — show it verbatim. 
+   (Note: earlier this footer was changed to a centered "${title} • Page X of Y" 
+   and it renders correctly.) Show its exact structure: is there an inner View? 
+   Is `render` a prop? What is the parent chain?
 
-  <View style={styles.footer} fixed>
-    <View style={{ borderTopWidth: 1, borderTopColor: colors.divider, borderTopStyle: "solid", paddingTop: 4 }}>
-      <Text
-        style={{ fontSize: 8, color: "#334155", textAlign: "center" }}
-        render={({ pageNumber, totalPages }) => `${title} • Page ${pageNumber} of ${totalPages}`}
-      />
-    </View>
-  </View>
+2. How is the footer's `title` / report-name variable obtained in the WORKING 
+   CrmPdGradeMigrationPDF footer vs the CRO footer? Show the exact variable 
+   and where it comes from in EACH. (e.g. is it a prop, a const, a literal?)
 
-Notes:
-- The inner <View> is the key fix (matches CRM's working pattern).
-- Since the inner <View> now carries the top border, and styles.footer ALSO 
-  has a borderTop, remove the borderTop from styles.footer to avoid a double 
-  line — OR remove the border from the inner View and rely on styles.footer's 
-  border. Pick ONE border source (prefer keeping the inner View's border like 
-  CRM, and remove borderTopWidth/borderTopColor/borderTopStyle from 
-  styles.footer). Ensure only ONE border line renders.
-- Restore normal styling: fontSize 8, color #334155, no yellow background, 
-  no FOOTERTEST prefix.
-- Use `title` in scope in both locations.
+3. The <Page> and <Document> structure around the footer in BOTH files:
+   - In CrmPdGradeMigrationPDF: how is the page component defined, and does 
+     the footer sit inside <Page>...</Page> directly?
+   - In CroProductionSummaryPDF: same — show the <Page> wrapper and where the 
+     footer sits relative to it.
+   - KEY: Is the footer inside the SAME <Page> element that has the content, 
+     or is it structured differently (e.g. CRO uses a separate component 
+     CroProductionSummaryPage that is placed inside a <Page> at the call site, 
+     vs PD Grade defining <Page> inside its page component)?
 
-CONSTRAINTS:
-- Do NOT touch pageSetup.ts, page size, orientation, margins, styles.page, 
-  header, or tables.
-- Apply the inner-View wrapper to BOTH footers.
-- Only edit this one file. Show both final footer blocks verbatim and 
-  confirm the styles.footer border was deduplicated (only one border line).
+4. Does the WORKING PD Grade footer <Text> use `render`, or does it use 
+   static children with the

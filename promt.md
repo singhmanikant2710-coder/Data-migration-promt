@@ -1,11 +1,25 @@
-Subject: CRM PD Grade Migration — approval-date requirement (status-driven reporting)
-Hi Geoff,
-I looked into your note that the report requires [Review_approval_date] to be populated, which overrides the Reports Home status selection. You're exactly right — I confirmed it in the code.
-Currently the report has a built-in "Approved Only" condition that defaults to on, so it only returns reviews where Review_approval_date is populated. The report also doesn't accept the Reports Home "Status" selection at all right now, so that filter has no effect here.
-To make it status-driven (so the Reports Home status — Completed / Distributed / Finalized — determines which reviews appear, independent of approval date), I'll wire the report to use the same status logic the Review Status screen uses, and remove the automatic "Approved Only" requirement.
-Before I make that change, one confirmation:
-The "Approved Only" default appears intentional in the original design — it limited the PD grade migration analysis to reviews that had been approved. Removing it means the report will include reviews at whatever status you select, including those not yet approved. Is that the intended behavior? In other words, should PD grade migration now reflect all reviews matching the selected status, regardless of whether they've been approved?
-If yes, I'll proceed with the status-driven change. If there's a case where "Approved Only" should still be available (e.g., as an optional toggle), let me know and I'll keep it as an option rather than removing it entirely.
-Everything else you flagged on this report (the color coding, hiding $0 / defaulting to 0, the direction logic, the % columns, and label edits) is done and ready for you to review.
-Thanks!
-Manikant
+READ-ONLY. Diagnostics only. Do not change anything.
+
+On page 1 of the CRM PD Grade Migration report, there is a large whitespace 
+gap below the two PD Distribution charts (before the footer). The next 
+section (PD Grade Migration matrix) starts on page 2. Geoff wants this 
+whitespace reduced.
+
+In CrmPdGradeMigrationPDF.tsx, show me:
+1. The JSX from the DistCharts (the two bar charts) down through the next 
+   element(s) — MatrixCount and MatrixCommitment. Show all the spacers 
+   (<View style={styles.spacer} />), margins, and any wrap={false} or break 
+   props between the charts and the matrix.
+2. The height/margin of styles.spacer and any marginTop/marginBottom on the 
+   chart container and the matrix container.
+3. Whether MatrixCount has wrap={false} on its outer View (which would force 
+   the whole matrix to move to the next page if it doesn't fit on page 1, 
+   creating the gap).
+4. The approximate height of the DistCharts block and MatrixCount block — 
+   would MatrixCount realistically fit on page 1 below the charts, or is it 
+   too tall (making the page-2 move unavoidable)?
+5. Confirm: is the gap caused by (a) excessive spacer/margin, or (b) 
+   MatrixCount being wrap={false} and too tall to fit, so it moves to page 2 
+   and leaves the remainder of page 1 empty?
+
+Do not edit anything. Findings only.

@@ -1,34 +1,82 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/components/pdf/HtmlRichText.tsx
+[decodeEntities fix — &amp;->&, &gt;->>, &lt;-><, etc., &amp; LAST]
+(same prompt as given earlier for Issue 2)
 
-Geoff reported the same "&amp; / &gt; / &lt;" jargon issue in the CAS 
-Linesheet report (in addition to Initial/Final Memo). Plus a data error and 
-a page-break issue. Investigate:
+Single-file edit (or shared util): frontend/src/components/pdf/ReviewPDF.tsx 
+(CAS Linesheet)
 
-1. Locate the CAS Linesheet PDF component (likely CasLinesheetPDF.tsx or 
-   similar in frontend/src/components/pdf/). Confirm the exact file path.
+CONTEXT: Some non-narrative fields in the CAS Linesheet render HTML entities 
+literally ("&gt;= 1.10x", "&amp;", "&lt;") because they are plain <Text> 
+(not routed through HtmlRichText), or use a stripHtml helper that doesn't 
+decode entities.
 
-2. ENTITY ISSUE: Find where the CAS Linesheet renders long-text / narrative 
-   fields that show "&amp;", "&gt;", "&lt;" literally (e.g. the "CRO concurs" 
-   bullets, "Minimum DSC &gt;= 1.10x" covenant comments). Confirm whether it 
-   routes this text through the SHARED HtmlRichText component (same as the 
-   memos), OR through its own local parser/decoder. If it uses HtmlRichText, 
-   the central decodeEntities fix will cover it too.
+Two specific places from diagnostics:
+1. The stripHtml helper (used for Policy Exception Comments) strips tags and 
+   replaces &nbsp; but does NOT decode &lt;, &gt;, &amp;.
+2. Non-narrative table cells (e.g. covenant thresholds like "&gt;= 1.10x") 
+   render raw entity-encoded strings.
 
-3. DATA ERROR — "Breaches Addressed" field: Locate where the CAS Linesheet 
-   renders the "Breaches Addressed" field (in the Reporting/Monitoring 
-   Covenants area). Geoff says it should display [Covenant_breaches_addressed] 
-   from the CORE Reviews table. Show:
-   - The current code/field that populates "Breaches Addressed" — what data 
-     property is it bound to right now?
-   - Whether the data model / repository already provides a 
-     covenant_breaches_addressed / breachesAddressed field, and if so its 
-     exact name.
-   - Is the backend query for CAS Linesheet already selecting 
-     Covenant_breaches_addressed from the Reviews table, or is it missing?
+FIX:
+a) Update the stripHtml helper in ReviewPDF.tsx to ALSO decode the named 
+   entities after stripping tags. Add these decode steps (decode &amp; LAST):
+     .replace(/&nbsp;/gi, " ")
+     .replace(/&lt;/gi, "<")
+     .replace(/&gt;/gi, ">")
+     .replace(/&quot;/gi, "\"")
+     .replace(/&#39;/gi, "'")
+     .replace(/&apos;/gi, "'")
+     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+     .replace(/&amp;/gi, "&")
 
-4. PAGE-BREAK ISSUE: Locate the "Unsatisfactory CRM Ratings" / "Risk Rating 
-   Justification" section. Show whether it has a wrap={false} / break / 
-   minPresenceAhead / "keep together" setting that forces the section to a 
-   new page, pushing comments to the next page.
+b) For non-narrative table cell values that may be entity-encoded (e.g. 
+   covenant threshold strings), apply the same decode. If there is a common 
+   helper (like `out()` or a text formatter) used for these cells, prefer 
+   decoding there. Otherwise, create a small local `decodeEntities` helper 
+   in ReviewPDF.tsx and wrap the specific entity-prone cell values (covenant 
+   threshold / covenant text fields) with it.
 
-Do not edit anything. Findings only.
+Report which specific cell/field values you wrapped, and confirm stripHtml 
+now decodes entities.
+
+CONSTRAINTS:
+- Do NOT touch pageSetup.ts, page layout, or unrelated fields.
+- Only decode entities; do not change the actual data or other formatting.
+- Show the updated stripHtml and any cell values you wrapped.
+
+
+Single-file edit: frontend/src/components/pdf/ReviewPDF.tsx (CAS Linesheet)
+
+DATA ERROR (Geoff): The "Breaches Addressed" field in the Covenant and 
+Monitoring Information table shows wrong/blank data. It should display 
+[Covenant_breaches_addressed] from the CORE Reviews table.
+
+ROOT CAUSE (confirmed): The backend already provides this value at 
+data.covenants.info.breachesMitigated (mapped from 
+Reviews.Covenant_breaches_addressed in SqlReviewRepository.GetCovenantsSectionAsync). 
+But the Linesheet currently reads it from data.reviewInfo.* variants 
+(Covenant_breaches_addressed / covenantBreachesAddressed etc.), which are 
+NOT populated — hence blank/incorrect.
+
+Current code:
+  const covBreaches = stripHtml(
+    ((ri as any)?.Covenant_breaches_addressed ??
+     (ri as any)?.covenant_breaches_addressed ??
+     (ri as any)?.CovenantBreachesAddressed ??
+     (ri as any)?.covenantBreachesAddressed ?? "") as any
+  );
+
+FIX: Bind covBreaches to the correct source — data.covenants.info.breachesMitigated 
+(the backend-provided, correctly-populated field). Keep stripHtml for safety:
+
+  const covBreaches = stripHtml(
+    ((data as any)?.covenants?.info?.breachesMitigated ?? "") as any
+  );
+
+CONSTRAINTS:
+- Do NOT touch the backend or any query (it already returns the correct value).
+- Only change the frontend binding for covBreaches to read from 
+  data.covenants.info.breachesMitigated.
+- Keep the existing stripHtml wrapper and the "-" fallback in the render.
+- Do NOT touch other fields or layout.
+- Only edit this one file. Show the updated covBreaches line.

@@ -1,37 +1,33 @@
-Two-file edit: 
-- frontend/src/components/pdf/InitialMemoPDF.tsx
-- frontend/src/components/pdf/FinalMemoPDF.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-GOAL (Geoff): In the "Informational Purposes" table, reduce the Code column 
-width and add that space to the Comments column, mirroring the "Credit Risk 
-Management Findings" table widths. Apply to BOTH the Initial Memo and Final 
-Memo reports.
+Two issues in the Initial Memo report (InitialMemoPDF.tsx), which also apply 
+to Final Memo (FinalMemoPDF.tsx):
 
-Reference (Credit Risk Management Findings, cols3Findings): 
-  Code 10% | Type 30% | Comments 60%
+ISSUE 1 — Approver field width (cosmetic):
+In the header/customer info area, the "Approver:" field value 
+("HOULDITCH, GEOFFREY") wraps onto two lines. Geoff wants the field width 
+increased so a long approver name fits on ONE line. Show:
+- The header block JSX where "Status", "Reviewer", "Approver" fields are 
+  rendered (the right column of the header).
+- The width styles (flexBasis/width) of the Approver field and its 
+  label/value container.
+- How the three columns (Customer#/ReviewID/Sample | Sample Date/Completed/
+  Distributed | Status/Reviewer/Approver) are laid out and their widths.
 
-The Informational Purposes table uses the `cols3Observations` StyleSheet 
-constant, currently:
-  c1 (Code): flexBasis "20%"
-  c2 (Observation Type): flexBasis "30%"
-  c3 (Comments): flexBasis "50%"
+ISSUE 2 — Ampersand showing as "&amp;" (formatting):
+In a long-text field, text shows the literal HTML entity "&amp;" instead of 
+"&" (e.g. "Excluding net income &amp; distributions"). Also scorecard IDs 
+show stray "&" fragments like "df6debd1-&a53d-&4d79". Show:
+- The code/component that renders these long-text narrative fields (the CRO 
+  concurrence bullet text).
+- Whether the text is rendered as-is from data, or passed through any 
+  HTML-decode / sanitize / rich-text helper.
+- Where the scorecard ID is rendered and whether it's also passing through 
+  the same rendering path (which might be inserting "&" fragments).
+- Any existing helper in the codebase that decodes HTML entities 
+  (e.g. &amp; -> &, &lt; -> <) that could be applied.
 
-Change `cols3Observations` in BOTH files to mirror the findings widths:
-  c1 (Code): flexBasis "20%"  ->  flexBasis "10%"
-  c2 (Observation Type): flexBasis "30%"  (unchanged)
-  c3 (Comments): flexBasis "50%"  ->  flexBasis "60%"
+For BOTH issues, confirm whether InitialMemoPDF.tsx and FinalMemoPDF.tsx 
+share code or are duplicated (so I know if both need editing).
 
-Apply this EXACT change to cols3Observations in:
-1. InitialMemoPDF.tsx
-2. FinalMemoPDF.tsx
-
-CONSTRAINTS:
-- Change ONLY the flexBasis values of cols3Observations.c1 (20% -> 10%) and 
-  cols3Observations.c3 (50% -> 60%). Leave c2 at 30%.
-- Do NOT touch cols3Findings, the header text, the table structure, or any 
-  other style/table.
-- The three widths must still sum to 100% (10 + 30 + 60 = 100). ✓
-- Do NOT change pageSetup.ts, page size, orientation, margins, or any other 
-  component.
-- Only edit these two files. Show the updated cols3Observations constant 
-  from each file.
+Do not edit anything. Findings only.

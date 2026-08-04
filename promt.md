@@ -1,33 +1,52 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/components/pdf/HtmlRichText.tsx
 
-Two issues in the Initial Memo report (InitialMemoPDF.tsx), which also apply 
-to Final Memo (FinalMemoPDF.tsx):
+BUG: The decodeEntities function does not decode named HTML entities. The 
+current code has no-op replacements (replacing "&" with "&", "<" with "<", 
+etc.) instead of decoding the entity forms. So "&amp;" renders literally as 
+"&amp;" in the PDF (seen in Initial/Final Memo narrative text: 
+"Excluding net income &amp; distributions").
 
-ISSUE 1 — Approver field width (cosmetic):
-In the header/customer info area, the "Approver:" field value 
-("HOULDITCH, GEOFFREY") wraps onto two lines. Geoff wants the field width 
-increased so a long approver name fits on ONE line. Show:
-- The header block JSX where "Status", "Reviewer", "Approver" fields are 
-  rendered (the right column of the header).
-- The width styles (flexBasis/width) of the Approver field and its 
-  label/value container.
-- How the three columns (Customer#/ReviewID/Sample | Sample Date/Completed/
-  Distributed | Status/Reviewer/Approver) are laid out and their widths.
+Current (broken) decodeEntities:
+  function decodeEntities(input: string): string {
+    return input
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&/gi, "&")        // no-op
+      .replace(/</gi, "<")        // no-op
+      .replace(/>/gi, ">")        // no-op
+      .replace(/"/gi, "\"")       // no-op
+      .replace(/'/gi, "'")        // no-op
+      .replace(/&#39;/gi, "'")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+      .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+  }
 
-ISSUE 2 — Ampersand showing as "&amp;" (formatting):
-In a long-text field, text shows the literal HTML entity "&amp;" instead of 
-"&" (e.g. "Excluding net income &amp; distributions"). Also scorecard IDs 
-show stray "&" fragments like "df6debd1-&a53d-&4d79". Show:
-- The code/component that renders these long-text narrative fields (the CRO 
-  concurrence bullet text).
-- Whether the text is rendered as-is from data, or passed through any 
-  HTML-decode / sanitize / rich-text helper.
-- Where the scorecard ID is rendered and whether it's also passing through 
-  the same rendering path (which might be inserting "&" fragments).
-- Any existing helper in the codebase that decodes HTML entities 
-  (e.g. &amp; -> &, &lt; -> <) that could be applied.
+FIX: Replace the no-op named-entity lines with correct entity decoding. 
+IMPORTANT: decode &amp; LAST (after all other named entities) so that 
+entities like "&amp;lt;" don't get partially decoded incorrectly. Correct 
+version:
 
-For BOTH issues, confirm whether InitialMemoPDF.tsx and FinalMemoPDF.tsx 
-share code or are duplicated (so I know if both need editing).
+  function decodeEntities(input: string): string {
+    return input
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, "\"")
+      .replace(/&#39;/gi, "'")
+      .replace(/&apos;/gi, "'")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+      .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+      .replace(/&amp;/gi, "&");   // MUST be last
+  }
 
-Do not edit anything. Findings only.
+Key points:
+- &amp; -> & must run LAST (after &lt;, &gt;, etc.) to correctly handle 
+  double-encoded sequences.
+- Decode &lt; -> <, &gt; -> >, &quot; -> ", &#39;/&apos; -> ', plus numeric 
+  and hex entities (keep those as they already work).
+
+CONSTRAINTS:
+- Only fix the decodeEntities function in HtmlRichText.tsx.
+- Do NOT change any other logic in HtmlRichText, and do NOT touch 
+  InitialMemoPDF.tsx / FinalMemoPDF.tsx for this issue (the fix is central).
+- Do NOT touch pageSetup.ts or page layout.
+- Only edit this one file. Show the final decodeEntities function.

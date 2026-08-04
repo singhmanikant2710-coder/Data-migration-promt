@@ -1,49 +1,43 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Four small, specific cosmetic changes. Each is bounded — do NOT loop or 
-search broadly. Make exactly these four changes and stop.
+Color-code the cell VALUE text in both migration matrices based on their 
+section background (Geoff's request):
+- Values in the PINK section (background #fee2e2) → dark red text
+- Values in the GREEN section (background #dcfce7) → dark green text
+- Values in the diagonal / no-background cells → keep default text color
 
-=== CHANGE 1: Count matrix — show "0" for empty cells ===
-In MatrixCount (the "PD Grade Migration by Number of Accounts" table), the 
-data cells currently render an empty/NBSP value when the count is 0. Geoff 
-wants empty cells to display "0" instead.
-Find the cell render in MatrixCount where it outputs the count value (it 
-likely does something like `{v === 0 ? NBSP : String(v)}` or 
-`{v || NBSP}`). Change it so a 0 value displays "0":
-  {String(v)}   // always show the number, including 0
-(Apply ONLY to MatrixCount data cells. Do NOT change the totals row logic 
-if it already shows numbers.)
+The cells already compute a background color `bg` based on toPd vs fromPd. 
+In BOTH MatrixCount AND MatrixCommitment, the data cell currently sets 
+backgroundColor via that `bg` logic (pink when toPd > fromPd, green when 
+toPd < fromPd, undefined when equal).
 
-=== CHANGE 2: Commitment matrix — hide "$0" values ===
-In MatrixCommitment (the "PD Grade Migration by Commitment" table), the data 
-cells currently show "$0" for zero values. Geoff wants $0 hidden (blank) in 
-the green and pink sections, matching how the count table hides empties.
-Find the cell render in MatrixCommitment where it outputs the money value. 
-Change it so a 0 value renders blank (NBSP) instead of "$0":
-  {(!v || v === 0) ? NBSP : money(v)}
-(Apply ONLY to MatrixCommitment data cells. Leave the Totals row showing 
-its values as-is unless it also shows $0 — keep totals showing real amounts.)
+For each data cell, ALSO set the text color to match:
+- Add a computed text color alongside the existing bg. Where bg is currently 
+  determined like:
+    const bg = toPd > r.fromPd ? "#fee2e2" : toPd < r.fromPd ? "#dcfce7" : undefined;
+  add:
+    const fg = toPd > r.fromPd ? "#991B1B" : toPd < r.fromPd ? "#166534" : undefined;
+  (#991B1B = dark red, #166534 = dark green)
 
-=== CHANGE 3: Capitalize "# of Accounts" header ===
-In Subreport03_DistByCount (Final PD Distribution Count), the column header 
-currently reads "# of Accounts". Change it to all caps:
-  "# OF ACCOUNTS"
+- Then apply `color: fg` in the cell's style, alongside the existing 
+  backgroundColor: bg. For example, in the cell style array add:
+    { backgroundColor: bg, color: fg }
+  (keep all other existing style properties on that cell).
 
-=== CHANGE 4: Detail table — Direction wider, Commitment narrower ===
-In the DETAIL table (page with CUSTOMER NAME (REVIEW ID) | BANK PD | CAS PD | 
-DIRECTION | COMMITMENT), Geoff wants the Direction column wider and the 
-Commitment column narrower.
-Show the current width styles for the DIRECTION and COMMITMENT columns 
-(likely wDirection and wCommit or similar), then increase DIRECTION's width 
-and decrease COMMITMENT's width by a matching amount so the row still sums 
-to 100%. For example, if Direction is 10% and Commitment is 25%, change to 
-Direction 18% and Commitment 17% (adjust based on the actual current values 
-— keep the total unchanged).
+Apply this to BOTH:
+1. MatrixCount data cells (the "by Number of Accounts" table)
+2. MatrixCommitment data cells (the "by Commitment" table)
 
 CONSTRAINTS:
-- Make ONLY these four changes. Do NOT touch other tables, colors, data 
-  logic, or the % columns (those are a separate batch).
-- For Change 4, only adjust the DIRECTION and COMMITMENT column widths in 
-  the detail table; keep all detail columns summing to 100%.
-- Do NOT loop or repeat. Show each changed line/style once and stop.
-- Only edit this one file. List the four changes made.
+- Only add the text color (fg) to the DATA cells that already have the pink/
+  green background logic. 
+- Do NOT color the diagonal cells (where toPd === fromPd) — leave fg 
+  undefined so they use default text color.
+- Do NOT color the header row, the BANK PD label column, the Totals column, 
+  or the Totals row — only the inner data cells that have the pink/green bg.
+- Do NOT change the background colors themselves, the values, or any other 
+  logic.
+- Match the fg computation to the EXISTING bg computation in each matrix 
+  (use the same toPd vs fromPd comparison that's already there).
+- Do NOT loop. Make the change in both matrices' data cells and stop.
+- Only edit this one file. Show the changed cell code for both matrices.

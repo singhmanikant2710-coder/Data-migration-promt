@@ -1,66 +1,59 @@
-Two-file edit (backend logic + frontend type):
-- backend/src/Casrr.Application/Reporting/CrmPdGradeMigration/CrmPdGradeMigrationReportService.cs
-- frontend type (CrmPdGradeMigrationDetailRow) in BOTH:
-  - frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
-  - frontend/src/services/api/reporting.ts
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-GOAL (Geoff): Fix the DETAIL table DIRECTION column logic/labels. 
-pdInitial = Bank PD, pdFinal = CAS PD. Higher PD = worse credit = downgrade.
-Correct rule:
-- CAS PD (pdFinal) > Bank PD (pdInitial) -> "Downgrade"
-- CAS PD (pdFinal) < Bank PD (pdInitial) -> "Upgrade"
-- equal                                  -> "No Change"
+Add percentage columns to the two "Final PD Distribution" tables (Geoff: 
+"Can we add a % OF COUNT / % OF COMMITMENT column like the tables above?").
+Same pattern already used in the Migration Totals tables: each row's value ÷ 
+the grand total of that column, to 1 decimal place with "%". Rows sum to ~100%.
 
-Direction is DISPLAY-ONLY (matrices/totals/filters use numeric pdInitial/
-pdFinal, not the Direction string), so this label change does not affect any 
-data/calculations — confirmed by diagnostics.
+=== PART A: "% OF COUNT" in Subreport03_DistByCount ===
+This table currently has columns: PD | # OF ACCOUNTS. Add a "% OF COUNT" 
+column after it.
 
-=== BACKEND CHANGE (CrmPdGradeMigrationReportService.cs) ===
-Current logic:
-  string direction = "Unchanged";
-  if (pdInit.HasValue && pdFinal.HasValue)
-  {
-      if (pdFinal.Value > pdInit.Value)
-          direction = "Up";
-      else if (pdFinal.Value < pdInit.Value)
-          direction = "Down";
-      else
-          direction = "Unchanged";
-  }
+a) Before the return/mapping, compute the grand total:
+   const grandTotalDistCount = (rows || []).reduce((s, r) => s + (r.count || 0), 0);
+   (Use the actual count field name on the row — check what property holds 
+   the count value, e.g. r.count or r.numAccounts.)
 
-Change the labels to:
-  string direction = "No Change";
-  if (pdInit.HasValue && pdFinal.HasValue)
-  {
-      if (pdFinal.Value > pdInit.Value)
-          direction = "Downgrade";
-      else if (pdFinal.Value < pdInit.Value)
-          direction = "Upgrade";
-      else
-          direction = "No Change";
-  }
+b) Rebalance the 2-column header to 3 columns and add "% OF COUNT" as the 
+   last column (right-aligned). Use inline flexBasis so widths sum to 100% 
+   (e.g. PD 40% | # OF ACCOUNTS 30% | % OF COUNT 30%). Move styles.tdLast to 
+   the new last (%) column.
 
-Do NOT touch the synthetic "No Grade Changes" display row — that special 
-label stays as-is (it's a different case, used when there are no changes).
+c) Add the body cell for % OF COUNT with divide-by-zero guard:
+   {grandTotalDistCount > 0 
+     ? `${((r.count || 0) / grandTotalDistCount * 100).toFixed(1)}%` 
+     : "0.0%"}
 
-=== FRONTEND TYPE UPDATE ===
-The detail row type currently declares:
-  direction: "Up" | "Down" | "Unchanged";
-Update it in BOTH files to:
-  direction: "Downgrade" | "Upgrade" | "No Change" | "No Grade Changes";
-(include "No Grade Changes" since the synthetic row uses it)
+=== PART B: "% OF COMMITMENT" in Subreport04_DistByExposure (Final PD 
+    Distribution Commitment) ===
+This table currently has columns: PD | COMMITMENT. Add "% OF COMMITMENT" 
+after it.
 
-The frontend render (out(r.direction)) needs NO change — it displays whatever 
-string comes from backend.
+a) Compute grand total (raw dollars, matching this table's money() column):
+   const grandTotalDistCommit = (rows || []).reduce((s, r) => s + Number(r.sumCommitment || 0), 0);
+   (Use the actual commitment field name — check the property, e.g. 
+   r.sumCommitment or r.commitment.)
+
+b) Rebalance to 3 columns: PD 40% | COMMITMENT 30% | % OF COMMITMENT 30% 
+   (right-aligned). Move styles.tdLast to the new last (%) column.
+
+c) Add the body cell with guard:
+   {grandTotalDistCommit > 0 
+     ? `${(Number(r.sumCommitment || 0) / grandTotalDistCommit * 100).toFixed(1)}%` 
+     : "0.0%"}
 
 CONSTRAINTS:
-- Only change the three direction LABEL strings in the backend logic 
-  (Up->Downgrade, Down->Upgrade, Unchanged->No Change) and the default init 
-  value ("Unchanged" -> "No Change").
-- Do NOT change the comparison direction (pdFinal > pdInit stays as the 
-  "Downgrade" branch — because higher CAS PD than Bank PD = downgrade).
-- Do NOT touch matrices, totals, distributions, filters, or the 
-  ExcludeUnchanged logic (they use numeric PDs, not Direction).
-- Do NOT touch the "No Grade Changes" synthetic row.
-- Update the TypeScript union type in both frontend files to match.
-- Show the changed backend logic and both frontend type updates.
+- FIRST show me the current header + body JSX and the row field names for 
+  BOTH Subreport03_DistByCount and Subreport04_DistByExposure, so the count/
+  commitment field names and current widths are correct before editing.
+- Compute each grand total by reducing the rows array (not from another 
+  table's total). For commitment use raw dollars (money()), do NOT reuse any 
+  $MM total.
+- Include the divide-by-zero guard exactly as shown.
+- Widths must sum to 100%; header and body must have the same 3 columns in 
+  the same order; move styles.tdLast to the new % column.
+- Do NOT change the data, existing values, money() formatting, or any other 
+  table.
+- Do NOT touch pageSetup.ts, page layout, or backend.
+- Only edit this one file. Confirm header column count = body column count 
+  (3 = 3) for both tables, and list the changes.

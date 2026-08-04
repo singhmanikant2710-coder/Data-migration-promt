@@ -1,37 +1,11 @@
-READ-ONLY. Diagnostics only. Do not change anything.
-
-Geoff's comment: "This report [CRM PD Grade Migration] appears to have an 
-underlying requirement for [Review_approval_date] to be populated. That 
-overrules any status selections from the Reports Home page." He wants the 
-report to be approval-date agnostic, so the Reports Home "Status" filter 
-drives which reviews appear (not the presence of Review_approval_date).
-
-Investigate (no edits):
-1. Find the backend query/repository that fetches the detail rows for the 
-   CRM PD Grade Migration report (likely SqlCrmPdGradeMigrationReportRepository.cs 
-   or similar). Show the SQL — specifically the WHERE clause. Does it filter 
-   on Review_approval_date IS NOT NULL (or require approval_date populated)? 
-   Show that predicate.
-
-2. How does the Reports Home "Status" filter reach this query? Show how the 
-   report request/filters (status, sampleId, dates) are passed into the 
-   repository, and whether a status filter is currently applied at all in 
-   this report's query.
-
-3. Is there any join or condition that implicitly requires approval_date 
-   (e.g. an INNER JOIN on an approval table, or ORDER BY / filtering that 
-   drops rows without approval_date)?
-
-4. Compare: how does the Review Status / Review Queue logic (from issue #163) 
-   apply the status filter? Could the same status-bucket approach be reused 
-   here so the report respects the Reports Home status selection instead of 
-   requiring approval_date?
-
-5. Confirm what "Status" values the Reports Home page can pass (the same 
-   buckets as Review Status: Unopened/Cancelled, In Progress, Draft Completed, 
-   Approved, Distributed, Finalized?), and whether this report's request 
-   object even has a status field.
-
-Report the exact WHERE clause, how status is (or isn't) applied, and what 
-would need to change to make the report status-driven instead of 
-approval-date-driven. Do NOT edit anything. Findings only.
+Subject: CRM PD Grade Migration — approval-date requirement (status-driven reporting)
+Hi Geoff,
+I looked into your note that the report requires [Review_approval_date] to be populated, which overrides the Reports Home status selection. You're exactly right — I confirmed it in the code.
+Currently the report has a built-in "Approved Only" condition that defaults to on, so it only returns reviews where Review_approval_date is populated. The report also doesn't accept the Reports Home "Status" selection at all right now, so that filter has no effect here.
+To make it status-driven (so the Reports Home status — Completed / Distributed / Finalized — determines which reviews appear, independent of approval date), I'll wire the report to use the same status logic the Review Status screen uses, and remove the automatic "Approved Only" requirement.
+Before I make that change, one confirmation:
+The "Approved Only" default appears intentional in the original design — it limited the PD grade migration analysis to reviews that had been approved. Removing it means the report will include reviews at whatever status you select, including those not yet approved. Is that the intended behavior? In other words, should PD grade migration now reflect all reviews matching the selected status, regardless of whether they've been approved?
+If yes, I'll proceed with the status-driven change. If there's a case where "Approved Only" should still be available (e.g., as an optional toggle), let me know and I'll keep it as an option rather than removing it entirely.
+Everything else you flagged on this report (the color coding, hiding $0 / defaulting to 0, the direction logic, the % columns, and label edits) is done and ready for you to review.
+Thanks!
+Manikant

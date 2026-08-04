@@ -1,25 +1,32 @@
 READ-ONLY. Diagnostics only. Do not change anything.
 
-On page 1 of the CRM PD Grade Migration report, there is a large whitespace 
-gap below the two PD Distribution charts (before the footer). The next 
-section (PD Grade Migration matrix) starts on page 2. Geoff wants this 
-whitespace reduced.
+AUDIT: We found that the CRM PD Grade Migration report has a hardcoded 
+"Approved Only" requirement (@ApprovedOnly defaults to true, forcing 
+Review_approval_date IS NOT NULL). The client wants to know if the SAME issue 
+exists in OTHER reports run from the Reports Home screen — especially the 
+other "CRM" reports.
 
-In CrmPdGradeMigrationPDF.tsx, show me:
-1. The JSX from the DistCharts (the two bar charts) down through the next 
-   element(s) — MatrixCount and MatrixCommitment. Show all the spacers 
-   (<View style={styles.spacer} />), margins, and any wrap={false} or break 
-   props between the charts and the matrix.
-2. The height/margin of styles.spacer and any marginTop/marginBottom on the 
-   chart container and the matrix container.
-3. Whether MatrixCount has wrap={false} on its outer View (which would force 
-   the whole matrix to move to the next page if it doesn't fit on page 1, 
-   creating the gap).
-4. The approximate height of the DistCharts block and MatrixCount block — 
-   would MatrixCount realistically fit on page 1 below the charts, or is it 
-   too tall (making the page-2 move unavoidable)?
-5. Confirm: is the gap caused by (a) excessive spacer/margin, or (b) 
-   MatrixCount being wrap={false} and too tall to fit, so it moves to page 2 
-   and leaves the remainder of page 1 empty?
+Search ALL report repositories/services (backend/src/Casrr.Infrastructure/
+SqlServer/*ReportRepository.cs and backend/src/Casrr.Application/Reporting/**) 
+and report which reports have any of the following:
 
-Do not edit anything. Findings only.
+1. An "ApprovedOnly" parameter/predicate (like @ApprovedOnly defaulting to 
+   true, or a WHERE condition forcing Review_approval_date IS NOT NULL).
+
+2. Any WHERE clause that requires Review_approval_date to be populated 
+   (Review_approval_date IS NOT NULL, or an INNER JOIN / condition that 
+   implicitly drops reviews without an approval date).
+
+3. Whether each report accepts and applies the Reports Home ReviewStatus 
+   filter (uses SqlReviewStatusHelper.ReviewStatusPredicate or has a 
+   ReviewStatus field), OR ignores status like PD Grade Migration does.
+
+For EACH report found under Reporting, produce a simple table:
+  Report name | File | Has ApprovedOnly / approval-date requirement? (Y/N) | 
+  Applies ReviewStatus filter? (Y/N) | Notes
+
+Focus especially on the "CRM" reports (CRM Summary, CRM Summary Table, 
+CRM Findings, Initial Memo, Final Memo, CAS Linesheet, and any others listed 
+in the Reports Home dropdown / Selections library).
+
+Do not edit anything. Just audit and list the findings.

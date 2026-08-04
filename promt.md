@@ -80,3 +80,37 @@ CONSTRAINTS:
 - Keep the existing stripHtml wrapper and the "-" fallback in the render.
 - Do NOT touch other fields or layout.
 - Only edit this one file. Show the updated covBreaches line.
+
+
+
+
+Single-file edit: frontend/src/components/pdf/ReviewPDF.tsx (this is the CAS 
+Linesheet component — the filename is ReviewPDF but it renders the CAS 
+Linesheet report).
+
+Make EXACTLY ONE change. Do NOT search for or wrap multiple cells. Do NOT 
+loop or repeat.
+
+The `stripHtml` helper function in this file strips HTML tags and replaces 
+&nbsp;, but does NOT decode &lt;, &gt;, &amp;. Update ONLY the stripHtml 
+function to also decode these named entities (decode &amp; LAST).
+
+Find the stripHtml function and add entity decoding to its return chain. 
+The final stripHtml should decode entities like this (keep its existing 
+tag-stripping logic, just add the entity decodes):
+
+  .replace(/&nbsp;/gi, " ")
+  .replace(/&lt;/gi, "<")
+  .replace(/&gt;/gi, ">")
+  .replace(/&quot;/gi, "\"")
+  .replace(/&#39;/gi, "'")
+  .replace(/&apos;/gi, "'")
+  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+  .replace(/&amp;/gi, "&")
+
+CONSTRAINTS:
+- Change ONLY the stripHtml function. Nothing else.
+- Do NOT wrap any table cells, do NOT touch other fields, do NOT loop.
+- This is a single, one-time edit to one function.
+- Show the final stripHtml function once, and stop.

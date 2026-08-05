@@ -1,27 +1,8 @@
-READ-ONLY. Diagnostics only. Do not change anything.
-
-The client wants to REORDER the sections in CrmPdGradeMigrationPDF.tsx to 
-use page space better. Show me the EXACT current render order of all major 
-sections within CrmPdGradeMigrationPage (and the document structure) — 
-verbatim, from top to bottom:
-
-1. List every section component rendered in order (DistCharts, MatrixCount, 
-   MatrixCommitment, Subreport01/02/03/04, Detail table, etc.) with the 
-   surrounding <View>/<Page> structure and any spacers between them.
-
-2. Confirm which are on the first <Page> (CrmPdGradeMigrationPage) vs 
-   separate pages/DetailTablePages.
-
-3. Show whether MatrixCount and MatrixCommitment each have wrap={false} 
-   (they do per earlier diagnostics) — so I know reordering them will keep 
-   each on its own page area.
-
-The target order the client wants:
-  1. MatrixCount (PD Matrix by Count) - first
-  2. MatrixCommitment (PD Matrix by Commitment)
-  3. DistCharts (the two bar charts)
-  4. Then the remaining blue-header tables (Subreports/Migration Totals) 
-     and Detail
-
-Do not edit anything. Just show the current order and structure so I can 
-reorder cleanly. Findings only.
+Thanks, Geoff — I really appreciate that, and I'm glad the approach is working for you. Digging into the details is the part I enjoy, so it's good to know it's landing well.
+On the reordering — I love the idea. Leading with the PD Matrix by Count on its own page, then the Matrix by Commitment, then the charts, followed by the blue-header tables makes a lot of sense and should use the page space much better. You're right that some whitespace will remain depending on how many PD rows there are, but this order will minimize it. I'll set it up that way.
+One quick scope check before I start, based on the file you shared: that version's matrix has a couple of things the current report doesn't — a "Changes" row and a "% Change" row below the Totals, and column labels like "13 / SM", "14 / SUB", "15 / DFUL", "16 / LOSS". I want to make sure I build exactly what you want:
+Option A — Reordering only: I'll just reorder the sections (Matrix by Count → Matrix by Commitment → Charts → the remaining tables), keeping the current matrix format as-is.
+Option B — Reordering + the matrix format from your file: I'll reorder and also bring in the "Changes" / "% Change" rows and the "SM / SUB / DFUL / LOSS" column labels to match the file you shared.
+Which would you prefer? Happy to do either — I just want to scope it correctly rather than assume. If you'd like Option B, that's a slightly larger change and I'll walk through it carefully to make sure the new rows calculate correctly.
+Thanks!
+Manikant

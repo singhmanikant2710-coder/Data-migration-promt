@@ -1,31 +1,52 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-The client (Geoff) wants to confirm which column is used as the "From PD" 
-in the CRM PD Grade Migration report. It should be [Bank_PD], NOT [System_PD].
+ROOT CAUSE (confirmed): In MatrixCount and MatrixCommitment, the data rows 
+and the Totals/Changes/%Change rows each have wrap={false}. Since these are 
+single-line rows, wrap={false} is unnecessary to prevent splitting — but it 
+forces React-PDF to push a whole row to the next page when it doesn't fit at 
+the bottom, creating whitespace (seen on Sample 354/374). Small samples 
+(356) fit on one page so don't show it.
 
-In the CRM PD Grade Migration data path:
-1. In SqlCrmPdGradeMigrationReportRepository.cs — show the SQL SELECT, 
-   specifically which column populates the "From PD" / PdInitial value. Is it 
-   a.[Bank_PD], a.[System_PD], or something else? Show the exact column 
-   reference and how it's aliased/mapped.
+FIX: Remove wrap={false} from the single-line DATA rows and the three SUMMARY 
+rows (Totals, Changes, % Change) in BOTH matrices, so rows flow naturally and 
+fill the page without pushing a whole row down. KEEP wrap={false} on the 
+HEADER row (with its minPresenceAhead: 28) so the header stays intact and 
+doesn't get orphaned.
 
-2. Also show which column populates the "To PD" / PdFinal value (should be 
-   [CAS_PD] based on earlier findings — confirm).
+In BOTH MatrixCount and MatrixCommitment:
 
-3. In CrmPdGradeMigrationReportService.cs — confirm how PdInitial (From PD / 
-   Bank PD) and PdFinal (To PD / CAS PD) are read from the raw query result 
-   and mapped. Show the mapping (which raw field -> PdInitial, which -> 
-   PdFinal).
+1. DATA rows — currently:
+   rows.map(...) => <View style={[styles.tr, ...]} wrap={false}>
+   Change to remove wrap={false}:
+   rows.map(...) => <View style={[styles.tr, ...]}>
 
-4. Confirm the WHERE clause's PD range filter: earlier it was 
-   "a.[Bank_PD] BETWEEN 1 AND 16 AND a.[CAS_PD] BETWEEN 1 AND 16" — confirm 
-   it uses Bank_PD (not System_PD) for the From side.
+2. Totals row — currently:
+   <View style={[styles.tr]} wrap={false}>
+   Change to:
+   <View style={[styles.tr]}>
 
-5. Check if [System_PD] exists as a column in the Accounts table 
-   (dbo.[02_CORE_04_Accounts]) and whether it's referenced ANYWHERE in this 
-   report's query — so I can confirm we're NOT accidentally using it for 
-   "From PD".
+3. Changes row — currently:
+   <View style={[styles.tr]} wrap={false}>
+   Change to:
+   <View style={[styles.tr]}>
 
-Report: exactly which column feeds "From PD" (Bank_PD vs System_PD), which 
-feeds "To PD", and confirm no System_PD is used where Bank_PD should be. 
-Do not edit anything. Findings only.
+4. % Change row — currently:
+   <View style={[styles.tr, styles.trLast]} wrap={false}>
+   Change to:
+   <View style={[styles.tr, styles.trLast]}>
+
+5. HEADER row — KEEP wrap={false} exactly as-is:
+   <View style={[styles.tr, styles.trHeader]} wrap={false}>   (unchanged)
+   (styles.trHeader keeps minPresenceAhead: 28 — do not change)
+
+CONSTRAINTS:
+- Remove wrap={false} ONLY from the data rows and the three summary rows 
+  (Totals/Changes/%Change) in BOTH matrices.
+- KEEP wrap={false} on the header row in both matrices (header integrity).
+- Do NOT change row contents, styles, colors, labels, the Changes/%Change 
+  calculations, data, or the matrix root (already a plain View).
+- Do NOT change the section order or the <View break /> markers between 
+  sections.
+- Do NOT touch pageSetup.ts, page size, margins, footer, or backend.
+- Only edit this one file. Show the changed rows (wrap removed) and confirm 
+  the header row still has wrap={false} in both matrices.

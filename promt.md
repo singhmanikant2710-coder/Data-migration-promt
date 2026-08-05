@@ -1,39 +1,77 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Investigating blank-page/pagination bug in CrmPdGradeMigrationPDF.tsx that 
-appears for Sample 354 (large matrix) but not 356 (small matrix), after we 
-reordered with <View break> wrappers around MatrixCommitment and DistCharts.
+ROOT CAUSE (confirmed via React-PDF warning "Node of type VIEW can't wrap 
+between pages and it's bigger than available page height"):
+- MatrixCount's and MatrixCommitment's ROOT <View wrap={false}> cannot split. 
+- For large samples (e.g. 354), the matrix now has up to 19 rows (16 data + 
+  Totals + Changes + % Change) exceeding one page height, so it overflows -> 
+  blank pages + suppressed footer.
+- Additionally, <View break> wrapping a wrap={false} block worsens the blank-
+  page emission.
 
-Show me:
-1. The EXACT current JSX in CrmPdGradeMigrationPage from the header down 
-   through the subreports (verbatim), including the <View break> wrappers.
+FIX (minimal, no layout/logic/data changes):
 
-2. MatrixCount and MatrixCommitment's OUTER element — confirm each returns 
-   <View wrap={false}> as its root. So the structure is:
-   <View break>              <- our reorder wrapper
-     <View wrap={false}>     <- matrix's own root (from the component)
-       ...matrix...
-     </View>
-   </View>
-   Confirm this double-nesting (break wrapper containing a wrap={false} root).
+=== PART A: Remove wrap={false} from the matrix ROOT views, keep it on rows ===
+In BOTH MatrixCount and MatrixCommitment, the outer/root element is currently:
+    return (
+      <View wrap={false}>
+        ...
+      </View>
+    );
+Change the ROOT to allow wrapping (remove wrap={false} from the root only):
+    return (
+      <View>
+        ...
+      </View>
+    );
+IMPORTANT: Keep wrap={false} on the individual HEADER row and each DATA row 
+(and Totals/Changes/%Change rows) — those inner wrap={false} props stay 
+UNCHANGED. This lets the matrix split BETWEEN rows across pages (no blank 
+page, no overflow), while never splitting a single row in half.
 
-3. The approximate height of MatrixCount for a large dataset: with the new 
-   Changes + % Change rows, how many total rows does the matrix have (data 
-   rows + Totals + Changes + % Change)? For a large sample like 354, could 
-   MatrixCount alone exceed one page height? (Page content height ~484pt; 
-   each row ~24pt; header ~44pt.) If data rows > ~16, the matrix + 3 total 
-   rows + labels could approach or exceed one page — and with wrap={false} 
-   it cannot split, forcing an overflow.
+=== PART B: Fix the <View break> wrappers (avoid break wrapping wrap=false) ===
+Currently:
+    <View break>
+      <MatrixCommitment ... />
+    </View>
+    <View break>
+      <DistCharts ... />
+    </View>
 
-4. Whether a <View break> that wraps a wrap={false} block that OVERFLOWS a 
-   page causes React-PDF to emit a blank page (the known interaction: break 
-   forces a new page, then the un-splittable oversized block overflows, and 
-   the fixed footer + break logic produce an empty page + missing footer).
+Replace the <View break> WRAPPERS with the `break` prop applied directly, so 
+there is no extra wrapper View around the matrix/charts:
+- For MatrixCommitment: pass break so it starts a new page without an outer 
+  wrapper. Since MatrixCommitment's root is now a plain <View> (from Part A), 
+  add the break prop to a lightweight leading element OR apply break to the 
+  matrix's own root View. The cleanest minimal approach: keep a break using a 
+  ZERO-HEIGHT breaking element right before the section:
+    <View break />
+    <MatrixCommitment ... />
+    <View break />
+    <DistCharts ... />
+  (A self-closing <View break /> forces a page break at that point WITHOUT 
+  wrapping the following content, avoiding the break+wrap=false nesting.)
 
-5. styles.page paddingBottom and the footer's fixed positioning — confirm 
-   the footer is <View style={styles.footer} fixed> as a direct child of 
-   <Page>, and whether an overflowing wrap={false} block on page 1 would 
-   suppress that page's fixed footer.
+So the final structure becomes:
+    <MatrixCount ... />
+    <View break />
+    <MatrixCommitment ... />
+    <View break />
+    <DistCharts ... />
+    <View style={styles.spacer} />
+    <Subreport01_Count ... />
+    ...
 
-Do not edit anything. Confirm the double-nesting (break + wrap=false), the 
-matrix height for large data, and the overflow interaction. Findings only.
+CONSTRAINTS:
+- Remove wrap={false} ONLY from the two matrix ROOT views. KEEP wrap={false} 
+  on all inner rows (header, data, Totals, Changes, % Change).
+- Replace the two <View break>...</View> wrappers with self-closing 
+  <View break /> break markers placed BEFORE MatrixCommitment and BEFORE 
+  DistCharts. Do not wrap the content.
+- Do NOT change the matrix contents, the Changes/% Change rows, column 
+  labels, colors, data, or calculations.
+- Do NOT change the section ORDER (still MatrixCount -> MatrixCommitment -> 
+  DistCharts -> subreports).
+- Do NOT touch pageSetup.ts, page size, margins, the footer, or backend.
+- Only edit this one file. Show: the two matrix root changes (wrap removed), 
+  the kept inner-row wrap={false}, and the new <View break /> markers.

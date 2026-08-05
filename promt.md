@@ -1,39 +1,70 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-The client wants to restructure the matrix headers and add footers. I need 
-to understand the current header structure and the reference layout before 
-editing. Investigate (no edits):
+Restructure the header and add a footer note for BOTH MatrixCount and 
+MatrixCommitment. Client-confirmed requirements. Apply identically to both 
+matrices.
 
-1. In MatrixCount and MatrixCommitment: show the FULL current header row 
-   structure — the "BANK PD" label cell, the 1-16 column cells (now showing 
-   "13/SM" etc.), and the "Totals" cell. Show the exact JSX, the cell 
-   styles/widths, and the height-related styles (padding, fontSize, 
-   lineHeight) on styles.tr, styles.trHeader, styles.thDark.
+=== PART 1: Make the header row THINNER ===
+The header height comes from padding (6) and lineHeight (1.25) at fontSize 9 
+(not from label wrapping). Shrink it so we can keep the SM/SUB/DFUL/LOSS 
+labels AND fit a CAS PD grouping row + a footer.
 
-2. The "BANK PD" header cell alignment: how is it currently aligned (left/
-   center)? And how are the data row PD-number cells (the first column, 
-   showing fromPd) aligned? The client wants "BANK PD" aligned with those PD 
-   rating numbers below it.
+Create a compact header cell style (or add inline overrides) for the header 
+cells:
+- fontSize: 7 (down from inherited 9)
+- padding: 3 (down from 6)
+- lineHeight: 1.1 (down from 1.25)
+Apply these to the header PD-column cells (and the new CAS PD row) so the 
+header is visibly thinner. Keep styles.thDark's background/color/borders.
 
-3. For adding a "CAS PD" grouping header ABOVE the 1-16 columns: is the 
-   header currently a single row? To add a "CAS PD" label spanning columns 
-   1-16, I'd need a two-row header (top row: "CAS PD" spanning the rating 
-   columns; bottom row: 1-16). Show whether the current header is one row 
-   and what the column width structure is (so I can build a spanning header).
+=== PART 2: Add a "CAS PD" grouping header row ABOVE the 1-16 columns ===
+Convert the single header row into TWO header rows:
 
-4. Header row height/thinness: what makes the header tall right now — is it 
-   the "13/SM", "14/SUB" labels wrapping to two lines (making the row taller)? 
-   Show the fontSize and any wrapping. The client wants it thinner so there's 
-   room for a footer; if we can shrink it (smaller font, single line), we 
-   keep the SM/SUB/DFUL/LOSS labels.
+TOP header row (new):
+- First cell (over BANK PD, 8% width): empty or blank (no label), same dark 
+  background.
+- A single spanning cell over the 1-16 columns (80% width): centered text 
+  "CAS PD", dark background, thin/compact styling.
+- Last cell (over Totals, 12% width): empty/blank, same dark background.
 
-5. For the matrix FOOTER (a note below each matrix): is there an existing 
-   note/footer pattern? Show if the report (or the reference) has a note like 
-   "CAS PD Rating totals represent the committed exposure... Red cells 
-   indicate PD downgrades... green cells indicate PD upgrades..." — I need to 
-   know the exact footer text the client wants (from the reference PD 
-   Migration report). If it's not in code, I'll ask the client for the exact 
-   text.
+BOTTOM header row (existing 1-16 labels):
+- Keep BANK PD (8%), the 16 colLabel(pd) cells (5% each), and Totals (12%) — 
+  but apply the thinner compact styling from Part 1.
 
-Do not edit anything. Show the header structure, alignment, height sources, 
-and any existing matrix-note pattern. Findings only.
+Both header rows should be wrapped so they stay together with wrap={false} 
+and the header integrity (minPresenceAhead) is preserved. Ensure the top row's 
+three segments (8% + 80% + 12%) line up exactly with the bottom row's columns.
+
+=== PART 3: Align "BANK PD" header with the PD rating column ===
+The "BANK PD" header cell and the first data column (fromPd numbers) are both 
+left-aligned. Center-align BOTH the "BANK PD" header cell AND the first-column 
+data cells (the fromPd values) so the header sits directly above and aligned 
+with the rating numbers. Add textAlign: "center" to:
+- the BANK PD header cell, and
+- the first-column data cell (String(r.fromPd)) in the data rows
+in BOTH matrices, so they visually align.
+
+=== PART 4: Add a footer NOTE below each matrix ===
+Below the table (after the closing of styles.table, still inside the matrix 
+component's root View), add a small note. Use this EXACT text (client-
+confirmed, "Accounts" not "Scorecards"):
+
+"CAS PD Rating totals represent the committed exposure of Accounts reviewed 
+by Bank PD as of the review date. Red cells indicate PD downgrades by CAS; 
+green cells indicate PD upgrades. Based on review population, there may not 
+be Bank PD rows for every PD rating (1-16)."
+
+Style the note: fontSize 7, color #475569, marginTop 4, italic if easy. 
+Full width. Add it below BOTH MatrixCount's and MatrixCommitment's tables.
+
+CONSTRAINTS:
+- Apply ALL parts to BOTH MatrixCount and MatrixCommitment identically.
+- Keep the SM/SUB/DFUL/LOSS labels (colLabel unchanged) — the thinner header 
+  makes room for them.
+- Do NOT change the data rows' values, the Changes/%Change rows, colors, 
+  calculations, or column widths (8% / 16×5% / 12% stays).
+- Keep wrap={false} on the header rows only (per earlier pagination fix — 
+  data/summary rows stay without wrap={false}).
+- Do NOT touch pageSetup.ts, page size, margins, the page footer, or backend.
+- Only edit this one file. Show the new two-row header, the thinner styles, 
+  the centered BANK PD alignment, and the footer note — for both matrices.

@@ -1,8 +1,71 @@
-Thanks, Geoff — I really appreciate that, and I'm glad the approach is working for you. Digging into the details is the part I enjoy, so it's good to know it's landing well.
-On the reordering — I love the idea. Leading with the PD Matrix by Count on its own page, then the Matrix by Commitment, then the charts, followed by the blue-header tables makes a lot of sense and should use the page space much better. You're right that some whitespace will remain depending on how many PD rows there are, but this order will minimize it. I'll set it up that way.
-One quick scope check before I start, based on the file you shared: that version's matrix has a couple of things the current report doesn't — a "Changes" row and a "% Change" row below the Totals, and column labels like "13 / SM", "14 / SUB", "15 / DFUL", "16 / LOSS". I want to make sure I build exactly what you want:
-Option A — Reordering only: I'll just reorder the sections (Matrix by Count → Matrix by Commitment → Charts → the remaining tables), keeping the current matrix format as-is.
-Option B — Reordering + the matrix format from your file: I'll reorder and also bring in the "Changes" / "% Change" rows and the "SM / SUB / DFUL / LOSS" column labels to match the file you shared.
-Which would you prefer? Happy to do either — I just want to scope it correctly rather than assume. If you'd like Option B, that's a slightly larger change and I'll walk through it carefully to make sure the new rows calculate correctly.
-Thanks!
-Manikant
+Single-file edit: frontend/src/components/pdf/HtmlRichText.tsx
+
+BUG: The parser calls decodeEntities BEFORE tokenizing (in parseHtmlToAst: 
+"html = decodeEntities(html)" at the top). This decodes "&lt;" to "<" before 
+parsing, so the tokenizer treats that "<" as a tag start and swallows it plus 
+following text until the next ">". Result: genuine "<" symbols (e.g. 
+"< 5% growth", "DSC &lt;= 1.10x") and the text after them disappear.
+
+FIX: Remove the top-level pre-decode so "<" is NOT decoded before parsing. 
+Text-level decoding (in parseText) already handles entities within text nodes 
+correctly, so genuine "&lt;" in text content will be decoded to "<" AFTER 
+tokenization — at which point it's safely treated as literal text, not a tag.
+
+In parseHtmlToAst, REMOVE this line (the top-level pre-decode):
+    html = decodeEntities(html);
+
+Keep the decodeEntities calls in parseText (raw text decoding) and parseAttrs 
+(attribute decoding) — those are correct and needed.
+
+CONSTRAINTS:
+- Only remove the ONE top-level pre-decode line in parseHtmlToAst.
+- Do NOT change parseText's decodeEntities call (that's what will now 
+  correctly decode &lt; -> < in text content, after tokenization).
+- Do NOT change parseAttrs, the tokenizer, or decodeEntities itself.
+- Note the trade-off (acceptable): if any data contains ENCODED html tags 
+  like "&lt;i&gt;", they will now show as literal text "<i>" rather than 
+  being rendered as real italic. This is correct behavior — real formatting 
+  should come from actual tags, and Geoff's issue is genuine "<" symbols in 
+  text, not encoded markup.
+- Only edit this one file. Show the change.
+
+
+
+
+Single-file edit: frontend/src/components/pdf/ReviewPDF.tsx (CAS Linesheet)
+
+BUG: Policy Exception Comments ([policy_exception_information]) don't show 
+paragraph breaks. It's rendered as plain <Text>{stripHtml(...)}</Text>, and 
+stripHtml removes <br>/<p> tags and collapses whitespace, losing paragraph 
+structure. All other narrative fields route through HtmlRichText (which 
+preserves paragraphs) and display correctly.
+
+FIX: Route Policy Exception Comments through HtmlRichText, exactly like the 
+other narrative fields (Risk Rating Justification, Scorecard Comments, etc.), 
+so paragraph breaks (<p>/<br>) render properly.
+
+Current render (plain Text + stripHtml):
+    <Text style={[styles.longText, { fontSize: 11, lineHeight: 1.2 }]}>
+      {policyExceptionInformation || "-"}
+    </Text>
+
+Change to use HtmlRichText with the RAW value (not the stripHtml'd version), 
+matching the pattern used by the other narrative sections in this file:
+    <HtmlRichText html={`<div style="font-size: 11px">${<raw policy exception source> || ""}</div>`} />
+
+Use the SAME raw source that policyExceptionInformation was built from 
+(before stripHtml was applied) — i.e. the original policy_exception_information 
+HTML string. If the value is empty, keep a "-" fallback (either render "-" 
+via a small conditional, or pass an empty div — match how other fields handle 
+empty).
+
+CONSTRAINTS:
+- Route Policy Exception through HtmlRichText using the RAW (un-stripped) 
+  source, mirroring the other narrative fields' exact pattern in this file.
+- Keep the "-" fallback behavior for empty values.
+- Do NOT change stripHtml itself (other places may still use it).
+- Do NOT change other fields or layout.
+- This fix depends on the Issue 1 HtmlRichText fix (so "<" renders correctly 
+  in HtmlRichText now) — apply Issue 1 first.
+- Only edit this one file. Show the changed render and confirm it uses the 
+  raw source through HtmlRichText.

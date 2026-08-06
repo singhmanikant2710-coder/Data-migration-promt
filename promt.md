@@ -1,70 +1,48 @@
-Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-MAJOR STRUCTURAL CHANGE (client-confirmed): Move "# Changes" and "% Change" 
-from bottom ROWS (per CAS PD column) to right-side COLUMNS (per Bank PD row). 
-Remove the bottom Changes and % Change rows; KEEP the bottom Totals row. 
-Apply to BOTH MatrixCount and MatrixCommitment.
+File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-=== PART 1: Remove bottom "Changes" and "% Change" rows ===
-In the <View wrap={false}> summary group at the bottom, REMOVE the "Changes" 
-row and the "% Change" row entirely. KEEP only the "Totals" row. (The column-
-wise changes/pctChange computations that fed those rows can be removed too, 
-but only if unused elsewhere — verify.)
+UAT found 8 issues after the structural change (per-row # Changes/% Change 
+columns). Investigate all before fixing:
 
-=== PART 2: Add two new RIGHT-SIDE columns: "# Changes" and "% Change" ===
-Compute PER ROW (for each data row r):
-  - rowDiagonal (Count):  byFromTo.get(`${r.fromPd}|${r.fromPd}`) || 0
-  - rowDiagonal (Commitment): (byFromTo.get(`${r.fromPd}|${r.fromPd}`) || 0) / 1_000_000
-  - rowChanges = r.sum - rowDiagonal
-  - rowPct = r.sum > 0 ? (rowChanges / r.sum * 100) : 0
+ISSUE 1 (new column header font too small): Show the header cell style for 
+the new "# Changes" and "% Change" columns vs existing headers (BANK PD, 
+Totals, PD columns). Is there a smaller fontSize on the new column headers? 
+Show exact style on each so I can make them identical (same fontSize, 
+fontWeight, alignment).
 
-Add TWO new columns AFTER the existing "Totals" column, in BOTH the header 
-and every data row AND the bottom Totals row:
-  - "# Changes" column: shows rowChanges 
-    (Count: integer String(rowChanges); Commitment: money fmt(rowChanges))
-  - "% Change" column: shows `${rowPct.toFixed(1)}%`
+ISSUE 2 + 8 (new columns too narrow + centering): Current widths: BANK PD 8% 
+| 16 PD cols 4.5% | Totals 12% | # Changes 4% | % Change 4%. The 4% columns 
+are cramped. Show all column widths (header + body) and textAlign. I want to 
+widen # Changes and % Change to ~7% each by reducing PD columns (e.g. 4.5% 
+-> 4%) or Totals. Also show PD column header textAlign (centering check).
 
-For the bottom Totals row's two new cells:
-  - "# Changes" total = sum of all rowChanges (grand changes)
-  - "% Change" total = (grand changes / grandTotal * 100).toFixed(1) + "%"
+ISSUE 3 + 4 + 5 (Totals split / whitespace / footnote): After removing the 
+Changes/%Change rows, is the bottom Totals row still wrapped in <View wrap=
+false>, or standalone? Show:
+- The current structure: last data rows -> Totals row -> footnote note.
+- Whether Totals row is grouped/wrapped and where the footnote sits.
+- I need Totals + footnote to stay with the matrix (not isolate on next page 
+  with whitespace).
 
-=== PART 3: Redistribute column widths (add 2 columns, sum = 100%) ===
-Current: BANK PD 8% + 16×5% (80%) + Totals 12% = 100%.
-Change to (Option A): 
-  - BANK PD: 8%
-  - 16 PD columns: 4.5% each = 72%
-  - Totals: 12%
-  - # Changes: 4%
-  - % Change: 4%
-  Total: 8 + 72 + 12 + 4 + 4 = 100%
+ISSUE 6 (hide 0/$0 in colored cells): Show the DATA cell render in both 
+matrices with the color logic. Currently colored cells (pink bg #fee2e2 when 
+toPd>fromPd, green bg #dcfce7 when toPd<fromPd) show "0"/"$0". Client wants: 
+in COLORED cells (toPd != fromPd), hide 0/$0 (show blank) so real changes 
+pop. Show the exact cell value render + the bg color condition so I can blank 
+zeros only in colored cells (keep values in white/diagonal cells as-is, or 
+confirm whether diagonal 0s stay).
 
-Update BOTH header rows and all body/Totals rows to these widths:
-- Header Row 1 (grouping): blank 8% | "CAS PD" span 72% (was 80%) | then over 
-  the Totals + # Changes + % Change (12+4+4=20%) — either leave that 20% blank 
-  or split; simplest: blank 8% | "CAS PD" 72% | blank 20%.
-- Header Row 2 (labels): BANK PD 8% | 16 cols 4.5% | Totals 12% | 
-  "# Changes" 4% | "% Change" 4%.
-- Data rows and Totals row: mirror the same widths, adding the two new cells.
+ISSUE 7 (subreport row shading): Show Subreport01_Count and 
+Subreport02_Commitment ("PD Migration Totals by Account/Commitment" tables 
+with FROM PD, TO PD, COUNT, % OF COUNT). Show each row's render and whether 
+fromPd/toPd are available per row. I need to shade rows: toPd < fromPd = 
+light green (#dcfce7, upgrade); toPd > fromPd = light red (#fee2e2, 
+downgrade); toPd == fromPd = no shade.
 
-=== PART 4: Page break between the two matrices ===
-Add a page break so MatrixCommitment always starts on a new page (client wants 
-the Commitment matrix to never split from a page shared with the Accounts 
-matrix). Add a self-closing <View break /> BEFORE MatrixCommitment in 
-CrmPdGradeMigrationPage:
-    <MatrixCount ... />
-    <View break />
-    <MatrixCommitment ... />
-    <DistCharts ... />
-(Do NOT add a break before DistCharts — only between the two matrices.)
+Cosmetic #3 (footnote): Show current footnote fontSize and marginTop (client 
+wanted font 8 and closer to table — verify if applied).
 
-CONSTRAINTS:
-- Per-row changes/%: rowChanges = rowTotal − rowDiagonal; rowPct = rowChanges/
-  rowTotal. Confirmed by client (Bank PD-13: 7/15 = 46.7%).
-- Keep the bottom Totals row; remove only the bottom Changes and % Change rows.
-- Widths must sum to 100% (Option A: 8 + 72 + 12 + 4 + 4).
-- Apply identically to BOTH matrices; mirror header and body widths exactly.
-- Commitment: new "# Changes" column uses fmt() ($MM), diagonal /1M for units.
-- Keep colLabel labels, cell colors, and all other logic unchanged.
-- Do NOT touch pageSetup.ts, page size, margins, footer, or backend.
-- Only edit this one file. Show: removed bottom rows, new per-row columns 
-  (header + body + Totals), width redistribution, and the page break.
+Do not edit anything. Show: new column header styles, all widths + textAlign, 
+Totals/footnote grouping, colored-cell value render + color condition, 
+subreport row structure + fromPd/toPd availability, footnote font. Findings only.

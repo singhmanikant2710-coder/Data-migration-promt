@@ -1,47 +1,32 @@
-Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-Two changes: hide zeros in colored matrix cells, and shade subreport rows.
+File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-PART A — Hide "0"/"$0" in COLORED cells only (Issue 6):
-In the data cells of BOTH matrices, the colored cells (upgrade/downgrade, 
-where toPd != fromPd) currently show "0"/"$0". Client wants these hidden 
-(blank) in colored cells so real changes pop. Keep values in white/diagonal 
-cells (toPd == fromPd) unchanged.
+Two remaining issues after the fixes:
 
-The cell already computes bg (backgroundColor: #fee2e2 for toPd>fromPd, 
-#dcfce7 for toPd<fromPd, undefined for diagonal). Use this:
-- MatrixCount cell value: change {String(v)} to:
-    {bg && v === 0 ? "" : String(v)}
-  (blank when the cell is colored AND value is 0; otherwise show the number, 
-  including 0 on white/diagonal cells)
-- MatrixCommitment cell value: change {fmt(v)} to:
-    {bg && (!v || v === 0) ? "" : fmt(v)}
-  (blank when colored AND zero; otherwise show fmt(v))
+ISSUE 1 (green cell still shows "$0"): In MatrixCommitment, a green colored 
+cell (Row 9, Col 1) still displays "$0" despite the zero-blanking fix. Show:
+1. The current MatrixCommitment data cell value render (the {bg && ... ? "" : 
+   fmt(v)} logic). 
+2. The exact condition used to blank zeros.
+3. IMPORTANT: cells are in $MM (raw / 1,000,000). A tiny nonzero value (e.g. 
+   $400,000 = 0.4 in $MM, or even smaller) is NOT === 0 but fmt() may round 
+   it to "$0". So the check "v === 0" misses values that DISPLAY as "$0" but 
+   aren't exactly 0. Show fmt()'s definition — does fmt(0.0003) return "$0"? 
+   Confirm whether the blank condition should check "fmt(v) === '$0'" or 
+   "Math.round(v) === 0" instead of "v === 0".
 
-So: colored cell + zero -> blank; colored cell + nonzero -> show value; 
-white/diagonal cell -> show value (including 0). This makes actual changes 
-stand out.
+ISSUE 2 (Totals+footnote isolate on page 2 with blank on page 1): Show the 
+current structure of MatrixCount:
+1. The data rows (mapped), then the Totals+footnote group. 
+2. Confirm the Totals+footnote are in a <View wrap={false}> that is a SIBLING 
+   after the data rows (so if the group doesn't fit at page 1 bottom, the 
+   whole group moves to page 2, leaving page 1's last portion blank).
+3. Is there a way to keep the group with the LAST data row(s)? Or is the 
+   issue that the matrix is just slightly too tall so the Totals group always 
+   spills? Show the table structure so I can decide: (a) reduce what forces 
+   the spill, or (b) accept that when the matrix is tall, the group moves 
+   together (minimal isolation).
 
-PART B — Shade subreport rows (Issue 7):
-In Subreport01_Count ("PD Migration Totals by Account") and 
-Subreport02_Commitment ("PD Migration Totals by Commitment"), shade each data 
-row based on fromPd vs toPd (both available per row):
-- toPd < fromPd (upgrade): row background light green #dcfce7
-- toPd > fromPd (downgrade): row background light red #fee2e2
-- toPd == fromPd (no change): no background (default white)
-
-Add the backgroundColor to each data row's container <View> (the row-level 
-View, so the whole row is shaded). Compute per row:
-    const rowBg = r.toPd < r.fromPd ? "#dcfce7" : r.toPd > r.fromPd ? "#fee2e2" : undefined;
-Then apply backgroundColor: rowBg to the row's style. Apply to BOTH subreport 
-tables.
-
-CONSTRAINTS:
-- Item 6: blank zeros ONLY in colored cells (bg defined); keep values in 
-  white/diagonal cells. Apply to both matrices.
-- Item 7: shade full rows in both subreports using the same colors as the 
-  matrices (#dcfce7 green, #fee2e2 red).
-- Do NOT change data, calculations, or the % columns in subreports.
-- Do NOT touch pageSetup.ts, page size, margins, or backend.
-- Only edit this one file. Show the colored-cell zero-hiding (both matrices) 
-  and the subreport row shading (both subreports).
+Do not edit anything. Show fmt() definition, the commitment cell blank 
+condition, and the Totals+footnote grouping structure. Findings only.

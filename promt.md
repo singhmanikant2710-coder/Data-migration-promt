@@ -1,22 +1,34 @@
-SELECT DISTINCT r.[Sample_id], a.[Bank_PD], a.[CAS_PD]
-FROM dbo.[02_CORE_02_Reviews] r
-INNER JOIN dbo.[02_CORE_04_Accounts] a ON a.[Review_id] = r.[Review_id]
-WHERE (a.[Bank_PD] BETWEEN 13 AND 16 OR a.[CAS_PD] BETWEEN 13 AND 16)
-  AND (r.[Cancelled] IS NULL OR r.[Cancelled] = 0)
-ORDER BY r.[Sample_id];
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
+FIX (Sample 354 blank-page issue): The <View break /> markers before 
+MatrixCommitment and before DistCharts force a new page even when the previous 
+matrix has overflowed, leaving a blank page. Remove the forced page breaks so 
+sections flow naturally, minimizing whitespace (per client's note that some 
+whitespace is acceptable, less than the alternative).
 
--- Aise reviews jinme Upgrade hoga (CAS PD < Bank PD)
-SELECT TOP 5 r.[Sample_id], r.[Review_id], a.[Bank_PD], a.[CAS_PD],
-  CASE 
-    WHEN a.[CAS_PD] > a.[Bank_PD] THEN 'Downgrade'
-    WHEN a.[CAS_PD] < a.[Bank_PD] THEN 'Upgrade'
-    ELSE 'No Change'
-  END AS ExpectedDirection
-FROM dbo.[02_CORE_02_Reviews] r
-INNER JOIN dbo.[02_CORE_04_Accounts] a ON a.[Review_id] = r.[Review_id]
-WHERE (r.[Cancelled] IS NULL OR r.[Cancelled] = 0)
-  AND a.[Bank_PD] BETWEEN 1 AND 16
-  AND a.[CAS_PD] BETWEEN 1 AND 16
-  AND a.[CAS_PD] < a.[Bank_PD]   -- Upgrade cases
-ORDER BY r.[Sample_id];
+Remove the two <View break /> markers:
+- The <View break /> between MatrixCount and MatrixCommitment — REMOVE it.
+- The <View break /> between MatrixCommitment and DistCharts — REMOVE it.
+
+So the sequence becomes:
+    <MatrixCount ... />
+    <MatrixCommitment ... />
+    <DistCharts ... />
+    <View style={styles.spacer} />
+    <Subreport01_Count ... />
+    ...
+
+The matrices and charts now flow naturally: when a matrix is tall (large 
+sample), the next section continues on the same page if there's room, or 
+flows to the next page without forcing a blank page. Small samples (356) may 
+now fit both matrices closer together — this is fine and more space-efficient.
+
+CONSTRAINTS:
+- Only remove the two <View break /> markers. Do NOT change anything else.
+- Keep the matrix content, header/footer notes, Changes/%Change rows, colors, 
+  and the section ORDER (MatrixCount -> MatrixCommitment -> DistCharts -> 
+  subreports).
+- Keep the row wrap settings as-is (header wrap={false}, data/summary rows 
+  no wrap).
+- Do NOT touch pageSetup.ts, page size, margins, the page footer, or backend.
+- Only edit this one file. Show the sequence with the breaks removed.

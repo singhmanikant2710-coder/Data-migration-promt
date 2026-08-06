@@ -1,37 +1,44 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Fix new column widths and center all PD/column headers, in BOTH MatrixCount 
-and MatrixCommitment.
+Keep the Totals row and footnote together with the matrix (prevent isolation 
+on next page with whitespace), and fix footnote font. Both matrices.
 
-PART A — Widen the new columns (Issue 2):
-Current widths: BANK PD 8% | 16 PD cols 4.5% (72%) | Totals 12% | # Changes 
-4% | % Change 4%. The 4% new columns are too narrow.
-Change to: BANK PD 8% | 16 PD cols 4% (64%) | Totals 12% | # Changes 8% | 
-% Change 8%. (Total: 8 + 64 + 12 + 8 + 8 = 100%.)
-Update these widths in BOTH header rows AND all body rows AND the Totals row, 
-in BOTH matrices. Also update the grouping header row 1: blank 8% | "CAS PD" 
-span 64% (was 72%) | blank 28% (12+8+8).
+PART A — Bind Totals + footnote together (Issues 3, 4, 5):
+Currently the Totals row is in <View wrap={false}> but the footnote is a 
+separate sibling <Text> after the table, not bound. So Totals can move to the 
+next page and the footnote isolates with whitespace.
 
-PART B — Center all column headers (Issues 1, 8):
-The PD column headers (1-16) currently default to LEFT align. Center them.
-Add textAlign: "center" to:
-- All 16 PD column header cells (currently no textAlign)
-- Keep BANK PD header centered (already is)
-- The "# Changes" and "% Change" headers: change from textAlign "right" to 
-  "center" (so headers are centered, matching the others). Keep the BODY 
-  cells of # Changes/% Change right-aligned (numbers read better right-aligned).
-- Totals header: keep as-is or center (your call — keep right if it looks 
-  aligned with right-aligned totals values).
+Wrap the Totals row AND the footnote together in a SINGLE <View wrap={false}> 
+so they always stay as one unit:
+    <View wrap={false}>
+      {/* Totals row */}
+      <View style={[styles.tr, styles.trLast]}> ...Totals... </View>
+      {/* Footnote */}
+      <Text style={{ ...footnote style... }}>CAS PD Rating totals represent...</Text>
+    </View>
 
-Ensure header fontSize/fontWeight stay identical across ALL header cells 
-(they already use styles.thCompact fontSize 7, fontWeight 700 — keep uniform).
+This keeps Totals + footnote together. If they don't fit at the page bottom, 
+BOTH move to the next page together (never Totals alone, never footnote 
+isolated).
+
+NOTE on whitespace (Issue 4): The page break between the two matrices means 
+some whitespace before the Commitment matrix is expected (client approved the 
+page break). But Totals+footnote should not create a near-empty page on their 
+own — binding them together minimizes that. Keep the existing minPresenceAhead 
+on headers so the matrix header doesn't orphan either.
+
+PART B — Footnote font (Cosmetic #3):
+Change the footnote style from fontSize 7 to fontSize 8, and reduce marginTop 
+from 10 to 4 (bring it closer to the table). Keep marginBottom for separation 
+from the next section. Apply in both matrices:
+    { fontSize: 8, color: "#475569", marginTop: 4, marginBottom: 10, fontStyle: "italic" }
 
 CONSTRAINTS:
-- Widths must sum to 100% (8+64+12+8+8).
-- Apply identically to BOTH matrices, mirroring header and body widths.
-- Center PD column headers + # Changes/% Change headers; keep body number 
-  cells right-aligned where they already are.
-- Do NOT change data, calculations, colors, or labels.
-- Do NOT touch pageSetup.ts, page size, margins, footer, or backend.
-- Only edit this one file. Show the updated widths and header alignment for 
-  both matrices.
+- Group ONLY the Totals row + footnote in one <View wrap={false}>.
+- Keep data rows above ungrouped (they flow/fill the page).
+- Footnote fontSize 8, marginTop 4.
+- Apply to BOTH matrices identically.
+- Do NOT change the page break between matrices (keep it).
+- Do NOT touch pageSetup.ts, page size, margins, or backend.
+- Only edit this one file. Show the grouped Totals+footnote and the footnote 
+  style for both matrices.

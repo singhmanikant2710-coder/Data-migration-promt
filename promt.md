@@ -1,21 +1,32 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Fix ONLY the MatrixCount footnote text. It currently says "committed exposure" 
-but for the Number of Accounts matrix it must say "number of accounts". Do NOT 
-touch MatrixCommitment's footnote or anything else.
+Hide TRUE-ZERO values in the colored (green/red) data cells so changes pop, 
+but keep SMALL non-zero values visible (e.g. a $40K change = $0.04MM must 
+still show). Apply to BOTH matrices' data cells. Do NOT change the Totals row, 
+widths, colors, or anything else.
 
-In MatrixCount (PD Grade Migration by Number of Accounts), replace the footnote 
-text with EXACTLY:
+MatrixCount colored data cells — currently: {String(v)} (shows "0" in colored 
+cells). Change to hide true zero only in colored cells:
+    {bg && v === 0 ? "" : String(v)}
+(Colored cell + exactly 0 -> blank; colored cell + any nonzero -> show the 
+number; white/diagonal cell -> show as-is including 0.)
 
-"CAS PD Totals represent the number of accounts reviewed by CAS PD as of the 
-review date. Bank PD Totals represent the number of accounts reviewed by Bank 
-PD as of the review date. Red cells indicate PD downgrades by CAS; green cells 
-indicate PD upgrades. Based on review population, there may not be Bank PD rows 
-for every PD rating (1-16)."
+MatrixCommitment colored data cells — currently: {fmt(v)} (shows "$0.0" in 
+colored cells even for true zero). Change to hide true zero only in colored 
+cells, but show small non-zero values:
+    {bg && v === 0 ? "" : fmt(v)}
+(Colored cell + exactly 0 -> blank; colored cell + tiny nonzero like 0.04 
+($40K) -> fmt shows "$0.04"; white/diagonal cell -> show as-is.)
+
+IMPORTANT: use "v === 0" (exact zero), NOT Math.round(v) === 0 — because a 
+$40K value (0.04 in $MM) is NOT exactly 0, so it will correctly SHOW as 
+"$0.04" and only TRUE zeros are blanked. This gives Geoff exactly what he 
+asked: hide zeros, but pick up small changes above $0.
 
 CONSTRAINTS:
-- ONLY change the MatrixCount footnote text (the one after MatrixCount's table).
-- Do NOT change MatrixCommitment's footnote (it correctly says "committed 
-  exposure" — leave it).
-- Do NOT change styles, widths, data, or anything else.
-- Only edit this one file. Show the updated MatrixCount footnote.
+- ONLY change the colored DATA cell value render in both matrices (the cell 
+  inside r.cells.map).
+- Keep the bg/fg colors unchanged (only the zero value is blanked).
+- Do NOT change the bottom Totals row cells, the white/diagonal cells' 
+  behavior, widths, or fmt().
+- Only edit this one file. Show the updated colored-cell render in both matrices.

@@ -1,18 +1,22 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Two text label renames only. Apply to BOTH MatrixCount and MatrixCommitment. 
-Do NOT change anything else — no widths, no logic, no styles.
+Replace the footnote text only. Apply to BOTH MatrixCount and MatrixCommitment. 
+Do NOT change anything else — no styles, no widths, no placement.
 
-RENAME 1: In the column-labels header row, the right-side column header 
-currently reads "Totals". Change that header text to "Bank PD Totals".
-(This is the header cell with flexBasis "12%", the one BEFORE "# Changes".)
+The footnote is the italic <Text> sibling after the table (fontSize 8, 
+color #475569, italic). Replace its text content with EXACTLY this (same for 
+both matrices):
 
-RENAME 2: In the bottom Totals row, the first cell label currently reads 
-"Totals". Change that label text to "CAS PD Totals".
-(This is the first cell of the summary/Totals row, flexBasis "8%".)
+"CAS PD Totals represent the committed exposure reviewed by CAS PD as of the 
+review date. Bank PD Totals represent the committed exposure reviewed by Bank 
+PD as of the review date. Red cells indicate PD downgrades by CAS; green cells 
+indicate PD upgrades. Based on the review population, there may not be Bank PD 
+rows for every PD rating (1-16)."
 
 CONSTRAINTS:
-- ONLY change these two text strings, in both matrices.
-- Do NOT change widths, alignment, colors, or any other text.
-- Do NOT touch the footnote, data, or pageSetup.
-- Only edit this one file. Show the two renamed cells in both matrices.
+- ONLY replace the footnote text string, in both matrices.
+- Keep the footnote's existing style (fontSize 8, color #475569, marginTop 4, 
+  marginBottom 10, italic, width 100%) unchanged.
+- Keep it as a sibling after the table (do NOT move it inside the table).
+- Do NOT change widths, data, or anything else.
+- Only edit this one file. Show the updated footnote in both matrices.

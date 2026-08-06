@@ -1,3 +1,41 @@
-This all makes sense, Geoff — and no need to apologize, this kind of refinement is exactly what gets the report right. I understand the structural change: the # of Changes and % Change should be assessed per Bank PD row (across the X-axis), not per CAS PD column. So for each Bank PD row, # Changes = accounts in that row that moved to a different PD, and % Change = # Changes ÷ that row's total accounts (e.g. Bank PD-13: 7 of 15 changed = 46.7%). I'll move these to right-side columns next to the row Totals and remove the bottom Changes/% Change rows, for both matrices.
-One quick confirmation: currently the bottom row shows a single "Changes" and "% Change" per CAS PD column. Once I move to per-Bank-PD-row columns, should I remove those bottom rows entirely (keeping just the "Totals" row at the bottom), and add "# Changes" and "% Change" as two new columns on the right after "Totals"? That matches your examples — just confirming before I restructure.
-The cosmetic changes are all clear. On #4 (page break between the two matrices): I can add that. Just so you know, when a matrix spans a very wide PD band it may still push to a second page, but the break will guarantee the Commitment matrix always starts fresh (never split mid-table) — which is what you want. I'll get all these done.
+READ-ONLY. Diagnostics only. Do not change anything.
+
+File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+
+MAJOR STRUCTURAL CHANGE: The client wants "# of Changes" and "% Change" moved 
+from the Y-axis (per CAS PD column, current) to the X-axis (per Bank PD ROW). 
+
+CURRENT: Changes/% Change are rendered as two ROWS at the bottom (per CAS PD 
+column): changes[i] = colTotals[i] - diagonal[i], pctChange[i] = changes[i]/
+colTotals[i].
+
+NEW (client-confirmed): For EACH Bank PD ROW:
+- "# of Changes" for that row = number of accounts in that row that changed 
+  (off-diagonal in that row, i.e. cells where toPd != fromPd for that fromPd row)
+- "% Change" for that row = # Changes / total accounts in that row (rowTotal)
+- Example: Bank PD-13 row has 15 accounts total, 7 changed → 7/15 = 46.7%
+- These become new COLUMNS on the right (alongside the existing row Totals 
+  column), NOT bottom rows.
+
+Show me (no edits, for BOTH MatrixCount and MatrixCommitment):
+1. The current row-building logic: how each row's cells, rowTotal (sum), and 
+   the diagonal are computed. Show where `sum` (rowTotal) is calculated and 
+   whether the per-row diagonal is accessible (byFromTo.get(`${fromPd}|${fromPd}`)).
+2. The current header structure (2-row: "CAS PD" grouping + 1-16 + "Totals"). 
+   To add "# Changes" and "% Change" as columns after "Totals", I need to 
+   know the column width layout (currently 8% + 16×5% + 12% = 100%).
+3. The current bottom Totals/Changes/%Change rows (grouped in <View wrap=false>). 
+   The Changes and % Change ROWS will be REMOVED (replaced by per-row columns); 
+   the Totals row stays. Confirm their structure.
+4. For each data row: can I compute per-row changes = rowTotal − rowDiagonal 
+   (where rowDiagonal = byFromTo.get(`${fromPd}|${fromPd}`) for count, or /1M 
+   for commitment), and per-row % = changes/rowTotal? Confirm rowTotal and the 
+   diagonal are available per row.
+5. Column width impact: adding 2 columns (# Changes, % Change) means 
+   redistributing widths. Currently BANK PD 8% + 16 cols × 5% (80%) + Totals 
+   12%. Show if we can shrink to fit 2 more columns (e.g. reduce PD cols or 
+   Totals width).
+
+Do not edit anything. Confirm per-row changes/diagonal availability and the 
+column layout so I can add "# Changes" and "% Change" as right-side columns 
+and remove the bottom Changes/% Change rows. Findings only.

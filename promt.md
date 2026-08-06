@@ -1,44 +1,47 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Keep the Totals row and footnote together with the matrix (prevent isolation 
-on next page with whitespace), and fix footnote font. Both matrices.
+Two changes: hide zeros in colored matrix cells, and shade subreport rows.
 
-PART A — Bind Totals + footnote together (Issues 3, 4, 5):
-Currently the Totals row is in <View wrap={false}> but the footnote is a 
-separate sibling <Text> after the table, not bound. So Totals can move to the 
-next page and the footnote isolates with whitespace.
+PART A — Hide "0"/"$0" in COLORED cells only (Issue 6):
+In the data cells of BOTH matrices, the colored cells (upgrade/downgrade, 
+where toPd != fromPd) currently show "0"/"$0". Client wants these hidden 
+(blank) in colored cells so real changes pop. Keep values in white/diagonal 
+cells (toPd == fromPd) unchanged.
 
-Wrap the Totals row AND the footnote together in a SINGLE <View wrap={false}> 
-so they always stay as one unit:
-    <View wrap={false}>
-      {/* Totals row */}
-      <View style={[styles.tr, styles.trLast]}> ...Totals... </View>
-      {/* Footnote */}
-      <Text style={{ ...footnote style... }}>CAS PD Rating totals represent...</Text>
-    </View>
+The cell already computes bg (backgroundColor: #fee2e2 for toPd>fromPd, 
+#dcfce7 for toPd<fromPd, undefined for diagonal). Use this:
+- MatrixCount cell value: change {String(v)} to:
+    {bg && v === 0 ? "" : String(v)}
+  (blank when the cell is colored AND value is 0; otherwise show the number, 
+  including 0 on white/diagonal cells)
+- MatrixCommitment cell value: change {fmt(v)} to:
+    {bg && (!v || v === 0) ? "" : fmt(v)}
+  (blank when colored AND zero; otherwise show fmt(v))
 
-This keeps Totals + footnote together. If they don't fit at the page bottom, 
-BOTH move to the next page together (never Totals alone, never footnote 
-isolated).
+So: colored cell + zero -> blank; colored cell + nonzero -> show value; 
+white/diagonal cell -> show value (including 0). This makes actual changes 
+stand out.
 
-NOTE on whitespace (Issue 4): The page break between the two matrices means 
-some whitespace before the Commitment matrix is expected (client approved the 
-page break). But Totals+footnote should not create a near-empty page on their 
-own — binding them together minimizes that. Keep the existing minPresenceAhead 
-on headers so the matrix header doesn't orphan either.
+PART B — Shade subreport rows (Issue 7):
+In Subreport01_Count ("PD Migration Totals by Account") and 
+Subreport02_Commitment ("PD Migration Totals by Commitment"), shade each data 
+row based on fromPd vs toPd (both available per row):
+- toPd < fromPd (upgrade): row background light green #dcfce7
+- toPd > fromPd (downgrade): row background light red #fee2e2
+- toPd == fromPd (no change): no background (default white)
 
-PART B — Footnote font (Cosmetic #3):
-Change the footnote style from fontSize 7 to fontSize 8, and reduce marginTop 
-from 10 to 4 (bring it closer to the table). Keep marginBottom for separation 
-from the next section. Apply in both matrices:
-    { fontSize: 8, color: "#475569", marginTop: 4, marginBottom: 10, fontStyle: "italic" }
+Add the backgroundColor to each data row's container <View> (the row-level 
+View, so the whole row is shaded). Compute per row:
+    const rowBg = r.toPd < r.fromPd ? "#dcfce7" : r.toPd > r.fromPd ? "#fee2e2" : undefined;
+Then apply backgroundColor: rowBg to the row's style. Apply to BOTH subreport 
+tables.
 
 CONSTRAINTS:
-- Group ONLY the Totals row + footnote in one <View wrap={false}>.
-- Keep data rows above ungrouped (they flow/fill the page).
-- Footnote fontSize 8, marginTop 4.
-- Apply to BOTH matrices identically.
-- Do NOT change the page break between matrices (keep it).
+- Item 6: blank zeros ONLY in colored cells (bg defined); keep values in 
+  white/diagonal cells. Apply to both matrices.
+- Item 7: shade full rows in both subreports using the same colors as the 
+  matrices (#dcfce7 green, #fee2e2 red).
+- Do NOT change data, calculations, or the % columns in subreports.
 - Do NOT touch pageSetup.ts, page size, margins, or backend.
-- Only edit this one file. Show the grouped Totals+footnote and the footnote 
-  style for both matrices.
+- Only edit this one file. Show the colored-cell zero-hiding (both matrices) 
+  and the subreport row shading (both subreports).

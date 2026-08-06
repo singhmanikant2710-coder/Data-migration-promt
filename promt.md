@@ -1,80 +1,57 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Three LAYOUT-ONLY fixes for BOTH MatrixCount and MatrixCommitment. Do NOT 
-change calculations, colors, data, the new columns, subreport shading, or the 
-page break.
+Three FINAL layout fixes for BOTH MatrixCount and MatrixCommitment. Do NOT 
+change column widths, font sizes, colors, $0 blanking, or the page break.
 
-=== ISSUE A: Header font too small (7) vs data (10) ===
-The matrix header cells use styles.thCompact (fontSize 7) while data cells use 
-styles.td (fontSize 10), inverting the hierarchy. Raise the header font to 
-match/exceed the data.
+=== FIX 1: Table border overflow (keep widths 100%, fix border rendering) ===
+The per-cell borderRightWidth: 1 on ~20 cells adds ~20pt beyond the 100% 
+flexBasis, overflowing the printable width. Fix WITHOUT changing widths:
 
-Change styles.thCompact fontSize from 7 to 10 (matching data), keeping it 
-compact otherwise. To avoid increasing row height too much, keep padding 
-small:
-    thCompact: { fontSize: 10, padding: 3, lineHeight: 1.1 }
-(fontSize 10 = same as data; bold comes from styles.thDark fontWeight 700; 
-centering is already applied per earlier fix. Padding 3 + lineHeight 1.1 
-keeps the header row reasonably tight.)
+a) On styles.table, ensure it clips overflow and stays within bounds. Add/
+   confirm:
+     overflow: "hidden",
+     width: "100%",
+   (This clips any border overflow to the table's box.)
 
-This applies to both matrices' headers (they share thCompact). Verify the 
-13/SM, 14/SUB labels still fit on the columns at fontSize 10 — if they wrap, 
-that's acceptable (2 lines) since the columns are 4% wide; the header is now 
-prominent.
+b) Remove the right border from the LAST cell in EVERY row (it's redundant — 
+   the table's outer border already closes the right edge). In BOTH matrices, 
+   add borderRightWidth: 0 (or apply styles.tdLast) to the LAST cell (% Change 
+   column) of:
+   - Header row 1 (grouping row - last cell)
+   - Header row 2 (labels - the % Change header cell)
+   - Every data row (the % Change data cell)
+   - The Totals row (last cell)
+   So the last column has NO right border, reducing cumulative width and 
+   letting the table fit within 720pt.
 
-=== ISSUE B: Table border overflow beyond printable width ===
-The row has ~20 cells, each with borderRightWidth: 1, adding ~20pt BEYOND the 
-100% flexBasis width (react-pdf draws borders in addition to the content box). 
-So the table (100% + 20pt) exceeds the 720pt printable width, overflowing 
-left/right.
+=== FIX 2: Reduce header height (keep font 10, cut padding/lineHeight) ===
+The header font is 10 (keep it — readable). Reduce ONLY padding and lineHeight 
+in styles.thCompact to shrink header height so Totals fits on page 1:
+   Change styles.thCompact from:
+     { fontSize: 10, padding: 3, lineHeight: 1.1 }
+   to:
+     { fontSize: 10, padding: 2, lineHeight: 1.0 }
+(Font stays 10, but tighter padding/lineHeight reduces header row height, 
+giving Totals a better chance to stay on page 1.)
 
-Fix: remove the right border from the LAST cell in each row so the cumulative 
-border width is reduced, AND ensure the outer table border contains it. Apply 
-styles.tdLast (borderRight: 0) to the LAST column cell (% Change) in:
-- Both header rows (the last header cell)
-- All data rows (the last data cell)
-- The Totals row (last cell)
-in BOTH matrices.
-
-Additionally, if overflow persists, reduce the total column width slightly to 
-leave room for the internal borders: change the widths so they sum to ~99% 
-instead of 100% (e.g. reduce the 16 PD columns from 4% to 3.9%, giving 16×3.9 
-= 62.4%, total 8 + 62.4 + 12 + 8 + 8 = 98.4%), leaving ~1.6% (~11pt) for the 
-per-cell borders so the table fits within 720pt. Keep header and body widths 
-mirrored.
-
-Prefer the tdLast approach first (removing last-column right border); only 
-reduce widths if the table still overflows.
-
-=== ISSUE C: Totals row isolating to page 2 with whitespace ===
-The Totals row is in <View wrap={false}>. On tall matrices, it can't fit at 
-page 1 bottom so the whole block moves to page 2, leaving blank space.
-
-Fix: REMOVE wrap={false} from the Totals row. A single Totals row is one line 
-— it won't split across pages anyway (single-line row), and without wrap=false 
-it will flow naturally into the remaining space on page 1 instead of jumping 
-to page 2. The footnote (already a separate sibling) flows after it.
-
-Change:
-    <View wrap={false}>
-      <View style={[styles.tr, styles.trLast]}> ...Totals... </View>
-    </View>
-to just:
-    <View style={[styles.tr, styles.trLast]}> ...Totals... </View>
-(remove the wrap={false} wrapper). Apply to both matrices.
-
-This lets the Totals row + footnote fill page 1's remaining space, minimizing 
-whitespace, while the page break before the Commitment matrix stays intact.
+=== FIX 3: Footnote width matches table ===
+Ensure the footnote container width matches the table exactly (full table 
+width, no overflow). On the footnote <Text>, add width: "100%" so it aligns 
+with the table's width, and confirm it's a direct sibling of the table within 
+the same matrix root View (so it aligns to the same left/right edges).
+   Footnote style becomes:
+     { fontSize: 8, color: "#475569", marginTop: 4, marginBottom: 10, fontStyle: "italic", width: "100%" }
 
 CONSTRAINTS:
-- Issue A: only change thCompact fontSize 7 -> 10 (keep padding 3, lineHeight 
-  1.1). Applies to both matrices' headers.
-- Issue B: add tdLast (borderRight: 0) to the last column in header/body/
-  Totals rows, both matrices. Only reduce widths if overflow persists.
-- Issue C: remove the wrap={false} wrapper around the Totals row in both 
-  matrices.
-- Do NOT change data, calculations, colors, the new columns, subreport 
-  shading, or the page break between matrices.
+- Do NOT change column widths (keep 8% + 16×4% + 12% + 8% + 8% = 100%).
+- Do NOT change font sizes (header stays 10, data stays 10).
+- Do NOT change colors, $0 blanking, zero-rounding, row shading, or the page 
+  break between matrices.
+- FIX 1: overflow:hidden + width:100% on styles.table, and borderRightWidth: 0 
+  on the last cell of every row (both matrices).
+- FIX 2: thCompact padding 3->2, lineHeight 1.1->1.0 (font stays 10).
+- FIX 3: footnote width: "100%".
+- Apply to BOTH matrices identically.
 - Do NOT touch pageSetup.ts, page size, margins, or backend.
-- Only edit this one file. Show: thCompact change, tdLast on last columns, 
-  and the Totals row wrap removal for both matrices.
+- Only edit this one file. Show the styles.table change, the last-cell border 
+  removal, the thCompact change, and the footnote width — for both matrices.

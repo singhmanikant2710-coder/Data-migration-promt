@@ -1,9 +1,3 @@
--- Sample ke liye actual commitment total (raw dollars)
-SELECT SUM(a.[Commitment]) / 1000000.0 AS ActualTotalMM
-FROM dbo.[02_CORE_02_Reviews] r
-INNER JOIN dbo.[02_CORE_04_Accounts] a ON a.[Review_id] = r.[Review_id]
-WHERE r.[Sample_id] = <sample>
-  AND (r.[Cancelled] IS NULL OR r.[Cancelled] = 0)
-  AND a.[Bank_PD] BETWEEN 1 AND 16
-  AND a.[CAS_PD] BETWEEN 1 AND 16
-  AND r.[Completed_date] IS NOT NULL;  -- ya jo status select kiya
+This all makes sense, Geoff — and no need to apologize, this kind of refinement is exactly what gets the report right. I understand the structural change: the # of Changes and % Change should be assessed per Bank PD row (across the X-axis), not per CAS PD column. So for each Bank PD row, # Changes = accounts in that row that moved to a different PD, and % Change = # Changes ÷ that row's total accounts (e.g. Bank PD-13: 7 of 15 changed = 46.7%). I'll move these to right-side columns next to the row Totals and remove the bottom Changes/% Change rows, for both matrices.
+One quick confirmation: currently the bottom row shows a single "Changes" and "% Change" per CAS PD column. Once I move to per-Bank-PD-row columns, should I remove those bottom rows entirely (keeping just the "Totals" row at the bottom), and add "# Changes" and "% Change" as two new columns on the right after "Totals"? That matches your examples — just confirming before I restructure.
+The cosmetic changes are all clear. On #4 (page break between the two matrices): I can add that. Just so you know, when a matrix spans a very wide PD band it may still push to a second page, but the break will guarantee the Commitment matrix always starts fresh (never split mid-table) — which is what you want. I'll get all these done.

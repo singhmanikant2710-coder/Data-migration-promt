@@ -1,32 +1,24 @@
 Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Hide TRUE-ZERO values in the colored (green/red) data cells so changes pop, 
-but keep SMALL non-zero values visible (e.g. a $40K change = $0.04MM must 
-still show). Apply to BOTH matrices' data cells. Do NOT change the Totals row, 
-widths, colors, or anything else.
+Make the bottom Totals row's "CAS PD Totals" label font size consistent with 
+the rest of the row (fontSize 10). Currently it uses styles.th (fontSize 9) 
+while the other cells in that row use styles.td (fontSize 10), making the 
+label slightly smaller.
 
-MatrixCount colored data cells — currently: {String(v)} (shows "0" in colored 
-cells). Change to hide true zero only in colored cells:
-    {bg && v === 0 ? "" : String(v)}
-(Colored cell + exactly 0 -> blank; colored cell + any nonzero -> show the 
-number; white/diagonal cell -> show as-is including 0.)
+In BOTH MatrixCount and MatrixCommitment, the bottom Totals row's first cell 
+(the "CAS PD Totals" label) currently uses styles.th:
+    <Text style={[styles.th, { flexBasis: "8%", flexGrow: 0, flexShrink: 0 }]}>
+      CAS PD Totals
+    </Text>
 
-MatrixCommitment colored data cells — currently: {fmt(v)} (shows "$0.0" in 
-colored cells even for true zero). Change to hide true zero only in colored 
-cells, but show small non-zero values:
-    {bg && v === 0 ? "" : fmt(v)}
-(Colored cell + exactly 0 -> blank; colored cell + tiny nonzero like 0.04 
-($40K) -> fmt shows "$0.04"; white/diagonal cell -> show as-is.)
-
-IMPORTANT: use "v === 0" (exact zero), NOT Math.round(v) === 0 — because a 
-$40K value (0.04 in $MM) is NOT exactly 0, so it will correctly SHOW as 
-"$0.04" and only TRUE zeros are blanked. This gives Geoff exactly what he 
-asked: hide zeros, but pick up small changes above $0.
+Add an explicit fontSize: 10 to match the row (and keep it bold via styles.th's 
+fontWeight if present, or add fontWeight: 700):
+    <Text style={[styles.th, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, fontSize: 10 }]}>
+      CAS PD Totals
+    </Text>
 
 CONSTRAINTS:
-- ONLY change the colored DATA cell value render in both matrices (the cell 
-  inside r.cells.map).
-- Keep the bg/fg colors unchanged (only the zero value is blanked).
-- Do NOT change the bottom Totals row cells, the white/diagonal cells' 
-  behavior, widths, or fmt().
-- Only edit this one file. Show the updated colored-cell render in both matrices.
+- ONLY add fontSize: 10 to the "CAS PD Totals" label cell in both matrices' 
+  bottom Totals rows.
+- Do NOT change widths, alignment, colors, or any other cell.
+- Only edit this one file. Show the updated label cell in both matrices.

@@ -1,18 +1,30 @@
-READ-ONLY. Read ONE file once. Do not search or re-read.
+Single-file edit: frontend/src/app/review/[ecif]/review-info/components/sections/ReviewInfoSection.tsx
 
-File: frontend/src/app/review/[ecif]/review-info/components/sections/ReviewInfoSection.tsx
+In the "General Revisions" unlock flow, the finalized date is not being 
+cleared (it should be). Add finalizedDate: "" to the save data object so 
+[Review_finalized_date] is cleared on unlock.
 
-I need to confirm the exact field name used in the saveReview data object for 
-the FINALIZED date, so I can add it to the General Revisions unlock. Show:
+Find the General Revisions unlock handler (when unlockReason === "GENERAL"). 
+It currently builds:
+    const data: Record<string, any> = { approvalDate: "" };
+    if (!hasInitial && mgr) {
+      data.initialApproval = mgr;
+    }
 
-1. Any place in this file where a "finalized" date field is referenced in a 
-   saveReview/reviewInfo data object or read from response (e.g. finalizedDate, 
-   reviewFinalizedDate, mgrFinalized, etc.) — the EXACT property name.
-2. The saveReview data object shape — show existing fields like approvalDate, 
-   initialApproval, and confirm what the finalized-date property is called in 
-   this frontend layer (to match backend [Review finalized date]).
-3. Also show where mgrApproval / initialApproval are read from (the response 
-   object) so I know the source object for finalized date too.
+Add finalizedDate clearing to that data object:
+    const data: Record<string, any> = { approvalDate: "", finalizedDate: "" };
+    if (!hasInitial && mgr) {
+      data.initialApproval = mgr;
+    }
 
-Do NOT edit. Just confirm the exact finalized-date property name used in this 
-file's save/data mapping. Findings only.
+So the General Revisions unlock now: transfers approval->initial (first unlock 
+only, unchanged), clears approvalDate (unchanged), AND clears finalizedDate 
+(new). The backend SaveReviewTimelineAsync maps finalizedDate to 
+[Review finalized date].
+
+CONSTRAINTS:
+- ONLY add finalizedDate: "" to the General Revisions data object.
+- Do NOT change the approvalDate/initialApproval logic or anything else.
+- Do NOT touch Reconsideration/Appeal yet (separate fix).
+- Only edit this one file. Show the updated data object in the General 
+  Revisions handler.

@@ -1,43 +1,24 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+READ-ONLY. One-time complete read for the Unlock Review workflow. Do not edit.
 
-Investigating the "Unlock Review" workflow (Review Form / Review Status). 
-Two bugs + one default-selection enhancement.
+Find and show ALL of the following in ONE pass (search the codebase for 
+"Unlock", "Review_finalized_date", "Review_approval_date", unlock handler):
 
-Find and show the Unlock Review workflow code — likely in the backend 
-(Application/Infrastructure) handling the unlock action, and possibly the 
-frontend modal. Show (no edits):
+1. BACKEND unlock handler/service — the method(s) that process unlocking a 
+   review. Show the COMPLETE method(s) verbatim, including:
+   - How "General Revisions" updates fields (approval_date transfer to 
+     initial_approval_date, clear approval_date, clear finalized_date, 
+     Locked=false, approver_name).
+   - How "Reconsideration" and "Appeal" are handled — do they call the same 
+     update logic or a separate/incomplete path?
+   - The exact field assignments (SQL or EF) for all three options.
+   - The "first unlock only" detection (how it checks first unlock).
+   File path + full method bodies.
 
-1. The UNLOCK handler/service method that processes "Unlock for General 
-   Revisions". Show the full logic — which fields it updates:
-   - Does it transfer [Review_approval_date] -> [Review_initial_approval_date] 
-     (first unlock only)? (reported working)
-   - Does it clear [Review_approval_date]? (working)
-   - Does it leave [Review_approver_name]? (working)
-   - Does it set [Locked] = FALSE? (working)
-   - Does it clear [Review_finalized_date]? ** REPORTED NOT WORKING ** — show 
-     whether this field is cleared in the code. Is it missing, or set wrong?
+2. The DTO/request model for the unlock action — what data comes from the 
+   frontend (which option was selected, sub-form data).
 
-2. The three unlock options: "General Revisions", "Reconsideration", "Appeal". 
-   Show how each is handled. Do Reconsideration and Appeal:
-   - open their sub-forms (working), THEN
-   - follow the SAME field-update workflow as General Revisions? 
-   ** REPORTED NOT WORKING for Reconsideration/Appeal ** — show whether they 
-   call the same update logic or a different/incomplete path. Is the shared 
-   workflow (transfer approval_date, clear approval_date, clear finalized_date, 
-   Locked=false) applied to all three, or only to General Revisions?
+3. FRONTEND Unlock modal component — the three radio options and whether any 
+   DEFAULT is pre-selected. File path + the relevant JSX.
 
-3. The field mapping: confirm the exact column names — [Review_approval_date], 
-   [Review_initial_approval_date], [Review_finalized_date], [Review_approver_name], 
-   [Locked] — and how they're set in the unlock update (SQL/EF).
-
-4. The frontend Unlock modal: show the three options and whether a DEFAULT 
-   selection is set. Client wants "Unlock for General Revisions" as the default 
-   (most common). Show the current default (if any).
-
-5. "First unlock only" logic for the approval_date transfer: how does it 
-   detect first unlock (e.g. Review_initial_approval_date IS NULL check)? 
-   Confirm this so the same guard applies to Reconsideration/Appeal.
-
-Do not edit anything. Show the unlock handler(s), which fields each of the 
-three options updates, the finalized_date handling, and the modal default. 
-Findings only.
+Show all three (backend handler, DTO, frontend modal) completely in this one 
+response so I don't need to re-read. Findings only, no edits.

@@ -1,21 +1,32 @@
-READ-ONLY. Read once. Do not search broadly or re-read.
+Single-file edit: frontend/src/app/load-samples/page.tsx
 
-Find where the Sample "Type" dropdown options are defined (Samples screen, 
-creating a new Sample). Two typos need fixing:
-- "Continous" should be "Continuous" (missing "u")
-- "Others" should be "Other" (not plural)
+Fix two display typos in the Sample "Type" dropdown WITHOUT changing the saved 
+values (the value = label currently, and the values "Continous"/"Others" are 
+persisted to the DB and used in filters/comparisons elsewhere, so we keep the 
+VALUE unchanged and only fix the visible LABEL).
 
-Search for the dropdown option strings. Likely in a Samples component or a 
-constants/enum file. Show:
-1. The file path and the exact code where these Type options are defined 
-   (the array/enum/list of dropdown values).
-2. The exact current strings ("Continous"/"Continuous" and "Others"/"Other") 
-   so I can see the precise typos.
-3. Whether these values are ALSO used elsewhere (e.g. saved to DB, compared in 
-   logic) — so fixing the display text doesn't break a value comparison. 
-   Specifically: is the dropdown VALUE (what's saved) different from the LABEL 
-   (what's shown)? If they're the same string, changing it might affect saved 
-   data or filters — flag that.
+In the Sample Type <Select>, separate the display label from the value for the 
+two options with typos — keep value as-is, fix only the label text shown:
 
-Do NOT edit. Show where the Type options are defined and whether the string is 
-used as a stored value vs just a display label. Findings only.
+Change:
+    <option value="Continous">Continous</option>
+to:
+    <option value="Continous">Continuous</option>
+
+Change:
+    <option value="Others">Others</option>
+to:
+    <option value="Others">Other</option>
+
+(The value attribute stays "Continous" and "Others" — so the stored value, 
+the equality checks like r.sample_type === "Continous", the API filter 
+searchSamples({ type: "Continous" }), and existing saved data are ALL 
+unaffected. Only the text the user sees in the dropdown is corrected.)
+
+CONSTRAINTS:
+- ONLY change the display text (between <option>...</option>), NOT the value 
+  attribute.
+- Do NOT change any equality checks, filters, the isContinuous regex, saved 
+  payload, or backend.
+- Do NOT touch other options (Examination, CCL) — they have no typos.
+- Only edit this one file. Show the two updated <option> lines.

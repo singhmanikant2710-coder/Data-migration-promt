@@ -1,30 +1,53 @@
 Single-file edit: frontend/src/app/review/[ecif]/review-info/components/sections/ReviewInfoSection.tsx
 
-In the "General Revisions" unlock flow, the finalized date is not being 
-cleared (it should be). Add finalizedDate: "" to the save data object so 
-[Review_finalized_date] is cleared on unlock.
+The Reconsideration and Appeal unlock flows open their sub-forms and save 
+their own fields, but they do NOT apply the same unlock workflow as General 
+Revisions (transfer approval->initial on first unlock, clear approvalDate, 
+clear finalizedDate). Client wants all three unlock options to follow the SAME 
+core unlock workflow. Add that workflow to both the Reconsideration submit and 
+the Appeal submit save payloads.
 
-Find the General Revisions unlock handler (when unlockReason === "GENERAL"). 
-It currently builds:
-    const data: Record<string, any> = { approvalDate: "" };
-    if (!hasInitial && mgr) {
-      data.initialApproval = mgr;
-    }
+The General Revisions unlock does this (reference):
+    const hasInitial = !!String((...initialApproval ?? "")).trim();
+    const mgr = toInputDateString((...mgrApproval ?? ""));
+    const data = { approvalDate: "", finalizedDate: "" };
+    if (!hasInitial && mgr) { data.initialApproval = mgr; }
 
-Add finalizedDate clearing to that data object:
-    const data: Record<string, any> = { approvalDate: "", finalizedDate: "" };
-    if (!hasInitial && mgr) {
-      data.initialApproval = mgr;
-    }
+Apply the SAME core unlock fields to BOTH the Reconsideration submit and the 
+Appeal submit save payloads, MERGED with their existing sub-form fields.
 
-So the General Revisions unlock now: transfers approval->initial (first unlock 
-only, unchanged), clears approvalDate (unchanged), AND clears finalizedDate 
-(new). The backend SaveReviewTimelineAsync maps finalizedDate to 
-[Review finalized date].
+RECONSIDERATION submit — currently saves:
+    data: { reconsideration, reconsiderationDate, reconsiderationDescription, 
+            reconsiderationDecision, reconsiderationRationale, appeal, 
+            appealDate, appealDescription, appealDecision, 
+            appealDecisionRationale }
+ADD the unlock fields to this same data object (do not remove the existing 
+reconsideration/appeal fields):
+    - approvalDate: ""
+    - finalizedDate: ""
+    - and, first-unlock-only: if initialApproval is not already set and mgr 
+      approval exists, add initialApproval: mgr
+   Use the SAME hasInitial/mgr computation as General Revisions.
+
+APPEAL submit — currently saves:
+    data: { appeal, appealDate, appealDescription, appealDecision, 
+            appealDecisionRationale, reconsideration, ... }
+ADD the same unlock fields to this data object too:
+    - approvalDate: ""
+    - finalizedDate: ""
+    - first-unlock-only initialApproval: mgr (same guard)
+
+So Reconsideration and Appeal now BOTH: save their sub-form fields AND apply 
+the unlock workflow (transfer approval->initial first time, clear approval, 
+clear finalized) — identical to General Revisions. The [Locked] flag handling 
+(via backend/approver-lock) stays as-is; only these date fields are added.
 
 CONSTRAINTS:
-- ONLY add finalizedDate: "" to the General Revisions data object.
-- Do NOT change the approvalDate/initialApproval logic or anything else.
-- Do NOT touch Reconsideration/Appeal yet (separate fix).
-- Only edit this one file. Show the updated data object in the General 
-  Revisions handler.
+- Add approvalDate: "", finalizedDate: "", and the first-unlock-only 
+  initialApproval to BOTH the Reconsideration and Appeal submit data objects.
+- Compute hasInitial and mgr the SAME way General Revisions does (reuse the 
+  same source values).
+- Do NOT remove or change the existing reconsideration/appeal sub-form fields.
+- Do NOT change General Revisions (already done) or anything else.
+- Only edit this one file. Show the updated Reconsideration and Appeal submit 
+  data objects with the merged unlock fields.

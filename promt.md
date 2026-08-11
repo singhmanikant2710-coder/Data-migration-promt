@@ -1,21 +1,43 @@
-DIAGNOSTIC ONLY — DO NOT EDIT ANY FILE. Read-only investigation. Report findings only, with file paths and line numbers.
+READ-ONLY. Diagnostics only. Do not change anything.
 
-Investigate the "Unlock Review" workflow for two confirmed bugs. Trace the full code path from the Unlock Review modal action through to the SQL UPDATE.
+Investigating the "Unlock Review" workflow (Review Form / Review Status). 
+Two bugs + one default-selection enhancement.
 
-Bug 1 — "Unlock for General Revisions" does NOT clear [Review_finalized_date]. These steps work correctly: transfers Review_approval_date into Review_initial_approval_date (first unlock only), clears Review_approval_date, leaves Review_approver_name as-is, sets Locked = FALSE. Only clearing Review_finalized_date is broken.
+Find and show the Unlock Review workflow code — likely in the backend 
+(Application/Infrastructure) handling the unlock action, and possibly the 
+frontend modal. Show (no edits):
 
-Bug 2 — "Unlock for Reconsideration" and "Unlock for Appeal" open their sub-forms correctly, but afterward should follow the SAME workflow as General Revisions (including clearing Review_finalized_date). This shared workflow is NOT being applied for these two paths.
+1. The UNLOCK handler/service method that processes "Unlock for General 
+   Revisions". Show the full logic — which fields it updates:
+   - Does it transfer [Review_approval_date] -> [Review_initial_approval_date] 
+     (first unlock only)? (reported working)
+   - Does it clear [Review_approval_date]? (working)
+   - Does it leave [Review_approver_name]? (working)
+   - Does it set [Locked] = FALSE? (working)
+   - Does it clear [Review_finalized_date]? ** REPORTED NOT WORKING ** — show 
+     whether this field is cleared in the code. Is it missing, or set wrong?
 
-Locate and report (no edits):
+2. The three unlock options: "General Revisions", "Reconsideration", "Appeal". 
+   Show how each is handled. Do Reconsideration and Appeal:
+   - open their sub-forms (working), THEN
+   - follow the SAME field-update workflow as General Revisions? 
+   ** REPORTED NOT WORKING for Reconsideration/Appeal ** — show whether they 
+   call the same update logic or a different/incomplete path. Is the shared 
+   workflow (transfer approval_date, clear approval_date, clear finalized_date, 
+   Locked=false) applied to all three, or only to General Revisions?
 
-1. The command/handler/service that processes "Unlock for General Revisions". Show exactly which review fields it sets or clears.
+3. The field mapping: confirm the exact column names — [Review_approval_date], 
+   [Review_initial_approval_date], [Review_finalized_date], [Review_approver_name], 
+   [Locked] — and how they're set in the unlock update (SQL/EF).
 
-2. Whether Review_finalized_date is included anywhere in that update path — in the C# entity mutation, the repository method, AND the actual SQL UPDATE statement. Confirm at which layer it is missing (set to null in C# but dropped from the SQL column list? or never set at all?).
+4. The frontend Unlock modal: show the three options and whether a DEFAULT 
+   selection is set. Client wants "Unlock for General Revisions" as the default 
+   (most common). Show the current default (if any).
 
-3. The repository method that issues the SQL UPDATE for unlock. Quote the column list in the UPDATE statement so we can see whether Review_finalized_date is present.
+5. "First unlock only" logic for the approval_date transfer: how does it 
+   detect first unlock (e.g. Review_initial_approval_date IS NULL check)? 
+   Confirm this so the same guard applies to Reconsideration/Appeal.
 
-4. The handlers for "Unlock for Reconsideration" and "Unlock for Appeal". Report whether they call the SAME shared unlock logic as General Revisions, or use a separate/duplicated code path. If separate, list exactly which fields each one sets or clears versus the General Revisions path.
-
-5. A summary table: for each of the three unlock options (General Revisions / Reconsideration / Appeal), show which of these fields each currently clears or sets — Review_approval_date, Review_initial_approval_date, Review_approver_name, Locked, Review_finalized_date.
-
-Output findings only. No code changes and no fix suggestions yet — just the trace and the summary table.
+Do not edit anything. Show the unlock handler(s), which fields each of the 
+three options updates, the finalized_date handling, and the modal default. 
+Findings only.

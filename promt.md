@@ -1,14 +1,18 @@
-Single-file edit: frontend/src/app/review/[ecif]/review-info/components/sections/ReviewInfoSection.tsx
+READ-ONLY. Read ONE file once. Do not search or re-read.
 
-Change the Unlock modal's default selected option from "APPEAL" to "GENERAL" 
-(client wants "Unlock for General Revisions" as the default — most common).
+File: frontend/src/app/review/[ecif]/review-info/components/sections/ReviewInfoSection.tsx
 
-Change:
-    const [unlockReason, setUnlockReason] = useState("APPEAL");
-to:
-    const [unlockReason, setUnlockReason] = useState("GENERAL");
+I need to confirm the exact field name used in the saveReview data object for 
+the FINALIZED date, so I can add it to the General Revisions unlock. Show:
 
-CONSTRAINTS:
-- ONLY change the default useState value from "APPEAL" to "GENERAL".
-- Do NOT change anything else.
-- Only edit this one file. Show the changed line.
+1. Any place in this file where a "finalized" date field is referenced in a 
+   saveReview/reviewInfo data object or read from response (e.g. finalizedDate, 
+   reviewFinalizedDate, mgrFinalized, etc.) — the EXACT property name.
+2. The saveReview data object shape — show existing fields like approvalDate, 
+   initialApproval, and confirm what the finalized-date property is called in 
+   this frontend layer (to match backend [Review finalized date]).
+3. Also show where mgrApproval / initialApproval are read from (the response 
+   object) so I know the source object for finalized date too.
+
+Do NOT edit. Just confirm the exact finalized-date property name used in this 
+file's save/data mapping. Findings only.

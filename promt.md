@@ -1,29 +1,54 @@
-READ-ONLY. Read once. Do not re-read.
+Fix ONLY the following UI bug on the Samples page.
 
-File: frontend/src/components/pdf/ReviewPDF.tsx (CAS Linesheet)
+TARGET FILE:
+frontend/src/app/load-samples/page.tsx
 
-The Transaction Information section moves to the top of the next page, leaving 
-empty space on the previous page (Geoff's "EMPTY SPACE" comment). Diagnostics 
-showed the section itself has no wrap={false}/break/minPresenceAhead. Confirm 
-the cause:
+IMPORTANT SCOPE RESTRICTION:
+- Make changes ONLY in:
+  frontend/src/app/load-samples/page.tsx
+- Do NOT modify any other file.
+- Do NOT modify backend/API files, shared components, global CSS, layout files, configuration files, or unrelated components.
+- Do NOT change existing business logic or functionality.
+- Do NOT refactor unrelated code.
 
-1. Show the section IMMEDIATELY BEFORE Transaction Information in the render 
-   order — does it have break, wrap={false}, or minPresenceAhead that could 
-   push Transaction Info down? Show that preceding section.
+I have attached screenshots showing the issue.
 
-2. Show styles.section and styles.sectionTitle — do they have any 
-   minPresenceAhead, break, or wrap that keeps the title+content together 
-   (which would push the whole section to the next page if the title can't fit 
-   with some content)?
+BUG:
+When the user creates a new Sample on the Samples page, the page becomes vertically cut off. Part of the Samples/Load Samples content goes below the visible viewport, and there is no usable vertical scrollbar to access the hidden content.
 
-3. The HtmlRichText inside Transaction Info — is the whole section wrapped in 
-   anything that prevents splitting? Could the section's content be large 
-   enough that React-PDF keeps title+content together and moves both down?
+EXPECTED RESULT:
+- The Samples page should remain fully accessible after creating a Sample.
+- The page should have proper vertical scrolling when the content height exceeds the viewport.
+- The page should maintain the same alignment and overall layout as the existing Samples page.
+- No section should be clipped or hidden at the bottom.
+- The existing header, sidebar, Select Sample section, Load Samples section, buttons, tables, filters, pagination, and other UI elements should remain unchanged.
+- Do not unnecessarily change heights, widths, spacing, or visual styling.
+- Fix the root cause of the page cut-off/overflow issue only.
 
-4. Is there a <View break> anywhere near/before Transaction Information (the 
-   diagnostics mentioned "Unsatisfactory CRM Ratings" has a break) — could a 
-   forced break earlier be causing the empty space?
+IMPORTANT:
+Before making any change, inspect ONLY this file and identify the container causing the page to be clipped or preventing vertical scrolling.
 
-Do NOT edit. Show the preceding section, styles.section/sectionTitle, and any 
-break/wrap near Transaction Info, so I can tell if this is a fixable forced 
-rule or natural pagination. Findings only.
+Prefer a minimal targeted fix such as correcting the relevant height/overflow/flex behavior in this file, if that is the actual root cause.
+
+DO NOT:
+- Add a hardcoded fixed height workaround.
+- Hide any content.
+- Reduce the size of existing UI.
+- Remove existing functionality.
+- Change API calls or data handling.
+- Modify any other file.
+
+VALIDATION:
+1. Verify the Samples page before creating a Sample remains exactly as it currently works.
+2. Create a Sample.
+3. Verify the complete page is accessible.
+4. Verify vertical scrolling works when required.
+5. Verify no content is clipped at the bottom.
+6. Verify existing Sample creation, tables, filters, pagination, buttons, and other functionality still work.
+7. Ensure ONLY frontend/src/app/load-samples/page.tsx was modified.
+
+After completing the fix, provide:
+1. Root cause of the issue.
+2. Exact change made in page.tsx.
+3. Confirmation that no other files were modified.
+4. Confirmation that existing functionality was preserved.

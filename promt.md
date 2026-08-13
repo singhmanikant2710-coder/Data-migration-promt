@@ -1,54 +1,32 @@
-Fix ONLY the following UI bug on the Samples page.
+Single-file edit: frontend/src/app/load-samples/page.tsx
 
-TARGET FILE:
-frontend/src/app/load-samples/page.tsx
+Fix two display typos in the Sample "Type" dropdown WITHOUT changing the saved 
+values (the value = label currently, and the values "Continous"/"Others" are 
+persisted to the DB and used in filters/comparisons elsewhere, so we keep the 
+VALUE unchanged and only fix the visible LABEL).
 
-IMPORTANT SCOPE RESTRICTION:
-- Make changes ONLY in:
-  frontend/src/app/load-samples/page.tsx
-- Do NOT modify any other file.
-- Do NOT modify backend/API files, shared components, global CSS, layout files, configuration files, or unrelated components.
-- Do NOT change existing business logic or functionality.
-- Do NOT refactor unrelated code.
+In the Sample Type <Select>, separate the display label from the value for the 
+two options with typos — keep value as-is, fix only the label text shown:
 
-I have attached screenshots showing the issue.
+Change:
+    <option value="Continous">Continous</option>
+to:
+    <option value="Continous">Continuous</option>
 
-BUG:
-When the user creates a new Sample on the Samples page, the page becomes vertically cut off. Part of the Samples/Load Samples content goes below the visible viewport, and there is no usable vertical scrollbar to access the hidden content.
+Change:
+    <option value="Others">Others</option>
+to:
+    <option value="Others">Other</option>
 
-EXPECTED RESULT:
-- The Samples page should remain fully accessible after creating a Sample.
-- The page should have proper vertical scrolling when the content height exceeds the viewport.
-- The page should maintain the same alignment and overall layout as the existing Samples page.
-- No section should be clipped or hidden at the bottom.
-- The existing header, sidebar, Select Sample section, Load Samples section, buttons, tables, filters, pagination, and other UI elements should remain unchanged.
-- Do not unnecessarily change heights, widths, spacing, or visual styling.
-- Fix the root cause of the page cut-off/overflow issue only.
+(The value attribute stays "Continous" and "Others" — so the stored value, 
+the equality checks like r.sample_type === "Continous", the API filter 
+searchSamples({ type: "Continous" }), and existing saved data are ALL 
+unaffected. Only the text the user sees in the dropdown is corrected.)
 
-IMPORTANT:
-Before making any change, inspect ONLY this file and identify the container causing the page to be clipped or preventing vertical scrolling.
-
-Prefer a minimal targeted fix such as correcting the relevant height/overflow/flex behavior in this file, if that is the actual root cause.
-
-DO NOT:
-- Add a hardcoded fixed height workaround.
-- Hide any content.
-- Reduce the size of existing UI.
-- Remove existing functionality.
-- Change API calls or data handling.
-- Modify any other file.
-
-VALIDATION:
-1. Verify the Samples page before creating a Sample remains exactly as it currently works.
-2. Create a Sample.
-3. Verify the complete page is accessible.
-4. Verify vertical scrolling works when required.
-5. Verify no content is clipped at the bottom.
-6. Verify existing Sample creation, tables, filters, pagination, buttons, and other functionality still work.
-7. Ensure ONLY frontend/src/app/load-samples/page.tsx was modified.
-
-After completing the fix, provide:
-1. Root cause of the issue.
-2. Exact change made in page.tsx.
-3. Confirmation that no other files were modified.
-4. Confirmation that existing functionality was preserved.
+CONSTRAINTS:
+- ONLY change the display text (between <option>...</option>), NOT the value 
+  attribute.
+- Do NOT change any equality checks, filters, the isContinuous regex, saved 
+  payload, or backend.
+- Do NOT touch other options (Examination, CCL) — they have no typos.
+- Only edit this one file. Show the two updated <option> lines.

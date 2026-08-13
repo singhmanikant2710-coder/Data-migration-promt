@@ -1,48 +1,51 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Multi-file edit: fix Scorecard ID wrapping in all three reports.
+Files: InitialMemoPDF.tsx, FinalMemoPDF.tsx, ReviewPDF.tsx
 
-Three reports share overlapping formatting/layout issues (items #173 Initial 
-Memo, #174 Final Memo, #175 CAS Linesheet):
-- frontend/src/components/pdf/InitialMemoPDF.tsx
-- frontend/src/components/pdf/FinalMemoPDF.tsx
-- frontend/src/components/pdf/ReviewPDF.tsx  (CAS Linesheet)
+The Scorecard ID needs to wrap naturally within its cell. 
 
-Investigate all shared + specific issues (no edits):
+=== MEMOS (InitialMemoPDF.tsx + FinalMemoPDF.tsx) — remove the hyphenWrap hack ===
+Both memos inject "-\u200b" after every hyphen via hyphenWrap() to force 
+wrapping. This creates visible artifacts. Remove the injection and rely on 
+natural wrapping (the cells already have wordBreak).
 
-=== SHARED ISSUE A — Scorecard ID wrap (all 3 reports) ===
-The Scorecard ID has extra space characters injected after hyphens (a hack 
-added to force text wrapping). It appears in TWO tables in each report: the 
-"Scorecard Assessment" table and the "Account Information" table. Show:
-1. How the Scorecard ID value is built/rendered in each report — is there code 
-   injecting spaces after hyphens (e.g. .replace(/-/g, "- ") or similar)? Show 
-   the exact transformation.
-2. The Scorecard ID cell in the Scorecard Assessment table AND in the Account 
-   Information table — the cell width (flexBasis) and text styling (wordBreak?).
-3. Whether removing the injected spaces + using proper wrapping (wordBreak: 
-   "break-all" or a width) would let the ID wrap naturally within the cell.
-Show this for all three files (InitialMemo, FinalMemo, ReviewPDF).
+In BOTH memos, change hyphenWrap so it does NOT inject the zero-width space — 
+just return the cleaned value:
+    function hyphenWrap(v?: any): string {
+      const s = out(v);
+      return s
+        .replace(/\u00a0/g, " ")
+        .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, "-");
+      // removed: .replace(/-/g, "-\u200b")
+    }
+The Scorecard Assessment cell already has wordBreak "break-word" and the 
+Account Info cell has wrapAnywhere (breakAll), so IDs will still wrap naturally 
+at hyphens/characters within the cell width — without the injected artifacts.
 
-=== ISSUE B — font size 11 for blue values (Memos #173/#174 only) ===
-Show where "blue highlighted" values are rendered in InitialMemoPDF and 
-FinalMemoPDF and their current fontSize (client wants 11).
+=== CAS LINESHEET (ReviewPDF.tsx) — enable wrapping in Account Info ID cell ===
+The Account Information Scorecard ID cell has wrap={false}, which prevents 
+wrapping. Remove wrap={false} and add wordBreak so it wraps within the 25% 
+cell:
+Change:
+    <Text wrap={false} style={[styles.tableCellValueTiny, {flexBasis: "25%", fontSize: 10, lineHeight: 1.1, minWidth: 0}]}>
+      {scorecardId}
+    </Text>
+to:
+    <Text style={[styles.tableCellValueTiny, {flexBasis: "25%", fontSize: 10, lineHeight: 1.1, minWidth: 0, wordBreak: "break-all"}]}>
+      {scorecardId}
+    </Text>
+(Remove wrap={false}, add wordBreak: "break-all" so the ID wraps within the cell.)
 
-=== ISSUE C — Account Information table starts on next page (Memos #173/#174) ===
-For large tables, the Account Information table begins on the next page. Show 
-the Account Information table's wrap/break/minPresenceAhead in both memos.
+For the Scorecard Assessment ID cell in ReviewPDF (flexBasis 30%, no wrap 
+prop): add wordBreak: "break-all" to ensure it wraps too:
+    <Text style={[styles.tableCellValueSmall, {flexBasis: "30%", fontSize: 10, lineHeight: 1.2, wordBreak: "break-all"}]}>
+      {r.id || ""}
+    </Text>
 
-=== ISSUE D — Account Info header repeats mid-page (Memos #173/#174) ===
-The Account Information table header repeats WITHIN a page (not just top of new 
-pages), on pages 3-11. Show:
-1. How the Account Info header is rendered in the memos — does it use "fixed" 
-   prop? How are rows chunked?
-2. Compare with CAS Linesheet (ReviewPDF.tsx) Detail/Account table header — it 
-   does NOT have this problem. Show how ReviewPDF renders its table header 
-   differently (this is the working pattern to copy).
-
-=== ISSUE E — Transaction Information empty space (CAS Linesheet #175 only) ===
-In ReviewPDF.tsx, the Transaction Information section moves to the top of the 
-next page, leaving empty space on the previous page. Show how the Transaction 
-Information section is rendered — any wrap={false}, break, or minPresenceAhead 
-forcing it to the next page?
-
-Show all relevant code across the three files. Confirm whether the memos share 
-duplicate code (so a fix applies to both). Do not edit. Findings only.
+CONSTRAINTS:
+- Memos: only remove the "-\u200b" injection line in hyphenWrap (keep the 
+  other replacements). Keep the cells' existing styles.
+- Linesheet: remove wrap={false} + add wordBreak on the two Scorecard ID cells.
+- Do NOT change widths, other columns, or data.
+- Apply the memo change to BOTH InitialMemoPDF and FinalMemoPDF identically.
+- Only edit these three files. Show the hyphenWrap change (both memos) and the 
+  two Linesheet cell changes.

@@ -1,32 +1,35 @@
-Single-file edit: frontend/src/app/load-samples/page.tsx
+READ-ONLY. Read once. Do not re-read.
 
-Fix two display typos in the Sample "Type" dropdown WITHOUT changing the saved 
-values (the value = label currently, and the values "Continous"/"Others" are 
-persisted to the DB and used in filters/comparisons elsewhere, so we keep the 
-VALUE unchanged and only fix the visible LABEL).
+File: InitialMemoPDF.tsx (confirm FinalMemoPDF.tsx matches)
 
-In the Sample Type <Select>, separate the display label from the value for the 
-two options with typos — keep value as-is, fix only the label text shown:
+Problem: the Account Info table header renders at the BOTTOM of a page with no 
+rows beneath it (orphaned), then repeats on the next page with rows. This 
+started after we made the header "fixed" and removed wrap={false} from the 
+table container.
 
-Change:
-    <option value="Continous">Continous</option>
-to:
-    <option value="Continous">Continuous</option>
+Show precisely:
+1. The Account Information table structure NOW — the full skeleton:
+   - The table container <View> (after we removed wrap={false})
+   - The MAIN header row (does it have "fixed"? "wrap={false}"? styles.trHeader 
+     with minPresenceAhead: 72?)
+   - How data rows are rendered (the batch.map / rows loop)
+   Show this skeleton exactly.
 
-Change:
-    <option value="Others">Others</option>
-to:
-    <option value="Others">Other</option>
+2. IMPORTANT: With "fixed", the header renders on EVERY page automatically. But 
+   is there ALSO a non-fixed header being rendered once at the table start? 
+   i.e. are there now effectively TWO header definitions (one fixed that 
+   repeats, and the original inline one)? Show whether the header appears once 
+   (fixed) or if there's a duplicate.
 
-(The value attribute stays "Continous" and "Others" — so the stored value, 
-the equality checks like r.sample_type === "Continous", the API filter 
-searchSamples({ type: "Continous" }), and existing saved data are ALL 
-unaffected. Only the text the user sees in the dropdown is corrected.)
+3. styles.trHeader — show it. Does it still have minPresenceAhead: 72? With a 
+   fixed header, minPresenceAhead may not prevent the orphan.
 
-CONSTRAINTS:
-- ONLY change the display text (between <option>...</option>), NOT the value 
-  attribute.
-- Do NOT change any equality checks, filters, the isContinuous regex, saved 
-  payload, or backend.
-- Do NOT touch other options (Examination, CCL) — they have no typos.
-- Only edit this one file. Show the two updated <option> lines.
+4. CAS Linesheet (ReviewPDF.tsx) comparison — show its Account/Detail table 
+   skeleton: how are rows grouped (chunked into separate <Page> components with 
+   rowsPerPage?), and where is the fixed header placed relative to the rows? 
+   The Linesheet does NOT orphan the header — show its exact structure so I can 
+   match it.
+
+Do NOT edit. Show the memo's current table skeleton (container + header + 
+rows), whether there's a duplicate header, styles.trHeader, and the CAS 
+Linesheet structure for comparison. Findings only.

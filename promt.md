@@ -60,3 +60,11 @@ CONSTRAINTS:
 - Leave the now-unused footer styles (footerInner, footerLeft, footerLogo, footerBrand, footerText) in place for now — do NOT delete them (removing could risk other references; we can clean up later).
 - Do NOT touch any other file.
 - Only edit this one file. Show the diff.
+
+
+Issue #: 186 (Items 3, 4)
+Type: New Functionality / Data-layer change
+Item 3: Summary counts computed by account (COUNT(*) in backend SQL); requested to count by unique Scorecard ID. Changes reported numbers. Backend SQL change + SQL validation needed.
+Item 4: Detail tables list one row per account (no dedup); requested to list unique Scorecard ID records only. Introduces new de-duplication logic. Needs uniqueness/precedence rule.
+Reason flagged: Alters reporting numbers and record selection (not formatting); needs client confirmation of uniqueness key; both should share same uniqueness definition so totals reconcile.
+Recommendation: Scope with business/client, then implement + SQL-verify.

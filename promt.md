@@ -1,31 +1,21 @@
-Bug #178 has two parts:
+Single-file edit: frontend/src/app/review/[ecif]/review-info/components/TopChromeBar.tsx
 
-PART 1 (simple rename — proceeding): "Review Home" button -> "Review Queue" (it 
-navigates to the Review Queue). Straightforward label fix.
+Bug #178 Part 1: Rename the "Review Home" button to "Review Queue" (it 
+navigates to /review-queue, so the label should match the destination).
 
-PART 2 (Geoff's idea — NEW FUNCTIONALITY, needs your call): Geoff asks whether 
-the button could instead return the user to whichever screen they came from 
-(Review Queue / Review Progress / Review History), ideally with the same 
-filters they had — like a browser back button. He himself framed it as "asking 
-a lot, just curious about options."
+The Link currently has three "Review Home" strings — update all three to 
+"Review Queue":
+1. Visible label: <span className="font-semibold">Review Home</span>
+   -> <span className="font-semibold">Review Queue</span>
+2. title="Review Home"  ->  title="Review Queue"
+3. aria-label="Review Home"  ->  aria-label="Review Queue"
 
-This is a new feature, not a bug fix. Rough scope:
-- Track the origin screen when the user opens the Review Form (query param or 
-  stored state).
-- On "back", navigate to that origin screen.
-- Hardest part: preserve each origin screen's filters/state so it looks like 
-  they left it (serialize + restore filters per screen).
-Effort: Medium-High (the filter-state preservation is the bulk of it).
+Keep href="/review-queue" and everything else unchanged.
 
-Options I'd propose:
-- Option A (minimal): Just rename to "Review Queue" (Part 1) — always goes to 
-  Review Queue. Simplest, ships now.
-- Option B (medium): Dynamic label + navigation — button returns to the origin 
-  screen (Review Queue/Progress/History) but WITHOUT restoring filters (screens 
-  load fresh).
-- Option C (full): Origin screen + filter/state restoration (the full "browser 
-  back" experience Geoff described).
+CONSTRAINTS:
+- Only change the three "Review Home" text occurrences to "Review Queue" (label 
+  span, title, aria-label).
+- Do NOT change the href, styling, icon, or navigation behavior.
+- Only edit this one file. Show the updated Link.
 
-Per our process (new functionality needs team sign-off before building), 
-holding Part 2 for your direction. Part 1 (rename) I'll proceed with unless you 
-say otherwise. Which option (A/B/C) should we pursue for Part 2?
+On #178 — renamed the button to "Review Queue" (it navigates there). Your idea of returning to the exact screen you came from with filters intact is a good one — a bit more involved, so I'm scoping options with the team and will come back to you.

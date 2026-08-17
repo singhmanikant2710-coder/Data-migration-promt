@@ -1,45 +1,35 @@
-Single-file edit: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-Bug #181 — fix the header to match the PD Migration report: title "CRM Findings 
-Summary Table" on the LEFT, report run date on the RIGHT (currently the right 
-side shows the caption/Sample Name, which is wrong).
+File: frontend/src/components/pdf/CrmSummaryPDF.tsx
 
-Reference (PD Migration, CrmPdGradeMigrationPDF.tsx): 
-    const hdrRight = formatRunDate(genOn);
-    <View style={styles.headerBar}>
-      <Text style={styles.headerTitle}>{title}</Text>
-      <Text style={styles.headerMeta}>{out(hdrRight)}</Text>
-    </View>
+Two issues found during verification of #182:
 
-Apply the same to CrmSummaryTablePDF.tsx:
+ISSUE 1 — Scorecard ID STILL overflows the table cell for some review IDs, 
+despite the wrapAnywhere (wordBreak: breakAll) we added. Show:
+1. The Scorecard ID cell — its exact style (flexBasis/width ~22%, wrapAnywhere, 
+   padding, fontSize). 
+2. The cell's container/row — does the row or cell have overflow handling? Is 
+   there padding that pushes content beyond the cell (like the load-samples 
+   box-sizing issue)?
+3. Does the Scorecard ID Text have flexShrink/minWidth that prevents it from 
+   staying within the column? Is wordBreak "breakAll" actually applied, or is 
+   there a competing style (whiteSpace nowrap, fixed width) overriding it?
+4. For a long ID that still overflows — what's the widest it can get? Is the 
+   column flexBasis fixed (22%) but the content forcing it wider? Show if the 
+   cell can grow beyond 22%.
 
-CHANGE 1 — Title text: The title currently defaults to "CRM Summary Table". 
-Change the default to "CRM Findings Summary Table":
-    <Text style={styles.headerTitle}>{title || "CRM Summary Table"}</Text>
-    ->
-    <Text style={styles.headerTitle}>{title || "CRM Findings Summary Table"}</Text>
+ISSUE 2 — Bank PD and Bank LGD values show a "K" that renders ABOVE / on top of 
+the table row line (the "K" overlaps the row border/gridline). Show:
+1. The Bank PD and Bank LGD DATA cells — their Text style (the { textAlign: 
+   "center", width: "100%" } we added, plus fontSize, lineHeight, padding).
+2. Is there a value formatter adding "K" (like formatting thousands as "1.2K")? 
+   Show the formatter for PD/LGD values.
+3. The row/cell height and lineHeight — is the "K" (or the value) taller than 
+   the row, causing it to overlap the row's top border? Show lineHeight, 
+   fontSize, and any row height constraint.
+4. Did adding width: "100%" to these cells change their vertical alignment or 
+   push text over the border? Compare with a cell that renders correctly.
 
-CHANGE 2 — Right side shows RUN DATE, not caption: The header meta currently 
-shows {out(caption)} (the reportingCaption / Sample Name). Change it to show 
-the formatted run date, matching PD Migration.
-- This report receives a generated-on date (check props for genOn / generatedOn 
-  / meta.generatedOn — the same source PD Migration uses via formatRunDate). 
-  Use formatRunDate on that date.
-- Change:
-    <Text style={styles.headerMeta}>{out(caption)}</Text>
-  to:
-    <Text style={styles.headerMeta}>{out(formatRunDate(genOn))}</Text>
-  (Import formatRunDate from pageSetup if not already imported, and resolve 
-  genOn from the same prop PD Migration uses — show how you obtained the date.)
-
-The layout (headerBar: row, justifyContent space-between; title left, meta 
-right) already matches PD Migration — keep it.
-
-CONSTRAINTS:
-- Title default -> "CRM Findings Summary Table".
-- Right-side meta -> run date via formatRunDate (not the caption/Sample Name).
-- Keep headerBar layout (left title, right date) unchanged.
-- Use the SAME date source and formatRunDate helper as PD Migration.
-- Do NOT change the footer or other sections yet.
-- Only edit this one file. Show the updated header (title + run date) and how 
-  genOn is resolved.
+Do NOT edit. Show: the Scorecard ID cell style + why it still overflows (width/
+padding/competing style), and the Bank PD/LGD cell style + the "K" formatter + 
+lineHeight causing the overlap. Findings only.

@@ -1,17 +1,13 @@
-Single-file edit: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix: All report footers should read "[Report Name] • Page # of ##". Currently the footer includes the caption (Sample Name): "CRM Summary Table • ${caption} • Page X of Y". Remove the caption segment and update the report name to "CRM Findings Summary Table". This footer text appears in TWO places (the main page footer and the final filter-payload page footer) — update BOTH occurrences identically.
+File: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
 
-BEFORE (both occurrences):
-render={({ pageNumber, totalPages }) => `CRM Summary Table • ${out(caption)} • Page ${pageNumber} of ${totalPages}`}
+The rendered PDF still shows BOTH filter blocks. I need to see the exact current state. Show me ONLY (no edits):
 
-AFTER (both occurrences):
-render={({ pageNumber, totalPages }) => `CRM Findings Summary Table • Page ${pageNumber} of ${totalPages}`}
+1. The first-page inline filter block. Search for the block that renders "APPLIED REPORT FILTERS" followed by the long interpolated string starting "REPORT NAME: ...". Show the FULL block including its opening condition (is it `{filters ? (` ... `) : null}` ?) and closing. I need to see exactly how it's wrapped so it can be removed cleanly.
 
-CONSTRAINTS:
-- ONLY change the footer render string, in both places it appears.
-- Remove the `${out(caption)}` segment entirely from the footer.
-- Do NOT change the footer styles, border, positioning, or the page-number render logic.
-- Do NOT remove or alter the `caption` variable itself (it may still be used by the header) — only stop using it in the footer text.
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
+2. The last-page block. Search for "Current Filter Payload" (or "CURRENT FILTER PAYLOAD"). Show the exact <Text> heading line and the buildFilterParagraph line beneath it. Confirm the heading text as it currently stands.
+
+3. Confirm: are these two blocks in the SAME return/Document, or in different branches (e.g. one in the main page, one in a separate <Page>)? Show enough surrounding structure (Page boundaries) to tell them apart.
+
+Read once. Findings only. No edits.

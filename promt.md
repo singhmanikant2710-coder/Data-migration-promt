@@ -1,68 +1,67 @@
-Single-file edit: frontend/src/components/pdf/ReviewPDF.tsx (CAS Linesheet)
+Multi-file edit: InitialMemoPDF.tsx + FinalMemoPDF.tsx
 
-Fix the fixed-header bleed AND orphan on the Scorecard Assessment and Account 
-Information tables. Root cause: the header uses "fixed", which in react-pdf 
-renders it on EVERY page (page-level), causing:
-- BLEED: Scorecard Assessment header appears on later non-table sections.
-- ORPHAN: Account Information header renders at a page bottom with no rows 
-  beneath, then repeats.
+Apply the SAME header bleed/orphan fix we just did in CAS Linesheet to the 
+Account Information table in both memos. The memos currently use "fixed" on the 
+header (which bleeds/orphans, page-level in react-pdf) AND batch rows with 
+break={ci > 0} — both must change to match the working CAS Linesheet pattern.
 
-Since these tables flow inline (not in dedicated Pages), "fixed" is the wrong 
-tool. Remove "fixed" from the header rows, and instead keep the header 
-together with its first data row so the header never appears alone.
+Restructure the Account Information table in BOTH memos:
 
-For BOTH the Scorecard Assessment table AND the Account Information table:
-
-STEP 1 — Remove "fixed" from the header row View:
-    <View style={styles.tableRow} wrap={false} fixed>   ...header...   </View>
-becomes:
-    <View style={styles.tableRow} wrap={false}>   ...header...   </View>
-(Remove ONLY the fixed prop. Keep wrap={false}.)
-
-STEP 2 — Prevent the header from being orphaned at a page bottom: wrap the 
-header row together with the first data row in a single wrap={false} group, so 
-if they don't fit at the page bottom, BOTH move to the next page together (the 
-header never sits alone).
-
-Restructure each table body from:
+STEP 1 — Remove batching. Do NOT chunk rows into batches with break={ci > 0}. 
+Render ONE single table container:
     <View style={styles.table}>
-      <View style={styles.tableRow} wrap={false}>...header...</View>
-      {rows.map((r,i) => <View style={styles.tableRow} wrap={false} key=...>...row...</View>)}
+      ...header + rows...
     </View>
-to:
+(Remove batches.map, chunk(rows, 12/15), and per-batch break={ci > 0}.)
+
+STEP 2 — Remove "fixed" from the header row (it causes page-level bleed/orphan):
+    <View style={[styles.tr, styles.trHeader]} wrap={false} fixed>
+becomes:
+    <View style={[styles.tr, styles.trHeader]} wrap={false}>
+(Remove ONLY fixed. Keep wrap={false}.)
+
+STEP 3 — Group the header row with the FIRST data row in a single wrap={false} 
+block so the header can never orphan at a page bottom (same as CAS Linesheet):
     <View style={styles.table}>
       {rows.length > 0 ? (
         <>
-          {/* header + first row kept together so header can't orphan */}
           <View wrap={false}>
-            <View style={styles.tableRow}>...header...</View>
-            <View style={styles.tableRow}>...first row (rows[0])...</View>
+            <View style={[styles.tr, styles.trHeader]}>...8 header cells...</View>
+            <View style={[styles.tr, rows.length === 1 ? styles.trLast : {}]}>
+              ...8 data cells for rows[0] (accountNumber, scorecardIdBank via 
+              hyphenWrap+wrapAnywhere, bankPd, bankLgd, casPd, casLgd, balance, 
+              commitment)...
+            </View>
           </View>
-          {/* remaining rows flow normally, each wrap={false} */}
-          {rows.slice(1).map((r,i) => (
-            <View style={styles.tableRow} wrap={false} key={...}>...row...</View>
+          {rows.slice(1).map((a, i) => (
+            <View key={`acc-${i+1}`} wrap={false} style={[styles.tr, i === rows.slice(1).length - 1 ? styles.trLast : {}]}>
+              ...8 data cells for a...
+            </View>
           ))}
         </>
       ) : (
         <>
-          <View style={styles.tableRow} wrap={false}>...header...</View>
-          <View style={styles.tableRow} wrap={false}>...empty placeholder row...</View>
+          <View style={[styles.tr, styles.trHeader]} wrap={false}>...header...</View>
+          <View style={[styles.tr, styles.trLast]} wrap={false}>...empty placeholder row...</View>
         </>
       )}
     </View>
 
-The key change: the header is grouped with the first row inside a wrap={false} 
-block (so they stay together — no orphan), and "fixed" is removed (so no bleed 
-onto other sections). The trade-off is the header no longer repeats on every 
-page of a multi-page table — but that also stops the bleed/orphan, matching a 
-clean single-header table.
+This matches CAS Linesheet exactly: single table (no batching), header NOT 
+fixed, header grouped with first row (no orphan), remaining rows flow with 
+wrap={false}. No bleed (fixed removed), no orphan (header+first row grouped), 
+no mid-page repeat (no manual re-header, no fixed).
 
 CONSTRAINTS:
-- Apply to BOTH the Scorecard Assessment table and the Account Information 
-  table in ReviewPDF.tsx.
-- Remove "fixed"; keep wrap={false} on rows.
-- Group header + first data row in a shared wrap={false} block.
-- Keep column widths, cell content, Scorecard ID wrapAnywhere, and formatting 
-  unchanged.
-- Only edit this one file. Show the restructured Scorecard Assessment and 
-  Account Information tables.
+- Apply to the Account Information table in BOTH InitialMemoPDF.tsx and 
+  FinalMemoPDF.tsx.
+- Remove batching (chunk + batches.map + break), remove "fixed", group 
+  header+first row.
+- Keep column widths (cols8Accounts), header cell text, Scorecard ID 
+  hyphenWrap+wrapAnywhere, currency formatting unchanged.
+- Do NOT touch other tables (Scorecard Assessment, Findings) unless they have 
+  the same fixed-header issue — if the Scorecard Assessment table in the memos 
+  also uses "fixed", apply the same header+first-row grouping there too (remove 
+  fixed, group header with first row).
+- Only edit these two files. Show the restructured Account Info table in both 
+  memos.

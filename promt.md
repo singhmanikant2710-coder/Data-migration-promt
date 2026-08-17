@@ -1,54 +1,97 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/app/review/[ecif]/review-info/components/sections/CrmFindingsAndRatingsSection.tsx
 
-Bug #179: Deleting a CRM Finding shows TWO confirmations — a browser-native 
-popup ("Delete this finding?" OK/Cancel) AND the app's "Confirm Delete" modal. 
-Only the app modal should show. Note: the app modal text says "delete this 
-policy exception" (not "finding") — suggesting a shared/copied component.
+Bug #179: CRM Findings delete uses a browser-native window.confirm("Delete this 
+finding?") popup instead of the app's ConfirmDialog. Replace the native confirm 
+with the shared ConfirmDialog, matching the working PolicyExceptionsSection 
+pattern. Do NOT remove confirmation entirely (delete must still be confirmed) — 
+swap native confirm for the app modal.
 
-Investigate the CRM Findings delete flow (no edits). Start with these likely 
-files, then follow the flow:
-- The CRM Findings table component (search: "CRM Findings" or "findings" in 
-  frontend/src/app/review — likely a section component like 
-  CrmFindingsSection.tsx or similar)
-- The shared confirm-delete modal component
+Reference (working) pattern from PolicyExceptionsSection.tsx:
+- useState for confirmOpen + pendingDeleteId
+- openDeleteModal(id) sets pendingDeleteId + confirmOpen=true
+- Delete button onClick calls openDeleteModal(row.id) (no window.confirm)
+- <ConfirmDialog open={confirmOpen} ... onConfirm={handleDeleteConfirm} .../>
+- handleDeleteConfirm does the actual delete (API + UI update)
 
-Show:
+Apply the same to CRM Findings:
 
-1. CRM FINDINGS TABLE: The component rendering the CRM Findings table and its 
-   Delete action/button. Show the Delete button's onClick handler.
+STEP 1 — Import ConfirmDialog (from frontend/src/components/ui/Dialog.tsx) if 
+not already imported.
 
-2. NATIVE CONFIRM: Search the CRM Findings delete handler (and any util it 
-   calls) for a browser-native confirm:
-   - window.confirm, confirm(, globalThis.confirm
-   Show if the delete handler calls window.confirm("Delete this finding?") 
-   BEFORE (or in addition to) opening the app modal. Show the exact line and 
-   file.
+STEP 2 — Add state (near other useState in this component):
+    const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
+    const [pendingDeleteRow, setPendingDeleteRow] = useState<any | null>(null);
 
-3. APP MODAL: Where the "Confirm Delete" app modal is opened for CRM Findings — 
-   the modal state (e.g. setConfirmOpen(true)) and the modal component. Show 
-   how the delete handler opens it.
+STEP 3 — In the Delete button onClick, REMOVE the window.confirm and the 
+inline delete logic for SAVED rows. Keep the NEW-unsaved-row local delete as-is 
+(that path has no findingCode and deletes locally — it doesn't need a modal). 
+For SAVED rows (has findingCode), instead of window.confirm + delete, open the 
+modal:
 
-4. DOUBLE TRIGGER: Determine if the SAME handler does BOTH — calls 
-   window.confirm AND opens the app modal (that's the bug), or if two layers 
-   each add a confirm. Show the handler's full body so I can see both.
+Current onClick (saved-row portion):
+    const confirmed = typeof window !== "undefined" ? window.confirm("Delete this finding?") : true;
+    if (!confirmed) return;
+    try {
+      if (!Number.isFinite(reviewId) || reviewId <= 0) return;
+      await deleteCrmFinding(reviewId, code);
+      ... UI update ...
+    } catch (err) { ... }
 
-5. WORKING REFERENCE: Show a screen where the app confirm modal works correctly 
-   WITHOUT a native popup (e.g. Policy Exceptions, since the modal text mentions 
-   "policy exception" — likely CRM Findings copied that modal but ALSO kept/added 
-   a window.confirm). Show that working delete handler for comparison — does it 
-   open the app modal WITHOUT any window.confirm?
+Change the Delete button so, for a saved row, it opens the modal instead:
+    onClick={async () => {
+      const code = (row.findingCode ?? "").trim();
+      if (!code) {
+        // NEW unsaved row: keep existing local delete (unchanged)
+        const base = Array.isArray(pendingFindings) ? pendingFindings : (s?.findings ?? []);
+        const nextArr = base.filter((f) => f.id !== row.id);
+        if (changes) changes.setSection("crmFindingsAndRatings", { findings: nextArr });
+        deleteRow(row.id);
+        return;
+      }
+      // SAVED row: open the app confirm modal (no window.confirm)
+      setPendingDeleteRow(row);
+      setConfirmOpen(true);
+    }}
 
-6. SHARED vs SPECIFIC: Is the confirm modal shared (same component used by 
-   Policy Exceptions and CRM Findings)? Is the window.confirm specific to CRM 
-   Findings' handler? Confirm whether removing the window.confirm from the CRM 
-   Findings handler leaves the app modal intact.
+STEP 4 — Add a handleDeleteConfirm function that runs the actual saved-row 
+delete (moved from the old onClick try/catch), using pendingDeleteRow:
+    async function handleDeleteConfirm() {
+      const row = pendingDeleteRow;
+      setConfirmOpen(false);
+      if (!row) return;
+      const code = (row.findingCode ?? "").trim();
+      try {
+        if (!Number.isFinite(reviewId) || reviewId <= 0) return;
+        await deleteCrmFinding(reviewId, code);
+        // ... the exact same UI-update / pending-array / sessionStorage / 
+        //     router.replace logic that was previously after the await ...
+      } catch (err) {
+        // keep row on error (same as before)
+      } finally {
+        setPendingDeleteRow(null);
+      }
+    }
 
-7. The modal message text: it says "policy exception" even for findings — show 
-   where that text comes from (is the message hardcoded/shared, or does CRM 
-   Findings pass a wrong message?). (Secondary — the main bug is the double 
-   confirm, but note this text mismatch.)
+STEP 5 — Render the ConfirmDialog once in the component's JSX (like Policy 
+Exceptions), with a message referencing a FINDING (not policy exception):
+    <ConfirmDialog
+      open={confirmOpen}
+      onClose={() => { setConfirmOpen(false); setPendingDeleteRow(null); }}
+      onConfirm={handleDeleteConfirm}
+      danger
+      title="Confirm Delete"
+      message="Are you sure you want to delete this finding? This action cannot be undone."
+      confirmText="Delete"
+      cancelText="Cancel"
+    />
 
-Do NOT edit. Show: the CRM Findings delete handler (full body — both 
-window.confirm and app-modal-open), the working reference handler (app modal 
-only, no native confirm), whether the modal is shared, and the exact 
-window.confirm line to remove. Findings only.
+CONSTRAINTS:
+- Remove the window.confirm entirely; use ConfirmDialog instead (no native popup).
+- Keep the NEW-unsaved-row local delete path unchanged (no modal for those).
+- Move the existing saved-row delete logic (deleteCrmFinding + UI update + 
+  sessionStorage clear + router.replace) into handleDeleteConfirm UNCHANGED — 
+  do not alter the delete API call or the post-delete refresh logic.
+- Message says "finding" (not "policy exception").
+- Only edit this one file. Do NOT modify Dialog.tsx or PolicyExceptionsSection.
+- Show: the new state, the updated Delete onClick, handleDeleteConfirm, and the 
+  ConfirmDialog JSX.

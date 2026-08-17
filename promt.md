@@ -1,14 +1,25 @@
-READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT edit any file.
+Single-file edit: frontend/src/app/reports/page.tsx
 
-I need to find where the report title "CRM Summary Table" is defined/passed to the CrmSummaryTablePDF component, so the name can be changed at its source (not hardcoded per-report).
+Fix: The CRM Summary Table report's header shows the old name because the reports page passes meta.title: "CRM Summary Table" to the PDF component. Geoff wants this report titled "CRM Findings Summary Table". Update the title string at this source (the CrmSummaryTablePDF invocation), so the header matches the footer/report-name which already say "CRM Findings Summary Table".
 
-STEP 1 — Find the caller (paths only, no file reads yet):
-STOP reading files. Run ONE command, show output paths only:
-grep -rl "CrmSummaryTablePDF\|CRM Summary Table" frontend/src --include=*.ts --include=*.tsx
+Locate the CrmSummaryTablePDF invocation inside the isCrmSummaryTable branch of onGeneratePdf.
 
-STEP 2 — Once paths are known, for the file(s) that render/invoke CrmSummaryTablePDF or set its meta.title, show me ONLY (no edits):
-1. Where meta.title (or the title value) is set to "CRM Summary Table" — the exact line and surrounding object/config.
-2. Is there a central place (a report config, registry, map, or constants file) where ALL report titles/names are defined? If so, show that structure — I want to see if there's one source of truth for report names.
-3. Is the same title string used for BOTH the header AND the footer/report-name across reports, or set separately per spot?
+BEFORE:
+<CrmSummaryTablePDF
+  data={data as any}
+  meta={{ title: "CRM Summary Table", filters: filtersEcho }}
+/>
 
-Read once each. Findings only. No edits.
+AFTER:
+<CrmSummaryTablePDF
+  data={data as any}
+  meta={{ title: "CRM Findings Summary Table", filters: filtersEcho }}
+/>
+
+CONSTRAINTS:
+- ONLY change the title string in this ONE meta object, inside the isCrmSummaryTable branch.
+- Do NOT change filters, data, or any other report's invocation.
+- Do NOT change the dropdown/selection label in reporting.ts (getReportNames) — that's the report picker label, a separate concern; changing it could affect report selection/matching logic. Leave it as-is unless Geoff asks.
+- Do NOT touch CrmSummaryTablePDF.tsx.
+- Do NOT touch any other file.
+- Only edit this one file. Show the diff.

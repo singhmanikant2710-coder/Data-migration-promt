@@ -1,16 +1,9 @@
-Single-file edit: frontend/src/components/pdf/CrmFindingsObservationsPDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix: Table column header font size should be 9 (currently 10). The header text uses thDark and thBlue styles directly. Change fontSize 10 -> 9 in BOTH.
+File: frontend/src/components/pdf/CrmFindingsObservationsPDF.tsx
 
-BEFORE (thDark): fontSize: 10   (within the thDark style object)
-AFTER  (thDark): fontSize: 9
+Show me ONLY the complete thDark and thBlue style objects exactly as they are now (full object, every line). I need to confirm:
+1. fontSize is 9 in both.
+2. No DUPLICATE keys (minWidth or lineHeight appearing twice) after the edit.
 
-BEFORE (thBlue): fontSize: 10   (within the thBlue style object)
-AFTER  (thBlue): fontSize: 9
-
-CONSTRAINTS:
-- ONLY change fontSize from 10 to 9 in thDark and thBlue.
-- Do NOT change padding, borders, flexGrow, lineHeight, or anything else in those styles.
-- Do NOT change td (row) font size or any other style.
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
+Read once. Findings only. No edits.

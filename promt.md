@@ -1,13 +1,35 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
 
-File: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
+Two changes to leave exactly ONE filter payload — on the last page, with the "APPLIED REPORT FILTERS" header.
 
-The rendered PDF still shows BOTH filter blocks. I need to see the exact current state. Show me ONLY (no edits):
+=== CHANGE 1 — Remove the first-page inline filter block entirely ===
+Inside CrmSummaryTablePage's returned <Page>, remove this ENTIRE block including the comment, the {filters ? ...} wrapper, and the closing ) : null}:
 
-1. The first-page inline filter block. Search for the block that renders "APPLIED REPORT FILTERS" followed by the long interpolated string starting "REPORT NAME: ...". Show the FULL block including its opening condition (is it `{filters ? (` ... `) : null}` ?) and closing. I need to see exactly how it's wrapped so it can be removed cleanly.
+REMOVE (exactly this, whole block):
+{/* Applied Filters Section (optional) */}
+{filters ? (
+<View>
+<Text style={styles.sectionTitle}>APPLIED REPORT FILTERS</Text>
+<View style={{ marginBottom: 8 }}>
+<Text style={{ fontSize: 8, color: "#0f172a" }}>
+{`REPORT NAME: ${out(title)}, SAMPLE ID: ${out(String(filters?.sampleId ?? ""))}, REVIEW STATUS: ${out(String(filters?.reviewStatus ?? ""))}, START DATE: ${out(String(filters?.startDate ?? ""))}, END DATE: ${out(String(filters?.endDate ?? ""))}, SEGMENT: ${filters?.segment ?? "No Selection"}, MARKET: ${filters?.market ?? "No Selection"}, RELATIONSHIP MANAGER: ${filters?.relationshipManager ?? "No Selection"}, UNIT: ${filters?.unit ?? "No Selection"}, PORTFOLIO MANAGER: ${filters?.portfolioManager ?? "No Selection"}, PORTFOLIO INDUSTRY: ${filters?.portfolioIndustry ?? "No Selection"}, PORTFOLIO CLASSIFICATION: ${filters?.portfolioClassification ?? "No Selection"}, PORTFOLIO SEGMENT: ${filters?.portfolioSegment ?? "No Selection"}, SPECIAL ASSETS: ${filters?.specialAssets == null ? "No Selection" : (filters?.specialAssets ? "Yes" : "No")}, CENTRALIZED COMMERCIAL (CCL): ${filters?.ccl == null ? "No Selection" : (filters?.ccl ? "Yes" : "No")}, REVIEWER: ${filters?.croName ?? "No Selection"}`}
+</Text>
+</View>
+</View>
+) : null}
 
-2. The last-page block. Search for "Current Filter Payload" (or "CURRENT FILTER PAYLOAD"). Show the exact <Text> heading line and the buildFilterParagraph line beneath it. Confirm the heading text as it currently stands.
+=== CHANGE 2 — Rename the last-page heading ===
+In the separate <Page> in the default export:
 
-3. Confirm: are these two blocks in the SAME return/Document, or in different branches (e.g. one in the main page, one in a separate <Page>)? Show enough surrounding structure (Page boundaries) to tell them apart.
+BEFORE:
+<Text style={styles.sectionTitle}>Current Filter Payload</Text>
 
-Read once. Findings only. No edits.
+AFTER:
+<Text style={styles.sectionTitle}>APPLIED REPORT FILTERS</Text>
+
+CONSTRAINTS:
+- CHANGE 1: remove the whole inline block cleanly — comment + {filters ? ( ... ) : null}. No dangling braces, parens, or JSX. The surrounding <Page> content must remain valid.
+- CHANGE 2: change ONLY the heading text; keep buildFilterParagraph and everything else in that block unchanged.
+- Do NOT touch the footer, the buildFilterParagraph call, styles, or any other section.
+- Do NOT change any other file.
+- Show the FULL diff so I can confirm the removal is clean and nothing else shifted.

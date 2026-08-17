@@ -2,12 +2,12 @@ READ-ONLY. Diagnostics only. Do NOT change anything.
 
 File: frontend/src/components/pdf/CrmFindingsObservationsPDF.tsx
 
-The last edit may have created a DUPLICATE headerBar style. Show me ONLY (no edits):
+Show me ONLY (no edits):
 
-1. EVERY occurrence of `headerBar:` in the StyleSheet — I need to see if it's defined once or more than once. Show each full headerBar object.
-2. The headerTitle and headerMeta style objects (confirm fontSize).
-3. The `page:` style object — show its exact paddingTop value now.
-4. Every `<View style={styles.headerBar}` line in the JSX — confirm none still have the `fixed` prop.
-5. Confirm `MARGINS` and any padding constants used are still valid (no undefined references).
+1. The full RETURN of the items-present branch. Show every <Page> boundary and what's inside — specifically: is the "Current Filter Payload" block inside its OWN separate <Page>, or inside the same <Page> as the detail tables (just after them)? Show the JSX from the last detail-table component through to the filter block and the closing of the Document.
 
-Read once. Findings only. No edits. I need to know the exact current state before proceeding.
+2. The exact "Current Filter Payload" block (heading <Text> + buildFilterParagraph + surrounding <View>), in BOTH the items branch and the no-items branch.
+
+3. Whether that filter <Page> (if separate) has its own footer with `fixed`.
+
+Read once. Findings only. No edits.

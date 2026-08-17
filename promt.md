@@ -1,39 +1,49 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/app/load-samples/page.tsx
 
-File: frontend/src/app/load-samples/page.tsx (the Load Samples / "Select 
-Sample" grid page)
+Fix edit-mode horizontal overflow (right columns Type/Target + Search cut off) 
+and blocked vertical scroll on the Load Samples page, plus add a missing 
+"Select Type" placeholder. Tightly scoped — only these.
 
-Bug: When "Create Sample" is clicked, the grid enters inline edit-mode and 
-renders a "(new)" row with input controls (date pickers, Select EIC dropdown, 
-Type dropdown, Select Target dropdown). Two problems:
-(A) In edit-mode the grid overflows horizontally — right-side columns (Type, 
-    Target BU) and the Search button get cut off, and a horizontal scrollbar 
-    appears inside the grid. Read-only/default view does NOT overflow.
-(B) The page does not scroll vertically, so cut-off content can't be reached.
+=== FIX 1: Grid box overflow (stop clipping cut-off content) ===
+The parent grid outer box uses overflow-hidden, which clips the right-side 
+columns in edit-mode instead of letting the inner horizontal scroll reach 
+them. Change the parent grid outer box so it doesn't clip:
+Find:
+    <div className="mt-3 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+Change overflow-hidden to allow the inner scroll container to work (remove the 
+clipping):
+    <div className="mt-3 border border-slate-200 rounded-lg shadow-sm">
+(Removing overflow-hidden lets the inner overflow-x-auto scrollbar be reachable 
+and stops the right columns being clipped. The rounded corners are cosmetic; if 
+needed keep rounded-lg but drop overflow-hidden.)
 
-Show me (no edits):
+=== FIX 2: Reduce wasted width on the EIC edit control ===
+The EIC edit cell wraps a w-32 (128px) control inside a w-64 (256px) div — the 
+256px wrapper wastes ~128px and inflates the row width. Make the wrapper match 
+the control (or remove the fixed wrapper). Change the EIC wrapper:
+Find the EIC edit wrapper div: className="w-64" wrapping the SearchableSelect 
+(which is className="w-32").
+Change the wrapper from w-64 to w-40 (160px) so it fits the control without 
+wasting space:
+    <div className="w-40"> ... <SearchableSelect className="w-32" ... /> ... </div>
+(This trims ~96px from the row width without changing the control itself.)
 
-1. GRID + EDIT ROW STRUCTURE: The component/JSX that renders the "Select 
-   Sample" grid and the edit-mode "(new)" row. Show the row/cell structure for 
-   BOTH read-only cells and edit-mode input controls (the date pickers, Select 
-   EIC, Type, Select Target dropdowns), so I can compare their widths.
+=== FIX 3: Add "Select Type" placeholder to the Type dropdown ===
+The Type <Select> first option is empty (<option value=""></option>), so the 
+box shows only an arrow with no placeholder — inconsistent with EIC ("Select 
+EIC Name") and Target ("Select Target"). Add placeholder text:
+Find:
+    <option value=""></option>
+(within the Type Select) and change to:
+    <option value="">Select Type</option>
+(Do NOT change the other Type options — "Examination", "Continuous" (value 
+"Continous"), "CCL", "Other" (value "Others") — those keep the #176 label fix.)
 
-2. WIDTH/OVERFLOW CSS: The grid wrapper and the page container — what 
-   width/height/overflow rules are applied (overflow-x, overflow-y, width, 
-   max-width, fixed height, flex). Show the className/style on: the outermost 
-   page container, the grid wrapper, and the scroll container (if any).
-
-3. EDIT-MODE INPUT WIDTHS: The input controls in edit-mode — do they have 
-   fixed width or min-width (e.g. the Select dropdowns had className="w-32", 
-   date pickers, etc.) that make them WIDER than the read-only cells? List each 
-   edit control's width class/style. This is likely why edit-mode overflows but 
-   read-only doesn't — sum of fixed input widths exceeds the container.
-
-4. VERTICAL SCROLL BLOCK: Which parent element blocks vertical scroll — look 
-   for overflow: hidden, overflow-y: hidden, or a fixed height (h-screen, 
-   fixed h-[...], max-h with overflow hidden) on the page container or a 
-   wrapper. Show the element and the rule blocking vertical scroll.
-
-Do NOT edit. Show: the grid/edit-row structure (read-only vs edit widths), the 
-container/wrapper width/overflow CSS, each edit input's fixed/min width, and 
-the element blocking vertical scroll. Findings only.
+CONSTRAINTS:
+- Only these three changes in this one file.
+- FIX 1: remove overflow-hidden from the parent grid outer box only.
+- FIX 2: EIC edit wrapper w-64 -> w-40 only.
+- FIX 3: add "Select Type" text to the empty Type option only.
+- Do NOT change the Type option labels/values (keep #176 fix), other columns, 
+  widths of Target/dates, DataTable, or globals.css.
+- Only edit this one file. Show the three changes.

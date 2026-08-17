@@ -1,24 +1,9 @@
-Single-file edit: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-The last-page block now has TWO heading lines by mistake — the old one wasn't removed, a new one was added. Remove the OLD heading line so only "APPLIED REPORT FILTERS" remains.
+File: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
 
-Current state (both lines present):
-<Text style={styles.sectionTitle}>Current Filter Payload</Text>
-<Text style={styles.sectionTitle}>APPLIED REPORT FILTERS</Text>
+Show me ONLY (no edits):
+1. Every line where `title` appears in this file (grep "title").
+2. The current banner header JSX line that renders the title (the <Text style={styles.headerTitle}> line).
 
-Remove ONLY this line:
-<Text style={styles.sectionTitle}>Current Filter Payload</Text>
-
-Result should be exactly:
-<View>
-  <Text style={styles.sectionTitle}>APPLIED REPORT FILTERS</Text>
-  <Text style={{ fontSize: 8, color: "#0f172a" }}>
-    {buildFilterParagraph("crm-summary-table", props?.meta?.filters)}
-  </Text>
-</View>
-
-CONSTRAINTS:
-- Remove ONLY the "Current Filter Payload" <Text> line.
-- Keep the "APPLIED REPORT FILTERS" line and buildFilterParagraph exactly as-is.
-- Do NOT touch anything else.
-- Show the diff.
+I need to confirm title is only used in the banner before changing it. Read once. Findings only.

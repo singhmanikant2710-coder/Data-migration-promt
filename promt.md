@@ -1,49 +1,49 @@
 Single-file edit: frontend/src/app/load-samples/page.tsx
 
-Fix edit-mode horizontal overflow (right columns Type/Target + Search cut off) 
-and blocked vertical scroll on the Load Samples page, plus add a missing 
-"Select Type" placeholder. Tightly scoped — only these.
+Fix edit-mode horizontal overflow by REDUCING column widths so the edit row 
+fits within the container (max-w-7xl ≈ 1280px). The previous fix allowed 
+overflow (removed clipping) but didn't reduce width — the internal horizontal 
+scrollbar and cut-off Target/Search columns remain. Root cause: sum of fixed 
+edit-control widths (~1440px) exceeds the container. Trim widths. Read-only 
+view must stay exactly as-is.
 
-=== FIX 1: Grid box overflow (stop clipping cut-off content) ===
-The parent grid outer box uses overflow-hidden, which clips the right-side 
-columns in edit-mode instead of letting the inner horizontal scroll reach 
-them. Change the parent grid outer box so it doesn't clip:
-Find:
-    <div className="mt-3 border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-Change overflow-hidden to allow the inner scroll container to work (remove the 
-clipping):
-    <div className="mt-3 border border-slate-200 rounded-lg shadow-sm">
-(Removing overflow-hidden lets the inner overflow-x-auto scrollbar be reachable 
-and stops the right columns being clipped. The rounded corners are cosmetic; if 
-needed keep rounded-lg but drop overflow-hidden.)
+Current edit-control widths (verify each line before editing):
+- Start date: w-[9rem] (144px)
+- End date: w-[9rem] (144px)
+- Quarter: w-24 (96px)
+- EIC: wrapper w-40 + control w-32
+- Type: w-32 (128px)
+- Target (BU): wrapper w-64 (256px) + control w-64 (256px)  ← biggest culprit
+- (DataTable selection col w-10, actions col w-40 — do not touch)
 
-=== FIX 2: Reduce wasted width on the EIC edit control ===
-The EIC edit cell wraps a w-32 (128px) control inside a w-64 (256px) div — the 
-256px wrapper wastes ~128px and inflates the row width. Make the wrapper match 
-the control (or remove the fixed wrapper). Change the EIC wrapper:
-Find the EIC edit wrapper div: className="w-64" wrapping the SearchableSelect 
-(which is className="w-32").
-Change the wrapper from w-64 to w-40 (160px) so it fits the control without 
-wasting space:
-    <div className="w-40"> ... <SearchableSelect className="w-32" ... /> ... </div>
-(This trims ~96px from the row width without changing the control itself.)
+Make these width reductions (edit-mode controls only):
 
-=== FIX 3: Add "Select Type" placeholder to the Type dropdown ===
-The Type <Select> first option is empty (<option value=""></option>), so the 
-box shows only an arrow with no placeholder — inconsistent with EIC ("Select 
-EIC Name") and Target ("Select Target"). Add placeholder text:
-Find:
-    <option value=""></option>
-(within the Type Select) and change to:
-    <option value="">Select Type</option>
-(Do NOT change the other Type options — "Examination", "Continuous" (value 
-"Continous"), "CCL", "Other" (value "Others") — those keep the #176 label fix.)
+1. TARGET (BU) — biggest saving. Change the Target edit wrapper from w-64 to 
+   w-40, and the SearchableSelect control from w-64 to w-32:
+       wrapper: w-64 -> w-40
+       control: w-64 -> w-32
+   (Trims ~192px.)
+
+2. START and END date inputs — change both DateInputWithCalendar from w-[9rem] 
+   to w-[7rem] (144px -> 112px each; MM/DD/YYYY fits fine):
+       w-[9rem] -> w-[7rem]  (on both Start and End)
+   (Trims ~64px total.)
+
+After these, recompute the approximate width budget and SHOW it:
+   selection 40 + Start 112 + End 112 + Quarter 96 + EIC wrapper 160 + 
+   Type 128 + Target wrapper 160 + actions 160 + paddings (~24 × columns) 
+   + Sample Name/Closed text.
+   Confirm the total is now <= ~1280px. 
+
+3. IF the recomputed total is STILL over ~1280px, also reduce Type from w-32 
+   to w-28 (128px -> 112px), and re-show the budget.
 
 CONSTRAINTS:
-- Only these three changes in this one file.
-- FIX 1: remove overflow-hidden from the parent grid outer box only.
-- FIX 2: EIC edit wrapper w-64 -> w-40 only.
-- FIX 3: add "Select Type" text to the empty Type option only.
-- Do NOT change the Type option labels/values (keep #176 fix), other columns, 
-  widths of Target/dates, DataTable, or globals.css.
-- Only edit this one file. Show the three changes.
+- Only edit page.tsx, only these width classes.
+- Do NOT change read-only cell rendering, Type option labels/values (#176 
+  fix), the "Select Type" placeholder, DataTable, or globals.css.
+- Verify each relevant line read-only before editing it.
+- After editing, show the recomputed width budget proving total <= ~1280px 
+  (trim further if not).
+- Show the changed lines (Target wrapper+control, Start, End, and Type if 
+  needed).

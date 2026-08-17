@@ -1,49 +1,42 @@
-Single-file edit: frontend/src/app/load-samples/page.tsx
+READ-ONLY. Diagnostics only. Do not change anything.
 
-Fix edit-mode horizontal overflow by REDUCING column widths so the edit row 
-fits within the container (max-w-7xl ≈ 1280px). The previous fix allowed 
-overflow (removed clipping) but didn't reduce width — the internal horizontal 
-scrollbar and cut-off Target/Search columns remain. Root cause: sum of fixed 
-edit-control widths (~1440px) exceeds the container. Trim widths. Read-only 
-view must stay exactly as-is.
+File: frontend/src/app/load-samples/page.tsx
+Also check: frontend/src/components/table/DataTable.tsx and the SearchableSelect 
++ DateInputWithCalendar components.
 
-Current edit-control widths (verify each line before editing):
-- Start date: w-[9rem] (144px)
-- End date: w-[9rem] (144px)
-- Quarter: w-24 (96px)
-- EIC: wrapper w-40 + control w-32
-- Type: w-32 (128px)
-- Target (BU): wrapper w-64 (256px) + control w-64 (256px)  ← biggest culprit
-- (DataTable selection col w-10, actions col w-40 — do not touch)
+Edit-mode row STILL overflows horizontally despite reducing width classes. The 
+className widths aren't producing the expected total — something is enforcing a 
+larger minimum width. Find the REAL constraint (no edits):
 
-Make these width reductions (edit-mode controls only):
+1. TABLE min-width: DataTable's table uses className "min-w-full". Does 
+   "min-w-full" force the table to be at least 100% of its container, 
+   preventing columns from shrinking? More importantly, is there any min-width 
+   on the table that makes it grow to fit content (so reducing cell widths 
+   doesn't help because other content sets the floor)? Show the table element's 
+   width/min-width classes.
 
-1. TARGET (BU) — biggest saving. Change the Target edit wrapper from w-64 to 
-   w-40, and the SearchableSelect control from w-64 to w-32:
-       wrapper: w-64 -> w-40
-       control: w-64 -> w-32
-   (Trims ~192px.)
+2. SearchableSelect internal width: The EIC and Target use SearchableSelect. 
+   Show the SearchableSelect component's ROOT element — does it have its own 
+   min-width, fixed width, or padding that IGNORES the className we pass (w-32/
+   w-40)? The passed className might not reach the widest inner element (e.g. 
+   the dropdown input or the selected-value display). Show SearchableSelect's 
+   internal structure and any hardcoded min-w / width / px padding.
 
-2. START and END date inputs — change both DateInputWithCalendar from w-[9rem] 
-   to w-[7rem] (144px -> 112px each; MM/DD/YYYY fits fine):
-       w-[9rem] -> w-[7rem]  (on both Start and End)
-   (Trims ~64px total.)
+3. DateInputWithCalendar internal width: Same check — does it have an internal 
+   min-width or fixed width that ignores w-[7rem]? Show its root element's 
+   width constraints and the calendar icon/button width.
 
-After these, recompute the approximate width budget and SHOW it:
-   selection 40 + Start 112 + End 112 + Quarter 96 + EIC wrapper 160 + 
-   Type 128 + Target wrapper 160 + actions 160 + paddings (~24 × columns) 
-   + Sample Name/Closed text.
-   Confirm the total is now <= ~1280px. 
+4. Column/cell floor: In DataTable, do td/th cells have whitespace-nowrap or a 
+   min-width that prevents shrinking? Show the td/th classes. Does 
+   "whitespace-pre-wrap break-words" allow wrapping (good) or is something 
+   nowrap (forces width)?
 
-3. IF the recomputed total is STILL over ~1280px, also reduce Type from w-32 
-   to w-28 (128px -> 112px), and re-show the budget.
+5. What is the ACTUAL widest column in edit-mode? Given the components' real 
+   min-widths (not just our className), which control is actually forcing the 
+   overflow — is it SearchableSelect's internal min-width regardless of our 
+   wrapper class?
 
-CONSTRAINTS:
-- Only edit page.tsx, only these width classes.
-- Do NOT change read-only cell rendering, Type option labels/values (#176 
-  fix), the "Select Type" placeholder, DataTable, or globals.css.
-- Verify each relevant line read-only before editing it.
-- After editing, show the recomputed width budget proving total <= ~1280px 
-  (trim further if not).
-- Show the changed lines (Target wrapper+control, Start, End, and Type if 
-  needed).
+Do NOT edit. Show: the table's min-width, SearchableSelect's real internal 
+width/min-width (does it honor our className?), DateInput's internal width, td/
+th nowrap/min-width, and which control truly sets the width floor. Findings 
+only.

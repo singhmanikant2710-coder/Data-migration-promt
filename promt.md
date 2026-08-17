@@ -1,10 +1,28 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/CrmSummaryPDF.tsx
 
-File: frontend/src/components/pdf/CrmSummaryPDF.tsx
+Fix: The Scorecard ID value still overflows its cell. Two issues: (a) the \u200B soft-break is not reliably respected by react-pdf, and (b) the value isn't wrapped in a <Text> with a break style. Replace the fragile soft-break approach with a dedicated break-all style applied ONLY to this cell.
 
-Show me ONLY (no edits):
-1. The exact current scorecardId value-cell JSX block (the <View style={[styles.td, styles.sc1]}> ... </View> including the <Text> and the .replace(...) call as it stands now after the last edit).
-2. The exact `tdText` style definition.
-3. Confirm whether `tdText` is used by OTHER value cells in the same row (list which columns use it), so I know a new sc1-only style won't affect them.
+STEP 1 — Add a new style next to tdText (do NOT modify tdText):
+tdTextId: {
+  color: colors.text,
+  wordBreak: "break-all"
+},
 
-Read once. Findings only. No edits.
+STEP 2 — Update ONLY the scorecardId value cell.
+
+BEFORE:
+<View style={[styles.td, styles.sc1]}>
+  {out(row?.scorecardId).replace(/(-&)/g, "$1\u200B")}
+</View>
+
+AFTER:
+<View style={[styles.td, styles.sc1]}>
+  <Text style={styles.tdTextId}>{out(row?.scorecardId)}</Text>
+</View>
+
+CONSTRAINTS:
+- ONLY add the new tdTextId style and update this one scorecardId cell.
+- Do NOT modify tdText (all other cells sc2–sc8 must stay exactly as-is).
+- Do NOT change any column widths (sc1–sc8 stay as they are now).
+- Do NOT touch any other file.
+- Only edit this one file. Show the diff.

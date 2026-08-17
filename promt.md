@@ -1,28 +1,13 @@
-Single-file edit: frontend/src/components/pdf/CrmSummaryPDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix: The Scorecard ID value still overflows its cell. Two issues: (a) the \u200B soft-break is not reliably respected by react-pdf, and (b) the value isn't wrapped in a <Text> with a break style. Replace the fragile soft-break approach with a dedicated break-all style applied ONLY to this cell.
+File: frontend/src/components/pdf/CrmSummaryPDF.tsx
 
-STEP 1 — Add a new style next to tdText (do NOT modify tdText):
-tdTextId: {
-  color: colors.text,
-  wordBreak: "break-all"
-},
+I need to confirm whether "&" was ever part of the real scorecardId data, or an artifact of the old .replace().
 
-STEP 2 — Update ONLY the scorecardId value cell.
+Show me ONLY (no edits):
+1. The `out(...)` helper function definition — exactly what it does to its input.
+2. The current scorecardId cell JSX (after last edit).
+3. Search this file for any OTHER place scorecardId or a similar id is rendered WITHOUT the old replace — grep for "scorecardId" and show every line it appears on.
+4. Confirm: does the raw scorecardId value come straight from props/data, or is it transformed anywhere before rendering?
 
-BEFORE:
-<View style={[styles.td, styles.sc1]}>
-  {out(row?.scorecardId).replace(/(-&)/g, "$1\u200B")}
-</View>
-
-AFTER:
-<View style={[styles.td, styles.sc1]}>
-  <Text style={styles.tdTextId}>{out(row?.scorecardId)}</Text>
-</View>
-
-CONSTRAINTS:
-- ONLY add the new tdTextId style and update this one scorecardId cell.
-- Do NOT modify tdText (all other cells sc2–sc8 must stay exactly as-is).
-- Do NOT change any column widths (sc1–sc8 stay as they are now).
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
+Read once. Findings only. No edits.

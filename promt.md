@@ -1,35 +1,29 @@
 READ-ONLY. Read once. Do not re-read.
 
-File: InitialMemoPDF.tsx (confirm FinalMemoPDF.tsx matches)
+File: frontend/src/components/pdf/ReviewPDF.tsx (CAS Linesheet)
 
-Problem: the Account Info table header renders at the BOTTOM of a page with no 
-rows beneath it (orphaned), then repeats on the next page with rows. This 
-started after we made the header "fixed" and removed wrap={false} from the 
-table container.
+Issue: the fixed table header (Account Information / Scorecard tables) renders 
+at the BOTTOM of a page with no data rows beneath it (orphaned), then repeats 
+on the next page. This is the "fixed" prop rendering the header on every page 
+even when the table content has ended or hasn't started on that page.
 
-Show precisely:
-1. The Account Information table structure NOW — the full skeleton:
-   - The table container <View> (after we removed wrap={false})
-   - The MAIN header row (does it have "fixed"? "wrap={false}"? styles.trHeader 
-     with minPresenceAhead: 72?)
-   - How data rows are rendered (the batch.map / rows loop)
-   Show this skeleton exactly.
+Show precisely for the Account Information table (and Scorecard Assessment 
+table if same pattern):
+1. The exact table structure: the <View style={styles.table}> container, the 
+   <View ... fixed> header row, and the rows.map. Show if the header's "fixed" 
+   is scoped to the table View or the whole Page.
+2. CRITICAL: In react-pdf, "fixed" on a View inside a table renders it on 
+   EVERY page of the DOCUMENT/Page, not just pages the table spans. Is the 
+   header's fixed causing it to render on pages AFTER the table has ended (or 
+   before it starts)? Show what comes AFTER the Account Info table (next 
+   sections) — does the fixed header bleed onto those pages, OR is the orphan 
+   specifically at the table's own page-boundary?
+3. Show whether the table is the last content or has sections after it. Show 
+   the surrounding section order.
+4. Is there any minPresenceAhead or wrap handling on the header or rows that 
+   could keep the header with at least one row?
 
-2. IMPORTANT: With "fixed", the header renders on EVERY page automatically. But 
-   is there ALSO a non-fixed header being rendered once at the table start? 
-   i.e. are there now effectively TWO header definitions (one fixed that 
-   repeats, and the original inline one)? Show whether the header appears once 
-   (fixed) or if there's a duplicate.
-
-3. styles.trHeader — show it. Does it still have minPresenceAhead: 72? With a 
-   fixed header, minPresenceAhead may not prevent the orphan.
-
-4. CAS Linesheet (ReviewPDF.tsx) comparison — show its Account/Detail table 
-   skeleton: how are rows grouped (chunked into separate <Page> components with 
-   rowsPerPage?), and where is the fixed header placed relative to the rows? 
-   The Linesheet does NOT orphan the header — show its exact structure so I can 
-   match it.
-
-Do NOT edit. Show the memo's current table skeleton (container + header + 
-rows), whether there's a duplicate header, styles.trHeader, and the CAS 
-Linesheet structure for comparison. Findings only.
+I need to understand if the orphan is: (a) fixed header bleeding onto 
+non-table pages, or (b) header rendering at a page-bottom right at the table's 
+break point. Show the structure and surrounding context. Findings only. Do NOT 
+edit.

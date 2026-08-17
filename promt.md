@@ -1,26 +1,28 @@
 Single-file edit: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
 
-Two small changes in the header only.
+Bug #181 header fix — match the PD Migration report: title "CRM Findings 
+Summary Table" on the LEFT, report run date on the RIGHT (currently the right 
+shows the caption/Sample Name, which is wrong).
 
-1. Change the header LEFT title default from "CRM Summary Table" to "CRM Findings Summary Table".
-2. Change the header RIGHT text from the caption to the run date (current date), matching the pattern other reports use. formatDate is already imported.
+CHANGE 1 — Title text default:
+    <Text style={styles.headerTitle}>{title || "CRM Summary Table"}</Text>
+    ->
+    <Text style={styles.headerTitle}>{title || "CRM Findings Summary Table"}</Text>
 
-BEFORE:
-<View style={styles.headerBar}>
-  <Text style={styles.headerTitle}>{title || "CRM Summary Table"}</Text>
-  <Text style={styles.headerMeta}>{out(caption)}</Text>
-</View>
+CHANGE 2 — Right side: run date instead of caption. Currently:
+    <Text style={styles.headerMeta}>{out(caption)}</Text>
+Change to show the formatted run date (like PD Migration uses formatRunDate):
+    <Text style={styles.headerMeta}>{out(formatRunDate(genOn))}</Text>
+- Import formatRunDate from pageSetup if not already imported.
+- Resolve genOn from the same prop PD Migration uses (check props for genOn / 
+  generatedOn / meta.generatedOn). Show how you obtained the date.
 
-AFTER:
-<View style={styles.headerBar}>
-  <Text style={styles.headerTitle}>{title || "CRM Findings Summary Table"}</Text>
-  <Text style={styles.headerMeta}>{out(formatDate(new Date() as any))}</Text>
-</View>
+Keep the headerBar layout (row, space-between, title left / meta right) 
+unchanged — it already matches PD Migration.
 
 CONSTRAINTS:
-- ONLY change these two lines in the header (headerBar block).
-- Do NOT change headerBar / headerTitle / headerMeta styles.
-- Do NOT touch the footer, caption variable, or any other block yet.
-- Do NOT change any other file.
-- If `title` is passed in as a prop with an old value, only change the DEFAULT fallback string here — do not alter how title is received.
-- Only edit this one file. Show the diff.
+- Title default -> "CRM Findings Summary Table".
+- Right meta -> run date via formatRunDate (not caption/Sample Name).
+- Use the SAME date source + formatRunDate helper as PD Migration.
+- Do NOT touch footer, table, or filter sections yet.
+- Only edit this one file. Show the header changes + how genOn is resolved.

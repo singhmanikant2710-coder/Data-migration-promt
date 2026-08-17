@@ -1,28 +1,22 @@
-Single-file edit: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT edit any file.
 
-Bug #181 header fix — match the PD Migration report: title "CRM Findings 
-Summary Table" on the LEFT, report run date on the RIGHT (currently the right 
-shows the caption/Sample Name, which is wrong).
+I need to see EXACTLY how the run date is produced and formatted in the working reports, so I can replicate it in CrmSummaryTablePDF.tsx.
 
-CHANGE 1 — Title text default:
-    <Text style={styles.headerTitle}>{title || "CRM Summary Table"}</Text>
-    ->
-    <Text style={styles.headerTitle}>{title || "CRM Findings Summary Table"}</Text>
+Files (read each ONCE, findings only, no edits):
+- frontend/src/components/pdf/CrmSummaryPDF.tsx
+- frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+- frontend/src/components/pdf/pageSetup.ts   (or wherever formatDate / formatRunDate is defined)
 
-CHANGE 2 — Right side: run date instead of caption. Currently:
-    <Text style={styles.headerMeta}>{out(caption)}</Text>
-Change to show the formatted run date (like PD Migration uses formatRunDate):
-    <Text style={styles.headerMeta}>{out(formatRunDate(genOn))}</Text>
-- Import formatRunDate from pageSetup if not already imported.
-- Resolve genOn from the same prop PD Migration uses (check props for genOn / 
-  generatedOn / meta.generatedOn). Show how you obtained the date.
+Show me ONLY:
 
-Keep the headerBar layout (row, space-between, title left / meta right) 
-unchanged — it already matches PD Migration.
+1. In CrmSummaryPDF.tsx: where `generatedOn` comes from — the FULL props/type definition, and how generatedOn gets its value (default? passed from parent? fallback to new Date()?). Show the exact lines including any `generatedOn = ...` default.
 
-CONSTRAINTS:
-- Title default -> "CRM Findings Summary Table".
-- Right meta -> run date via formatRunDate (not caption/Sample Name).
-- Use the SAME date source + formatRunDate helper as PD Migration.
-- Do NOT touch footer, table, or filter sections yet.
-- Only edit this one file. Show the header changes + how genOn is resolved.
+2. In CrmSummaryPDF.tsx: the exact header line rendering the date — {formatDate(generatedOn as any)} — and what generatedOn holds if the parent doesn't pass it.
+
+3. In CrmPdGradeMigrationPDF.tsx: the `formatRunDate` usage, especially the no-argument call `formatRunDate()` in DetailTablePage — show the exact line.
+
+4. The DEFINITION of BOTH helpers:
+   - formatDate (from pageSetup) — full function body, what input it expects (Date? string? ISO?), what string it returns.
+   - formatRunDate (wherever defined) — full function body, including what it does when called with NO argument.
+
+5. Confirm: when called with no real date, does either h

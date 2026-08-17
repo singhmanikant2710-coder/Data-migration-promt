@@ -1,35 +1,41 @@
-READ-ONLY. Diagnostics only. Do not change anything.
+Single-file edit: frontend/src/components/pdf/CrmSummaryPDF.tsx
 
-File: frontend/src/components/pdf/CrmSummaryPDF.tsx
+Two fixes found during verification of #182.
 
-Two issues found during verification of #182:
+=== FIX A: Scorecard ID wrap (wrong CSS value) ===
+The wrapAnywhere style uses wordBreak: "breakAll" — this is a NON-STANDARD 
+value and react-pdf ignores it, so long IDs don't wrap. The correct value is 
+"break-all" (with a hyphen). Fix the style:
+    wrapAnywhere: { wordBreak: "breakAll" }
+    ->
+    wrapAnywhere: { wordBreak: "break-all" }
+This makes the break-anywhere actually apply, so long unspaced Scorecard IDs 
+wrap within the 22% column instead of overflowing.
 
-ISSUE 1 — Scorecard ID STILL overflows the table cell for some review IDs, 
-despite the wrapAnywhere (wordBreak: breakAll) we added. Show:
-1. The Scorecard ID cell — its exact style (flexBasis/width ~22%, wrapAnywhere, 
-   padding, fontSize). 
-2. The cell's container/row — does the row or cell have overflow handling? Is 
-   there padding that pushes content beyond the cell (like the load-samples 
-   box-sizing issue)?
-3. Does the Scorecard ID Text have flexShrink/minWidth that prevents it from 
-   staying within the column? Is wordBreak "breakAll" actually applied, or is 
-   there a competing style (whiteSpace nowrap, fixed width) overriding it?
-4. For a long ID that still overflows — what's the widest it can get? Is the 
-   column flexBasis fixed (22%) but the content forcing it wider? Show if the 
-   cell can grow beyond 22%.
+Also, as a safety net, add overflow clipping to the table so nothing paints 
+past the border (matching the sibling CrmSummaryTablePDF.tsx which has 
+overflow: "hidden"):
+    In styles.table, add: overflow: "hidden"
+(Keep everything else in styles.table unchanged.)
 
-ISSUE 2 — Bank PD and Bank LGD values show a "K" that renders ABOVE / on top of 
-the table row line (the "K" overlaps the row border/gridline). Show:
-1. The Bank PD and Bank LGD DATA cells — their Text style (the { textAlign: 
-   "center", width: "100%" } we added, plus fontSize, lineHeight, padding).
-2. Is there a value formatter adding "K" (like formatting thousands as "1.2K")? 
-   Show the formatter for PD/LGD values.
-3. The row/cell height and lineHeight — is the "K" (or the value) taller than 
-   the row, causing it to overlap the row's top border? Show lineHeight, 
-   fontSize, and any row height constraint.
-4. Did adding width: "100%" to these cells change their vertical alignment or 
-   push text over the border? Compare with a cell that renders correctly.
+=== FIX B: "K" (and other glyphs) overlapping the row border in Bank PD/LGD ===
+The Bank PD and Bank LGD cells' Text has no explicit lineHeight, so inside the 
+vertically-centered tight cell, tall glyphs like "K" overlap the row's border. 
+Add an explicit lineHeight to the Text so glyphs sit within the line box.
 
-Do NOT edit. Show: the Scorecard ID cell style + why it still overflows (width/
-padding/competing style), and the Bank PD/LGD cell style + the "K" formatter + 
-lineHeight causing the overlap. Findings only.
+For the Bank PD and Bank LGD (and CAS PD / CAS LGD if they have the same 
+centered Text) DATA cells, add lineHeight to the Text style:
+    <Text style={[styles.tdText, { textAlign: "center", width: "100%" }]}>
+    ->
+    <Text style={[styles.tdText, { textAlign: "center", width: "100%", lineHeight: 1.2 }]}>
+Apply this to all four centered PD/LGD data cells (Bank PD, Bank LGD, CAS PD, 
+CAS LGD) so the values sit cleanly within the row without overlapping the 
+border.
+
+CONSTRAINTS:
+- FIX A: wordBreak "breakAll" -> "break-all" in wrapAnywhere; add overflow 
+  "hidden" to styles.table.
+- FIX B: add lineHeight: 1.2 to the centered Text in the four PD/LGD data cells.
+- Do NOT change column widths, the data, padding, or other cells.
+- Only edit this one file. Show the corrected wrapAnywhere, the table overflow, 
+  and the PD/LGD Text with lineHeight.

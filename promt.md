@@ -1,21 +1,16 @@
 Single-file edit: frontend/src/components/pdf/CrmFindingsObservationsPDF.tsx
 
-Fix: In the six-column detailed table, the SEVERITY column (f3) is too narrow to fit "Observation", and COMMENTS (f6) is the widest. Slightly increase SEVERITY's flex weight and reduce COMMENTS' by the same amount, so total proportion is preserved.
+Fix: Header vs row vertical gridlines don't line up because header cells and data cells use different padding: thDark padding 6, thBlue padding 2, td padding 4. Align the header padding to match the row padding (4) so the vertical borders line up.
 
-BEFORE:
-f3: { flexGrow: 1, flexShrink: 1, flexBasis: 0 }
-...
-f6: { flexGrow: 8, flexShrink: 1, flexBasis: 0 }
+BEFORE (thDark): padding: 6
+AFTER  (thDark): padding: 4
 
-AFTER:
-f3: { flexGrow: 2, flexShrink: 1, flexBasis: 0 }
-...
-f6: { flexGrow: 7, flexShrink: 1, flexBasis: 0 }
+BEFORE (thBlue): padding: 2
+AFTER  (thBlue): padding: 4
 
 CONSTRAINTS:
-- ONLY change flexGrow for f3 (1 -> 2) and f6 (8 -> 7).
-- Do NOT change f1, f2, f4, f5.
-- Do NOT change flexShrink or flexBasis on any column.
-- Do NOT touch the consolidated table (c1-c3) or any shared style.
-- Do NOT touch any other file.
+- ONLY change the `padding` value in thDark (6 -> 4) and thBlue (2 -> 4).
+- Do NOT change borders, fontSize, flexGrow, lineHeight, or anything else.
+- Do NOT change td or any row style.
+- Do NOT touch column widths (f*/c*) or any other file.
 - Only edit this one file. Show the diff.

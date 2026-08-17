@@ -1,32 +1,17 @@
 Single-file edit: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
 
-Fix: The CRM Component sub-headers above each table (e.g. "RISK RECOGNITION (4)", "SCORECARD MANAGEMENT (5)") should be fontSize 11. They currently use the SHARED styles.sectionTitle (fontSize 10), which is also used by "APPLIED REPORT FILTERS" and the "Current Filter Payload" heading. To avoid affecting those, add a NEW style just for component sub-headers.
+Fix: All report footers should read "[Report Name] • Page # of ##". Currently the footer includes the caption (Sample Name): "CRM Summary Table • ${caption} • Page X of Y". Remove the caption segment and update the report name to "CRM Findings Summary Table". This footer text appears in TWO places (the main page footer and the final filter-payload page footer) — update BOTH occurrences identically.
 
-STEP 1 — Add a new style `componentTitle` right after the sectionTitle definition. It is a copy of sectionTitle with fontSize 11. Do NOT modify sectionTitle.
+BEFORE (both occurrences):
+render={({ pageNumber, totalPages }) => `CRM Summary Table • ${out(caption)} • Page ${pageNumber} of ${totalPages}`}
 
-componentTitle: {
-  fontSize: 11,
-  fontWeight: 700,
-  color: "#1F3864",
-  marginBottom: 6,
-  borderBottomWidth: 1,
-  borderBottomColor: "#cbd5e1",
-  borderBottomStyle: "solid",
-  paddingBottom: 3,
-  textTransform: "uppercase"
-},
-
-STEP 2 — Update ONLY the component sub-header JSX to use it.
-
-BEFORE:
-<Text style={styles.sectionTitle}>{out(`${cleanCompName(sec?.component)} (${count})`)}</Text>
-
-AFTER:
-<Text style={styles.componentTitle}>{out(`${cleanCompName(sec?.component)} (${count})`)}</Text>
+AFTER (both occurrences):
+render={({ pageNumber, totalPages }) => `CRM Findings Summary Table • Page ${pageNumber} of ${totalPages}`}
 
 CONSTRAINTS:
-- ONLY add the componentTitle style and change this one <Text> to use it.
-- Do NOT modify sectionTitle.
-- Do NOT change the "APPLIED REPORT FILTERS" or "Current Filter Payload" headings — they stay on sectionTitle.
+- ONLY change the footer render string, in both places it appears.
+- Remove the `${out(caption)}` segment entirely from the footer.
+- Do NOT change the footer styles, border, positioning, or the page-number render logic.
+- Do NOT remove or alter the `caption` variable itself (it may still be used by the header) — only stop using it in the footer text.
 - Do NOT touch any other file.
 - Only edit this one file. Show the diff.

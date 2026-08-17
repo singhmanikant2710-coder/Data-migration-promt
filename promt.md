@@ -1,22 +1,24 @@
-READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT edit any file.
+Single-file edit: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
 
-I need to see EXACTLY how the run date is produced and formatted in the working reports, so I can replicate it in CrmSummaryTablePDF.tsx.
+Two header-only changes.
 
-Files (read each ONCE, findings only, no edits):
-- frontend/src/components/pdf/CrmSummaryPDF.tsx
-- frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
-- frontend/src/components/pdf/pageSetup.ts   (or wherever formatDate / formatRunDate is defined)
+CONTEXT: formatDate (already imported) accepts an ISO string like "2026-05-01" and returns M/D/YYYY. It does NOT accept a Date object (returns blank). So pass an ISO string via new Date().toISOString().
 
-Show me ONLY:
+BEFORE:
+<View style={styles.headerBar}>
+  <Text style={styles.headerTitle}>{title || "CRM Summary Table"}</Text>
+  <Text style={styles.headerMeta}>{out(caption)}</Text>
+</View>
 
-1. In CrmSummaryPDF.tsx: where `generatedOn` comes from — the FULL props/type definition, and how generatedOn gets its value (default? passed from parent? fallback to new Date()?). Show the exact lines including any `generatedOn = ...` default.
+AFTER:
+<View style={styles.headerBar}>
+  <Text style={styles.headerTitle}>{title || "CRM Findings Summary Table"}</Text>
+  <Text style={styles.headerMeta}>{out(formatDate(new Date().toISOString()))}</Text>
+</View>
 
-2. In CrmSummaryPDF.tsx: the exact header line rendering the date — {formatDate(generatedOn as any)} — and what generatedOn holds if the parent doesn't pass it.
-
-3. In CrmPdGradeMigrationPDF.tsx: the `formatRunDate` usage, especially the no-argument call `formatRunDate()` in DetailTablePage — show the exact line.
-
-4. The DEFINITION of BOTH helpers:
-   - formatDate (from pageSetup) — full function body, what input it expects (Date? string? ISO?), what string it returns.
-   - formatRunDate (wherever defined) — full function body, including what it does when called with NO argument.
-
-5. Confirm: when called with no real date, does either h
+CONSTRAINTS:
+- ONLY change these two lines inside the headerBar block.
+- Do NOT change headerBar / headerTitle / headerMeta styles.
+- Do NOT modify the footer, caption variable, or any other block.
+- Do NOT change any other file.
+- Only edit this one file. Show the diff.

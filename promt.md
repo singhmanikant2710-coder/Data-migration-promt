@@ -1,31 +1,15 @@
-READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT edit any file.
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
 File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-Read ONCE. Findings only, no edits. Show me the following.
+For Item 2, I need to apply fontSize 9 ONLY to the two matrices (MatrixCount, MatrixCommitment), not to shared thDark/td used elsewhere. Show me ONLY (no edits):
 
-=== ITEM 1 — Font 11 for matrices + table headers (light red highlighted) ===
-1. Identify the matrix tables and their table-header styles (the "light red highlighted" headers). Show the style object(s) controlling their fontSize and current value.
-2. Flag if these header styles are SHARED across multiple tables/matrices.
+1. In MatrixCount and MatrixCommitment: the exact JSX for the blue column-header cells (the row with BANK PD, 1-16, CAS PD Totals headers). Show the full style array on those header Text/View cells (e.g. [styles.thDark, styles.thCompact, {...}]).
 
-=== ITEM 2 — Font 9 for blue column headers + values ===
-3. Identify the "blue column headers" and their VALUES in the matrices. Show the style object(s) controlling fontSize for both the blue headers and the value cells. Current values.
-4. Flag sharing — is the blue-header style and the value style used in multiple places?
+2. In both matrices: the exact JSX for the value/body cells and totals cells. Show the full style array (e.g. [styles.td, {...}, styles.tdClamp]).
 
-=== ITEM 3 — Vertical centering ===
-5. In the Accounts matrix: find the "CAS PD Totals" row. Show its cell styles — specifically alignItems / justifyContent / textAlign / any vertical alignment. Why might it not be vertically centered?
-6. In the Commitment matrix: find the value cells and totals. Show their vertical-alignment styles. 
-7. Show the base cell style these use, and flag if shared.
+3. Confirm: is `thCompact` used ONLY by these two matrices (not by detail/subreports)? And is there any matrix-only value style, or do values rely on shared `td`?
 
-=== ITEM 4 — Rename + reposition filter payload ===
-8. Search for "Current Filter Payload" / "APPLIED REPORT FILTERS" / "Applied Report Filters" — show every occurrence with surrounding JSX and which Page/branch.
-9. Show the Document structure: which Page holds the details table, and the separate Page holding the filter payload. I need to see if I can move the filter block into the details Page's flow (like we did for CrmFindingsObservations), and whether the details Page auto-flows. Show the details-table component/Page and where the filter Page sits.
-10. Does the details Page / component receive `filters`? Show its props.
+4. Show the current fontSize source for: matrix header (thCompact=10?), matrix values (td=10 + inline?).
 
-=== SHARED CHECK ===
-11. List any styles shared across matrices/tables that items 1, 2, 3 might touch, so changing one doesn't break others.
-
-CONSTRAINTS:
-- Read ONCE. Findings only. No edits.
-- For items 1 & 2: I need exact style names + current fontSizes, and whether they're shared, so I can add targeted styles if needed (like we did before) rather than changing shared ones.
-- For item 4: flag footer/pagination handling on the filter Page.
+Read once. Findings only. No edits. I want to find the matrix-only insertion point so shared thDark/td stay untouched.

@@ -1,12 +1,27 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/CrmSummaryPDF.tsx
 
-File: frontend/src/components/pdf/CrmSummaryPDF.tsx
+Fix (Item 6): Reduce the Scorecard Assessment table header height by lowering vertical padding on ONLY its header cells (shared styles.th has padding: 8). Add an inline paddingVertical: 4 override to each Scorecard Assessment header cell. Do NOT change styles.th (that would affect Policy Exception and Unsatisfactory tables).
 
-For item 6 (reduce ONLY the Scorecard Assessment table header height, without affecting other tables that share styles.th):
+Add { paddingVertical: 4 } to the style array of EACH Scorecard Assessment header cell (sc1 through sc8):
 
-Show me ONLY (no edits):
-1. Confirm the Scorecard Assessment header cells use [styles.th, styles.scN] — can I add an inline paddingVertical override on just these header cells (or a new style applied only here) to reduce their height, leaving shared styles.th unchanged?
-2. styles.th current padding value (confirm it's padding: 8).
-3. Do the OTHER tables' headers (Policy Exception, Unsatisfactory) use styles.th the same way? Confirm changing only the Scorecard header cells won't touch them.
+BEFORE (example, SCORECARD ID):
+<View style={[styles.th, styles.sc1]}><Text style={styles.thText}>SCORECARD ID</Text></View>
+AFTER:
+<View style={[styles.th, styles.sc1, { paddingVertical: 4 }]}><Text style={styles.thText}>SCORECARD ID</Text></View>
 
-Read once. Findings only. No edits.
+Apply the same { paddingVertical: 4 } addition to ALL eight header cells:
+- sc1 (SCORECARD ID)
+- sc2 (DATE)
+- sc3 (BANK PD)
+- sc4 (BANK LGD)
+- sc5 (CAS PD)
+- sc6 (CAS LGD)
+- sc7 (SCORECARD TYPE)
+- sc8 (SCORECARD ASSESSMENT) — keep its existing styles.tdLast too: [styles.th, styles.sc8, styles.tdLast, { paddingVertical: 4 }]
+
+CONSTRAINTS:
+- ONLY add { paddingVertical: 4 } to the eight Scorecard Assessment HEADER cells.
+- Do NOT modify styles.th, styles.thText, or any other table's headers (Policy Exception, Unsatisfactory).
+- Do NOT change the value/data row cells, only the header row.
+- Do NOT change widths or any prior fix.
+- Show the FULL diff.

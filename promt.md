@@ -23,4 +23,9 @@ Read ONCE. Findings only, no edits. Show me the following.
 10. Does the details Page / component receive `filters`? Show its props.
 
 === SHARED CHECK ===
-11. List
+11. List any styles shared across matrices/tables that items 1, 2, 3 might touch, so changing one doesn't break others.
+
+CONSTRAINTS:
+- Read ONCE. Findings only. No edits.
+- For items 1 & 2: I need exact style names + current fontSizes, and whether they're shared, so I can add targeted styles if needed (like we did before) rather than changing shared ones.
+- For item 4: flag footer/pagination handling on the filter Page.

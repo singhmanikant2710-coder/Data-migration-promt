@@ -1,19 +1,6 @@
--- 1. Raw count (abhi report kya dikhata)
-SELECT COUNT(*) AS RawCount
-FROM dbo.[02_CORE_04_Accounts]
-WHERE [Review_id] IN (<sample ke review ids>);
+You can send this to Geoff:
 
--- 2. De-duped count (Geoff ka rule)
-SELECT COUNT(*) AS DedupedCount FROM (
-  SELECT DISTINCT [Review_id],[Scorecard_id_bank],[Bank_PD],[Bank_LGD],[CAS_PD],[CAS_LGD]
-  FROM dbo.[02_CORE_04_Accounts]
-  WHERE [Review_id] IN (<sample ke review ids>)
-) d;
-
--- 3. Bad-data reveal (same Bank ID, alag PD/LGD)
-SELECT [Review_id],[Scorecard_id_bank],
-       COUNT(DISTINCT CONCAT([Bank_PD],'|',[Bank_LGD],'|',[CAS_PD],'|',[CAS_LGD])) AS DistinctCombos
-FROM dbo.[02_CORE_04_Accounts]
-WHERE [Review_id] IN (<sample ke review ids>)
-GROUP BY [Review_id],[Scorecard_id_bank]
-HAVING COUNT(DISTINCT CONCAT([Bank_PD],'|',[Bank_LGD],'|',[CAS_PD],'|',[CAS_LGD])) > 1;
+> Hi Geoff,
+Would it be possible to schedule a quick call today from 7:30–8:00 PM IST (9:00–9:30 AM US Central Time)? I’d like to discuss a few points with you.
+Please let me know if this time works for you.
+Thanks!

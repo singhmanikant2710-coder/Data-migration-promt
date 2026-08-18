@@ -1,29 +1,6 @@
-READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT edit any file.
-
-Files (read each ONCE, findings only, no edits):
-- backend/src/Casrr.Infrastructure/SqlServer/SqlScorecardResultsReportRepository.cs
-- backend/src/Casrr.Application/Reporting/ScorecardResults/ScorecardResultsModels.cs
-- backend/src/Casrr.Application/Reporting/ScorecardResults/ScorecardResultsReportService.cs
-- frontend/src/components/pdf/ScorecardResultsPDF.tsx
-
-I need to change both the summary count (Item 3) and the details table (Item 4) to work by UNIQUE Scorecard ID instead of by account. Before any edit, show me:
-
-=== A. UNIQUENESS KEY (most important) ===
-1. In the SQL repository: the query that pulls scorecard rows (the details source). Show ALL columns selected, especially any scorecard ID field(s). Is there a single unique scorecard ID column (e.g. Scorecard_id / ScorecardId), or is the ID composed of multiple fields (Bank ID + System ID)?
-2. Show how the frontend formatScorecardId builds the displayed ID — which underlying field(s) it uses. This tells me what "unique scorecard ID" actually means in the data.
-
-=== B. ITEM 3 — Summary count ===
-3. The full ComputeTotalsAsync SQL (COUNT(*) ... GROUP BY Scorecard_assessment). Show it exactly.
-4. Confirm it counts account rows (COUNT(*)) — and whether a COUNT(DISTINCT <scorecardIdColumn>) would be possible with the columns available in that table.
-
-=== C. ITEM 4 — Details rows ===
-5. In ScorecardResultsPDF.tsx buildGroups: show exactly how rows are pushed (per account row). Show what fields identify each row.
-6. Confirm whether dedup should happen in the SQL/service (backend) or in buildGroups (frontend). Show enough of both to judge the safest place.
-
-=== D. RECONCILIATION ===
-7. Are the summary totals (backend) and the details rows (frontend) both derived from the SAME underlying rows? If we dedup one but not the other, will totals stop matching the row counts shown? Flag this.
-
-CONSTRAINTS:
-- Read each file ONCE. Findings only. No edits.
-- I specifically need the exact unique-scorecard-ID column name, and whether dedup is safe in SQL vs frontend.
-- Flag anything where deduping could drop or merge rows that differ (e.g. same scorecard ID but different assessment/values).
+#186 — CRM Scorecard Results, Items 3 & 4 (count & details by unique Scorecard ID) — Clarification Needed Before Implementation
+Items 1, 2, and 5 are complete and pushed. For Items 3 and 4 (counting and listing by unique Scorecard ID instead of by account), I've analysed the data layer and need a few business rules confirmed before implementing, as the change affects the numbers shown on this report:
+Uniqueness definition: The data has two ID fields — Scorecard_id_bank and Scorecard_id_system (no single unified ID). Should "unique scorecard" be defined by the bank ID, the system ID, or the combination of both?
+Handling duplicates with differing values: The same scorecard ID can appear on multiple account rows, and those rows can differ in assessment, scorecard type, PD/LGD values, or date. When de-duplicating, which record should we keep — e.g. the latest by scorecard date, the latest transaction, or another rule?
+Scope: Should uniqueness be evaluated within each review, or across the whole selected dataset?
+Both the summary counts (Item 3) and the detail tables (Item 4) must use the same definition so the totals reconcile with the rows shown, so I'd like to lock these rules before coding. Once confirmed, I'll implement in the backend (so counts and details stay consistent) and validate with before/after SQL checks.

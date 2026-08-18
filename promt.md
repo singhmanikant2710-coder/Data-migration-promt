@@ -1,15 +1,22 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+Fix: Section headings (sectionTitle) can get orphaned at the bottom of a page while their table flows to the next page. This happens depending on data size (some samples break, some don't). Apply a data-independent orphan control: add minPresenceAhead to each section heading so the heading only renders if there's enough room below for the start of its table; otherwise it moves to the next page WITH its table.
 
-I need a STRUCTURAL orphan fix that works for ANY sample/data (not tuned to one PDF). A section heading gets separated from its table depending on data size. Show me ONLY (no edits):
+This is safer than wrap={false} on the whole section (which would be unsafe for the potentially large Subreport01/02 tables). minPresenceAhead on just the heading keeps the heading attached to its table's start without forcing the whole table together.
 
-1. ALL subreport/section components that render a sectionTitle heading followed by a table: Subreport01_Count, Subreport02_Commitment, Subreport03_DistByCount, Subreport04_DistByExposure. For EACH, show the JSX: how the heading and its table are wrapped (same parent View or separate siblings?), and whether any wrap={false} / minPresenceAhead / keep-together prop exists.
+Apply to the sectionTitle heading in ALL these sections: Subreport01_Count, Subreport02_Commitment, Subreport03_DistByCount, Subreport04_DistByExposure, MatrixCount, MatrixCount, MatrixCommitment.
 
-2. The matrices (MatrixCount, MatrixCommitment) heading+table structure too — same check.
+For each, change the heading from:
+<Text style={styles.sectionTitle}>...heading text...</Text>
+to:
+<Text style={styles.sectionTitle} minPresenceAhead={40}>...heading text...</Text>
 
-3. Any EXISTING keep-together pattern in this file (e.g. trTotalsReserve uses minPresenceAhead — show its value and how it's applied).
+(Use minPresenceAhead={40} — enough to guarantee the heading isn't left alone at page bottom; the table header row already has its own minPresenceAhead: 28, so 40 on the heading keeps heading + table-header together.)
 
-4. The table sizes: are these distribution/subreport tables bounded (e.g. always ~14 PD rows) or can they grow large? This determines whether wrap={false} on the whole heading+table is safe, or if I need heading+first-row keep-together.
-
-Read once. Findings only. No edits. I want one consistent orphan-control approach applied to all these heading+table sections so no sample breaks.
+CONSTRAINTS:
+- ONLY add minPresenceAhead={40} to the sectionTitle <Text> headings in the listed sections.
+- Do NOT change the sectionTitle style definition itself (that would affect ALL uses including "Applied Report Filters" and "Detail" — we only want it on these section headings).
+- Do NOT change wrap props, table structure, rows, or minPresenceAhead on existing trHeader/trTotalsReserve.
+- Do NOT touch fonts, alignment, or any prior fix.
+- Do NOT touch any other file.
+- Show the FULL diff so I can confirm it's applied per-heading (not to the shared style).

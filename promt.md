@@ -1,13 +1,10 @@
-Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix (Item 1): The section headings (light-red highlighted titles like "PD GRADE MIGRATION BY NUMBER OF ACCOUNTS", "PD MIGRATION TOTALS BY ACCOUNT", "FINAL PD DISTRIBUTION", "DETAIL", etc.) should be font size 11. These all use styles.sectionTitle (currently fontSize 10). Change it to 11.
+File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-BEFORE (sectionTitle style): fontSize: 10
-AFTER  (sectionTitle style): fontSize: 11
+Show me ONLY the complete sectionTitle style object exactly as it is now (every line). Confirm:
+1. fontSize is 11.
+2. No duplicate keys (fontWeight, color, etc. appearing twice).
+3. All original properties still present (fontWeight, color, marginBottom, borders, paddingBottom, textTransform).
 
-CONSTRAINTS:
-- ONLY change fontSize 10 -> 11 in the sectionTitle style object.
-- Do NOT change fontWeight, color, marginBottom, borders, paddingBottom, textTransform, or anything else.
-- Do NOT touch any other style (headerTitle, th, thDark, td, footer, etc.).
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
+Read once. Findings only.

@@ -1,70 +1,27 @@
-Single-file edit: frontend/src/components/pdf/ScorecardResultsPDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT edit any file.
 
-Change the header title font size from 20 to 14 (to match CRM Summary).
+Files (read each ONCE, findings only, no edits):
+- frontend/src/components/pdf/InitialMemoPDF.tsx
+- frontend/src/components/pdf/FinalMemoPDF.tsx
 
-BEFORE (headerTitle style): fontSize: 20
-AFTER  (headerTitle style): fontSize: 14
+These two reports share the same 3 issues. Show me the following for BOTH files.
 
-CONSTRAINTS:
-- ONLY change fontSize 20 -> 14 in the headerTitle style object.
-- Do NOT change color, fontWeight, or anything else.
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
+=== ITEM 1 — Font size 11 for blue highlighted values ===
+1. Find the "blue highlighted values" — likely values in a table styled with a blue color/background. Show the style controlling these value cells' fontSize, and the current value. Identify exactly which style object(s) render these values so I can change only them.
+2. Flag if that style is SHARED with other (non-blue) content.
 
-- Single-file edit: frontend/src/components/pdf/ScorecardResultsPDF.tsx
+=== ITEM 2 — Scorecard ID wrap in the Scorecard Assessment table ===
+3. Find the Scorecard Assessment table. Show the Scorecard ID value cell JSX + how the ID string is produced. CRITICAL: look for any code that inserts SPACE characters after hyphens (e.g. .replace(/-/g, "- ") or similar), or \u200B, or \n — the ticket says spaces were added after hyphens to force wrapping. Show the exact string transformation.
+4. Show the Scorecard ID column width style in this table (fixed %/flex) and the cell's wordBreak / wrap props.
 
-The right-hand header currently shows the caption (sample name). Change it to show the report run date, matching CRM Summary. This component does NOT receive a generatedOn prop, so use the current date via formatDate (which accepts an ISO string). Confirm formatDate is imported from ./pageSetup (it is used by sibling PDFs) — if not imported, add it to the existing pageSetup import.
+=== ITEM 4 — Scorecard ID wrap in the Account Information table ===
+5. Find the Account Information table. Show its Scorecard ID value cell JSX + the same string transformation (spaces after hyphens? \u200B? \n?).
+6. Show that column's width style and wrap props.
 
-BEFORE:
-<Text style={styles.headerMeta}>{out(caption)}</Text>
-
-AFTER:
-<Text style={styles.headerMeta}>{out(formatDate(new Date().toISOString()))}</Text>
-
-CONSTRAINTS:
-- ONLY change this one header line.
-- Do NOT remove the `caption` variable (it may be used elsewhere) — just stop using it in this header line.
-- Do NOT change headerMeta style or any other block.
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
-
-Single-file edit: frontend/src/components/pdf/ScorecardResultsPDF.tsx
-
-Replace the footer (which has the First Horizon logo + "CAS RiskReview" brand) with the centered text style used by CRM Summary and PD Migration reports: a centered "[Report Name] • Page X of Y" line. Remove the logo Image and the brand text.
-
-BEFORE:
-<View style={styles.footer} fixed>
-  <View style={styles.footerInner}>
-    <View style={styles.footerLeft}>
-      <Image src="/assets/FHB_Logo.png" style={styles.footerLogo} />
-      <Text style={styles.footerBrand}>CAS RiskReview</Text>
-    </View>
-    <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
-  </View>
-</View>
-
-AFTER:
-<View style={styles.footer} fixed>
-  <View style={{ borderTopWidth: 1, borderTopColor: colors.divider, borderTopStyle: "solid", paddingTop: 4 }}>
-    <Text
-      style={{ fontSize: 8, color: "#475569", textAlign: "center" }}
-      render={({ pageNumber, totalPages }) => `CRM Scorecard Results • Page ${pageNumber} of ${totalPages}`}
-    />
-  </View>
-</View>
+=== SHARED CHECK ===
+7. Is there a SHARED formatScorecardId (or similar) helper used by both tables / both files that does the hyphen-space insertion? Show it. This matters because fixing it once may fix multiple spots — or breaking it may affect several places.
 
 CONSTRAINTS:
-- Replace ONLY the footer's inner content as shown. Keep the outer <View style={styles.footer} fixed> wrapper.
-- Remove the FH logo Image and the "CAS RiskReview" brand text.
-- If `colors` is already imported from ./pageSetup (it is used elsewhere), use colors.divider as shown; otherwise use "#e2e8f0".
-- Leave the now-unused footer styles (footerInner, footerLeft, footerLogo, footerBrand, footerText) in place for now — do NOT delete them (removing could risk other references; we can clean up later).
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
-
-
-Issue #: 186 (Items 3, 4)
-Type: New Functionality / Data-layer change
-Item 3: Summary counts computed by account (COUNT(*) in backend SQL); requested to count by unique Scorecard ID. Changes reported numbers. Backend SQL change + SQL validation needed.
-Item 4: Detail tables list one row per account (no dedup); requested to list unique Scorecard ID records only. Introduces new de-duplication logic. Needs uniqueness/precedence rule.
-Reason flagged: Alters reporting numbers and record selection (not formatting); needs client confirmation of uniqueness key; both should share same uniqueness definition so totals reconcile.
-Recommendation: Scope with business/client, then implement + SQL-verify.
+- Read each file ONCE. Findings only. No edits.
+- For each Scorecard ID spot, I specifically need to see whether the wrapping is forced by inserted spaces/characters (which we'd remove and replace with proper wrapping) vs a column-width issue.
+- Flag every SHARED style/helper.

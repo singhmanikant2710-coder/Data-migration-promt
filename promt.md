@@ -1,12 +1,35 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/ScorecardResultsPDF.tsx
 
-File: frontend/src/components/pdf/ScorecardResultsPDF.tsx
+Fix: The Scorecard ID breaks char-by-char / at every hyphen because softBreak() explicitly inserts "\n" after each hyphen (and formatScorecardId inserts "\n" between bank/system IDs). The column (COL8_B = 32%) is already wide enough. Remove the forced line breaks and let it wrap naturally with break-all only when needed.
 
-The Scorecard ID value wraps badly — breaks char-by-char vertically (e.g. "27fd4955-" / "af90-" / ...). Show me ONLY (no edits):
+STEP 1 — Stop inserting "\n" in the value cell. Render the raw id (from formatScorecardId) without softBreak.
 
-1. The Scorecard ID VALUE cell JSX in the details table — how the id is rendered. Show the full <View>/<Text> and the formatScorecardId call. Does it insert \n or any breaks?
-2. formatScorecardId definition — does it add "\n" or "\u200B" between bank/system IDs? (Earlier diagnostic showed it uses `${bank}\n${system}` when both differ.)
-3. The Scorecard ID column width style (the sc/column class for this cell) — current width %.
-4. The value cell's text style (tdText equivalent) — does it have wordBreak? Is this style shared with other columns?
+BEFORE:
+<View style={[styles.td, { width: COL8_B, paddingLeft: 4, paddingRight: 4 }]}>
+  <Text style={styles.tdText}>{softBreak(r?.id as any)}</Text>
+</View>
 
-Read once. Findings only. No edits.
+AFTER:
+<View style={[styles.td, { width: COL8_B, paddingLeft: 4, paddingRight: 4 }]}>
+  <Text style={[styles.tdText, { wordBreak: "break-all" }]}>{out(r?.id as any)}</Text>
+</View>
+
+(Use `out(...)` to safely handle null/empty — confirm `out` is imported in this file, it is used elsewhere. If not, use `{r?.id ?? ""}`.)
+
+STEP 2 — In formatScorecardId, replace the "\n" between bank and system with a plain space so it doesn't force a hard break either.
+
+BEFORE:
+  if (bank && system && bank !== system) {
+    return `${bank}\n${system}`;
+  }
+AFTER:
+  if (bank && system && bank !== system) {
+    return `${bank} ${system}`;
+  }
+
+CONSTRAINTS:
+- Remove the softBreak() call on the Scorecard ID value only. Do NOT change softBreak's definition (it may be used elsewhere — check; if used ONLY here, leaving it unused is fine, do not delete in this edit).
+- Add wordBreak: "break-all" inline ONLY on this Scorecard ID Text (not on shared tdText style, which other columns use).
+- Do NOT change COL8_B width or other columns.
+- Do NOT touch any other file.
+- Show the diff. Confirm whether softBreak is used anywhere else.

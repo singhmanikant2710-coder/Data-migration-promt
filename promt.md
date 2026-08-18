@@ -1,31 +1,48 @@
-READ-ONLY. Read once. Do not re-read.
+Single-file edit: frontend/src/app/review/[ecif]/review-info/components/sections/ReviewInfoSection.tsx
 
-File: frontend/src/app/review/[ecif]/review-info/components/sections/ReviewInfoSection.tsx
+Bug #180(d): Reconsideration and Appeal unlock don't unlock the review / hide 
+the Unlock button, while General Revisions does. Two root causes found:
 
-Bug #180(d) reopened: General Revisions unlock works, but Reconsideration and 
-Appeal unlock are NOT (a) unlocking the review (Locked stays true), and (b) 
-hiding the Unlock button afterward. We previously added unlock fields to their 
-submit payloads. Verify the current state.
+ROOT CAUSE 1: General Revisions calls setIsApprovedFromQueue(false) after save 
+(which hides the Unlock button immediately). Reconsideration and Appeal do NOT 
+call it, so reviewLocked stays true and the button remains visible.
 
-Show:
-1. The RECONSIDERATION submit handler — the full saveReview data object. Does it 
-   currently include approvalDate: "", finalizedDate: "", and the first-unlock 
-   initialApproval? Show the exact current data object.
-2. The APPEAL submit handler — same, show its full current data object.
-3. Compare with the GENERAL REVISIONS handler (which works) — show its data 
-   object. What does General Revisions do that Reconsideration/Appeal don't? 
-   Specifically, how does the review get UNLOCKED (Locked -> false)? Is there a 
-   "locked: false" field, or does clearing approvalDate trigger the unlock in 
-   the backend?
-4. UNLOCK BUTTON visibility condition: show the exact condition that shows/hides 
-   the Unlock button (reviewLocked / canUnlock / approval date). What must be 
-   cleared for the button to hide? Does General Revisions clear that but 
-   Reconsideration/Appeal don't?
-5. Do Reconsideration/Appeal actually SEND the unlock fields on submit, or is 
-   there a separate code path where their submit only saves the sub-form fields 
-   (reconsideration/appeal details) and skips the unlock fields? Show the exact 
-   submit call for each.
+ROOT CAUSE 2: The initialApproval spread condition in Reconsideration/Appeal is 
+different (and wrong) compared to General Revisions:
+- General (correct): (!hasInitial && mgr) where hasInitial = 
+  !!String(s?.initialApproval).trim()  → "initialApproval is blank AND mgr 
+  exists → set it"
+- Reconsideration/Appeal (wrong): 
+  !(String(s?.initialApproval ?? "").trim() && toInputDateString(s?.mgrApproval ?? ""))
+  → this is a different/incorrect condition.
 
-Do NOT edit. Show all three handlers' data objects, how unlock (Locked->false) 
-actually happens for General Revisions, the button visibility condition, and 
-whether Reconsideration/Appeal send the unlock fields. Findings only.
+FIX BOTH the Reconsideration submit and the Appeal submit:
+
+FIX A — Correct the initialApproval condition to MATCH General Revisions. 
+Replace the spread condition:
+    ...(!(String(s?.initialApproval ?? "").trim() && toInputDateString(s?.mgrApproval ?? "")) ? { initialApproval: toInputDateString(s?.mgrApproval ?? "") } : {})
+with the same logic General Revisions uses:
+    ...(!String(s?.initialApproval ?? "").trim() && toInputDateString(s?.mgrApproval ?? "") ? { initialApproval: toInputDateString(s?.mgrApproval ?? "") } : {})
+(The difference: General is "!initialApproval && mgr" — set only when 
+initialApproval is blank AND mgr exists. Apply this exact condition to both 
+Reconsideration and Appeal.)
+
+FIX B — After the saveReview call succeeds in BOTH the Reconsideration and 
+Appeal submit handlers, add the same post-save unlock reflection that General 
+Revisions does:
+    setIsApprovedFromQueue(false);
+    reloadPageData();
+Add these right after the successful saveReview in both handlers (if 
+reloadPageData is already called, just add setIsApprovedFromQueue(false) before 
+it). This makes reviewLocked go false immediately and hides the Unlock button, 
+matching General Revisions.
+
+CONSTRAINTS:
+- Apply FIX A (correct initialApproval condition) and FIX B 
+  (setIsApprovedFromQueue(false) + reloadPageData) to BOTH the Reconsideration 
+  and Appeal submit handlers.
+- Do NOT change the sub-form fields (reconsideration*/appeal* data), 
+  approvalDate/finalizedDate (already correct), or General Revisions.
+- Only edit this one file. Show the updated Reconsideration and Appeal handlers 
+  (the corrected condition + the added setIsApprovedFromQueue(false)/
+  reloadPageData).

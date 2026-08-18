@@ -1,27 +1,25 @@
-Single-file edit: frontend/src/components/pdf/CrmSummaryPDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT modify data.
 
-Fix (Item 6): Reduce the Scorecard Assessment table header height by lowering vertical padding on ONLY its header cells (shared styles.th has padding: 8). Add an inline paddingVertical: 4 override to each Scorecard Assessment header cell. Do NOT change styles.th (that would affect Policy Exception and Unsatisfactory tables).
+Files (read ONCE each, findings only, no edits):
+- backend/src/Casrr.Infrastructure/SqlServer/SqlScorecardResultsReportRepository.cs
+- backend/src/Casrr.Application/Reporting/ScorecardResults/ScorecardResultsReportService.cs
+- frontend/src/components/pdf/ScorecardResultsPDF.tsx
 
-Add { paddingVertical: 4 } to the style array of EACH Scorecard Assessment header cell (sc1 through sc8):
+Geoff confirmed the de-dup rules:
+- Uniqueness key: Review_id + Scorecard_id_bank
+- De-dupe at Review_id + Scorecard_id_bank + PD/LGD combo (so identical rows collapse, but same Bank ID with DIFFERENT PD/LGD stays visible to reveal bad data)
+- Applies to BOTH the summary count (Item 3) and the details table (Item 4), using the same de-duped population so totals reconcile with rows.
 
-BEFORE (example, SCORECARD ID):
-<View style={[styles.th, styles.sc1]}><Text style={styles.thText}>SCORECARD ID</Text></View>
-AFTER:
-<View style={[styles.th, styles.sc1, { paddingVertical: 4 }]}><Text style={styles.thText}>SCORECARD ID</Text></View>
+Show me ONLY (no edits):
 
-Apply the same { paddingVertical: 4 } addition to ALL eight header cells:
-- sc1 (SCORECARD ID)
-- sc2 (DATE)
-- sc3 (BANK PD)
-- sc4 (BANK LGD)
-- sc5 (CAS PD)
-- sc6 (CAS LGD)
-- sc7 (SCORECARD TYPE)
-- sc8 (SCORECARD ASSESSMENT) — keep its existing styles.tdLast too: [styles.th, styles.sc8, styles.tdLast, { paddingVertical: 4 }]
+1. PopulateScorecardsAsync — the FULL current SQL (SELECT + FROM + WHERE + ORDER BY), with EVERY column selected. I need exact column names for Review_id, Scorecard_id_bank, Bank_PD, Bank_LGD, CAS_PD, CAS_LGD, Scorecard_assessment, and any transaction/date columns.
 
-CONSTRAINTS:
-- ONLY add { paddingVertical: 4 } to the eight Scorecard Assessment HEADER cells.
-- Do NOT modify styles.th, styles.thText, or any other table's headers (Policy Exception, Unsatisfactory).
-- Do NOT change the value/data row cells, only the header row.
-- Do NOT change widths or any prior fix.
-- Show the FULL diff.
+2. ComputeTotalsAsync — the FULL current SQL (the COUNT(*) ... GROUP BY Scorecard_assessment).
+
+3. In the service layer (ScorecardResultsReportService): is there any post-processing between the repo and the response, or does it pass repo rows straight through? Show where totals and detail rows are assembled.
+
+4. In ScorecardResultsPDF.tsx buildGroups: confirm it just renders whatever rows come from backend (no dedup) — so if I dedup in the backend, both the count and details will reflect it. Show how count/totals are consumed.
+
+5. Confirm the exact WHERE/scope: results are already filtered by Review_id IN (...). So de-dup needs to be WITHIN that set, keyed by Review_id + Scorecard_id_bank + PD/LGD.
+
+Read once. Findings only. No edits.

@@ -1,27 +1,29 @@
 READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT edit any file.
 
 Files (read each ONCE, findings only, no edits):
-- frontend/src/components/pdf/InitialMemoPDF.tsx
-- frontend/src/components/pdf/FinalMemoPDF.tsx
+- backend/src/Casrr.Infrastructure/SqlServer/SqlScorecardResultsReportRepository.cs
+- backend/src/Casrr.Application/Reporting/ScorecardResults/ScorecardResultsModels.cs
+- backend/src/Casrr.Application/Reporting/ScorecardResults/ScorecardResultsReportService.cs
+- frontend/src/components/pdf/ScorecardResultsPDF.tsx
 
-These two reports share the same 3 issues. Show me the following for BOTH files.
+I need to change both the summary count (Item 3) and the details table (Item 4) to work by UNIQUE Scorecard ID instead of by account. Before any edit, show me:
 
-=== ITEM 1 — Font size 11 for blue highlighted values ===
-1. Find the "blue highlighted values" — likely values in a table styled with a blue color/background. Show the style controlling these value cells' fontSize, and the current value. Identify exactly which style object(s) render these values so I can change only them.
-2. Flag if that style is SHARED with other (non-blue) content.
+=== A. UNIQUENESS KEY (most important) ===
+1. In the SQL repository: the query that pulls scorecard rows (the details source). Show ALL columns selected, especially any scorecard ID field(s). Is there a single unique scorecard ID column (e.g. Scorecard_id / ScorecardId), or is the ID composed of multiple fields (Bank ID + System ID)?
+2. Show how the frontend formatScorecardId builds the displayed ID — which underlying field(s) it uses. This tells me what "unique scorecard ID" actually means in the data.
 
-=== ITEM 2 — Scorecard ID wrap in the Scorecard Assessment table ===
-3. Find the Scorecard Assessment table. Show the Scorecard ID value cell JSX + how the ID string is produced. CRITICAL: look for any code that inserts SPACE characters after hyphens (e.g. .replace(/-/g, "- ") or similar), or \u200B, or \n — the ticket says spaces were added after hyphens to force wrapping. Show the exact string transformation.
-4. Show the Scorecard ID column width style in this table (fixed %/flex) and the cell's wordBreak / wrap props.
+=== B. ITEM 3 — Summary count ===
+3. The full ComputeTotalsAsync SQL (COUNT(*) ... GROUP BY Scorecard_assessment). Show it exactly.
+4. Confirm it counts account rows (COUNT(*)) — and whether a COUNT(DISTINCT <scorecardIdColumn>) would be possible with the columns available in that table.
 
-=== ITEM 4 — Scorecard ID wrap in the Account Information table ===
-5. Find the Account Information table. Show its Scorecard ID value cell JSX + the same string transformation (spaces after hyphens? \u200B? \n?).
-6. Show that column's width style and wrap props.
+=== C. ITEM 4 — Details rows ===
+5. In ScorecardResultsPDF.tsx buildGroups: show exactly how rows are pushed (per account row). Show what fields identify each row.
+6. Confirm whether dedup should happen in the SQL/service (backend) or in buildGroups (frontend). Show enough of both to judge the safest place.
 
-=== SHARED CHECK ===
-7. Is there a SHARED formatScorecardId (or similar) helper used by both tables / both files that does the hyphen-space insertion? Show it. This matters because fixing it once may fix multiple spots — or breaking it may affect several places.
+=== D. RECONCILIATION ===
+7. Are the summary totals (backend) and the details rows (frontend) both derived from the SAME underlying rows? If we dedup one but not the other, will totals stop matching the row counts shown? Flag this.
 
 CONSTRAINTS:
 - Read each file ONCE. Findings only. No edits.
-- For each Scorecard ID spot, I specifically need to see whether the wrapping is forced by inserted spaces/characters (which we'd remove and replace with proper wrapping) vs a column-width issue.
-- Flag every SHARED style/helper.
+- I specifically need the exact unique-scorecard-ID column name, and whether dedup is safe in SQL vs frontend.
+- Flag anything where deduping could drop or merge rows that differ (e.g. same scorecard ID but different assessment/values).

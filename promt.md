@@ -1,32 +1,48 @@
-Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+Implemented Item 3 exactly as requested, adding alignItems: "center" inline only to the specified matrix rows while leaving styles.tr unchanged and preserving all logic.
 
-Fix (Item 3): Vertically center specific matrix rows by adding alignItems: "center" inline to their row containers. styles.tr is shared across all tables, so do NOT modify tr — add alignItems inline only on these matrix rows.
+Summary of changes:
+- MatrixCount (Accounts) matrix: CAS PD Totals row ONLY now includes alignItems: "center".
+- MatrixCommitment matrix: all body/data rows and the CAS PD Totals row now include alignItems: "center".
+- No other rows or tables were modified.
 
-Per Geoff: Accounts matrix = only the CAS PD Totals row; Commitment matrix = all value rows AND totals row.
+Full diff with context to disambiguate matrices:
 
-=== CHANGE 1 — MatrixCount: CAS PD Totals row only ===
-BEFORE:
-<View style={[styles.tr, styles.trLast, styles.trTotalsReserve]} wrap={false}>
-AFTER:
-<View style={[styles.tr, styles.trLast, styles.trTotalsReserve, { alignItems: "center" }]} wrap={false}>
-(NOTE: this exact same JSX pattern appears in BOTH matrices' totals rows. For THIS change, only apply to the MatrixCount totals row. See Change 3 for MatrixCommitment's totals row.)
+1) MatrixCount – CAS PD Totals row only
+Context: inside function MatrixCount
 
-=== CHANGE 2 — MatrixCommitment: body/data rows ===
-BEFORE:
-<View key={`row-amt-${r}`} style={[styles.tr, r1 === rowsWithMetrics.length - 1 ? styles.trLast : {}]}>
-AFTER:
-<View key={`row-amt-${r}`} style={[styles.tr, r1 === rowsWithMetrics.length - 1 ? styles.trLast : {}, { alignItems: "center" }]}>
+Before:
+{rowsWithMetrics.length > 0 && (
+  <View style={[styles.tr, styles.trLast, styles.trTotalsReserve]} wrap={false}>
+After:
+{rowsWithMetrics.length > 0 && (
+  <View style={[styles.tr, styles.trLast, styles.trTotalsReserve, { alignItems: "center" }]} wrap={false}>
 
-=== CHANGE 3 — MatrixCommitment: totals row ===
-BEFORE (the MatrixCommitment CAS PD Totals row):
-<View style={[styles.tr, styles.trLast, styles.trTotalsReserve]} wrap={false}>
-AFTER:
-<View style={[styles.tr, styles.trLast, styles.trTotalsReserve, { alignItems: "center" }]} wrap={false}>
+2) MatrixCommitment – body/data rows
+Context: inside function MatrixCommitment, rowsWithMetrics map for commitment rows
 
-CONSTRAINTS:
-- Do NOT modify styles.tr (it's shared).
-- Add alignItems: "center" ONLY to: MatrixCount totals row, MatrixCommitment body rows, MatrixCommitment totals row.
-- Do NOT add it to MatrixCount body rows (Geoff only asked for the Accounts totals row).
-- Do NOT touch Detail table, Subreports, or any other rows.
-- The two totals-row JSX lines are identical between matrices — be careful to edit the RIGHT one in each matrix (Change 1 = MatrixCount, Change 3 = MatrixCommitment). Show enough surrounding context in the diff to confirm which matrix each edit is in.
-- Show the FULL diff.
+Before:
+{rowsWithMetrics.length > 0 ? rowsWithMetrics.map((r, ri) => (
+  <View key={`row-amt-${ri}`} style={[styles.tr, ri === rowsWithMetrics.length - 1 ? styles.trLast : {}]}>
+
+After:
+{rowsWithMetrics.length > 0 ? rowsWithMetrics.map((r, ri) => (
+  <View key={`row-amt-${ri}`} style={[styles.tr, ri === rowsWithMetrics.length - 1 ? styles.trLast : {}, { alignItems: "center" }]}>
+
+3) MatrixCommitment – CAS PD Totals row
+Context: inside function MatrixCommitment, totals row
+
+Before:
+{rowsWithMetrics.length > 0 && (
+  <View style={[styles.tr, styles.trLast, styles.trTotalsReserve]} wrap={false}>
+
+After:
+{rowsWithMetrics.length > 0 && (
+  <View style={[styles.tr, styles.trLast, styles.trTotalsReserve, { alignItems: "center" }]} wrap={false}>
+
+Notes:
+- styles.tr was not modified; alignItems is only applied inline on the specified matrix rows.
+- MatrixCount body rows remain unchanged per directive.
+- Detail table, distribution subreports, and any other sections were untouched.
+- Business logic, calculations, and render flow remain intact.
+
+These edits vertically center the targeted rows without affecting shared styles or unrelated components.

@@ -1,25 +1,24 @@
-READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT modify data.
+READ-ONLY SQL VERIFICATION. Run these SELECTs only — do NOT modify any data or code. Just show me the numbers.
 
-Files (read ONCE each, findings only, no edits):
-- backend/src/Casrr.Infrastructure/SqlServer/SqlScorecardResultsReportRepository.cs
-- backend/src/Casrr.Application/Reporting/ScorecardResults/ScorecardResultsReportService.cs
-- frontend/src/components/pdf/ScorecardResultsPDF.tsx
+Use a sample review set (e.g. the Review_ids for sample 357 or whichever is currently tested).
 
-Geoff confirmed the de-dup rules:
-- Uniqueness key: Review_id + Scorecard_id_bank
-- De-dupe at Review_id + Scorecard_id_bank + PD/LGD combo (so identical rows collapse, but same Bank ID with DIFFERENT PD/LGD stays visible to reveal bad data)
-- Applies to BOTH the summary count (Item 3) and the details table (Item 4), using the same de-duped population so totals reconcile with rows.
+-- 1. Current raw account count (what report shows now)
+SELECT COUNT(*) AS RawCount
+FROM dbo.[02_CORE_04_Accounts]
+WHERE [Review_id] IN (<sample review ids>);
 
-Show me ONLY (no edits):
+-- 2. De-duped count per Geoff's rule (Review_id + Scorecard_id_bank + all PD/LGD)
+SELECT COUNT(*) AS DedupedCount FROM (
+  SELECT DISTINCT [Review_id], [Scorecard_id_bank], [Bank_PD], [Bank_LGD], [CAS_PD], [CAS_LGD]
+  FROM dbo.[02_CORE_04_Accounts]
+  WHERE [Review_id] IN (<sample review ids>)
+) d;
 
-1. PopulateScorecardsAsync — the FULL current SQL (SELECT + FROM + WHERE + ORDER BY), with EVERY column selected. I need exact column names for Review_id, Scorecard_id_bank, Bank_PD, Bank_LGD, CAS_PD, CAS_LGD, Scorecard_assessment, and any transaction/date columns.
+-- 3. Show any cases where same Review_id + Scorecard_id_bank has DIFFERING PD/LGD (the bad-data reveal Geoff mentioned)
+SELECT [Review_id], [Scorecard_id_bank], COUNT(DISTINCT CONCAT([Bank_PD],'|',[Bank_LGD],'|',[CAS_PD],'|',[CAS_LGD])) AS DistinctRatingCombos
+FROM dbo.[02_CORE_04_Accounts]
+WHERE [Review_id] IN (<sample review ids>)
+GROUP BY [Review_id], [Scorecard_id_bank]
+HAVING COUNT(DISTINCT CONCAT([Bank_PD],'|',[Bank_LGD],'|',[CAS_PD],'|',[CAS_LGD])) > 1;
 
-2. ComputeTotalsAsync — the FULL current SQL (the COUNT(*) ... GROUP BY Scorecard_assessment).
-
-3. In the service layer (ScorecardResultsReportService): is there any post-processing between the repo and the response, or does it pass repo rows straight through? Show where totals and detail rows are assembled.
-
-4. In ScorecardResultsPDF.tsx buildGroups: confirm it just renders whatever rows come from backend (no dedup) — so if I dedup in the backend, both the count and details will reflect it. Show how count/totals are consumed.
-
-5. Confirm the exact WHERE/scope: results are already filtered by Review_id IN (...). So de-dup needs to be WITHIN that set, keyed by Review_id + Scorecard_id_bank + PD/LGD.
-
-Read once. Findings only. No edits.
+Show me the three results. No edits.

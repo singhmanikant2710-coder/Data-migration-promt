@@ -1,6 +1,26 @@
-#186 — CRM Scorecard Results, Items 3 & 4 (count & details by unique Scorecard ID) — Clarification Needed Before Implementation
-Items 1, 2, and 5 are complete and pushed. For Items 3 and 4 (counting and listing by unique Scorecard ID instead of by account), I've analysed the data layer and need a few business rules confirmed before implementing, as the change affects the numbers shown on this report:
-Uniqueness definition: The data has two ID fields — Scorecard_id_bank and Scorecard_id_system (no single unified ID). Should "unique scorecard" be defined by the bank ID, the system ID, or the combination of both?
-Handling duplicates with differing values: The same scorecard ID can appear on multiple account rows, and those rows can differ in assessment, scorecard type, PD/LGD values, or date. When de-duplicating, which record should we keep — e.g. the latest by scorecard date, the latest transaction, or another rule?
-Scope: Should uniqueness be evaluated within each review, or across the whole selected dataset?
-Both the summary counts (Item 3) and the detail tables (Item 4) must use the same definition so the totals reconcile with the rows shown, so I'd like to lock these rules before coding. Once confirmed, I'll implement in the backend (so counts and details stay consistent) and validate with before/after SQL checks.
+READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT edit any file.
+
+File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+
+Read ONCE. Findings only, no edits. Show me the following.
+
+=== ITEM 1 — Font 11 for matrices + table headers (light red highlighted) ===
+1. Identify the matrix tables and their table-header styles (the "light red highlighted" headers). Show the style object(s) controlling their fontSize and current value.
+2. Flag if these header styles are SHARED across multiple tables/matrices.
+
+=== ITEM 2 — Font 9 for blue column headers + values ===
+3. Identify the "blue column headers" and their VALUES in the matrices. Show the style object(s) controlling fontSize for both the blue headers and the value cells. Current values.
+4. Flag sharing — is the blue-header style and the value style used in multiple places?
+
+=== ITEM 3 — Vertical centering ===
+5. In the Accounts matrix: find the "CAS PD Totals" row. Show its cell styles — specifically alignItems / justifyContent / textAlign / any vertical alignment. Why might it not be vertically centered?
+6. In the Commitment matrix: find the value cells and totals. Show their vertical-alignment styles. 
+7. Show the base cell style these use, and flag if shared.
+
+=== ITEM 4 — Rename + reposition filter payload ===
+8. Search for "Current Filter Payload" / "APPLIED REPORT FILTERS" / "Applied Report Filters" — show every occurrence with surrounding JSX and which Page/branch.
+9. Show the Document structure: which Page holds the details table, and the separate Page holding the filter payload. I need to see if I can move the filter block into the details Page's flow (like we did for CrmFindingsObservations), and whether the details Page auto-flows. Show the details-table component/Page and where the filter Page sits.
+10. Does the details Page / component receive `filters`? Show its props.
+
+=== SHARED CHECK ===
+11. List

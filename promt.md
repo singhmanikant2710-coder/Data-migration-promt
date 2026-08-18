@@ -1,21 +1,42 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/CrmSummaryPDF.tsx
 
-File: frontend/src/components/pdf/CrmSummaryPDF.tsx
+Several refinements to the Scorecard Assessment table (Geoff #182 follow-up). Total column width must stay exactly 100%.
 
-Geoff wants several refinements to the Scorecard Assessment table. Show me ONLY (no edits):
+=== CHANGE 1 — "CAS PD" header to two lines (match BANK PD/LGD, CAS LGD) ===
+BEFORE:
+<Text style={styles.thText}>CAS PD</Text>
+AFTER:
+<Text style={styles.thText}>CAS{"\n"}PD</Text>
 
-=== Column headers (items 1, 2) ===
-1. The Scorecard Assessment table header row JSX — the header cells for Scorecard ID, Date, Bank PD, Bank LGD, CAS PD, CAS LGD, Scorecard Type, Scorecard Assessment. Show each header cell's full style array and current textAlign.
-2. The header cell style (th) and header text style (thText) definitions — current textAlign, and any height/padding.
-3. Show exactly how "CAS PD" / "CAS LGD" / "BANK PD" / "BANK LGD" header text is rendered (are they single strings? Can I make "CAS PD" wrap to two lines?).
+(Also confirm BANK PD, BANK LGD, CAS LGD already render two-line; if BANK PD is still one line, apply same: "BANK{"\n"}PD" etc. But per screenshot only CAS PD needs it. Only change CAS PD unless BANK PD is also single-line.)
 
-=== Values (item 3) ===
-4. The VALUE cells for CAS PD and CAS LGD (data rows) — their current textAlign. Show the value cell JSX + styles.
+=== CHANGE 2 — Center CAS PD and CAS LGD VALUES (mirror BANK PD/LGD) ===
+BEFORE (CAS PD value):
+<View style={[styles.td, styles.sc5]}><Text style={styles.tdText}>{out((row as any)?.casPd)}</Text></View>
+AFTER:
+<View style={[styles.td, styles.sc5]}><Text style={[styles.tdText, { textAlign: "center", width: "100%" }]}>{out((row as any)?.casPd)}</Text></View>
 
-=== Column widths (items 4, 5) ===
-5. All column width classes sc1-sc8 with current % values (we previously set sc1=21.5%, sc3-6=7%/8%, sc8=21.5% etc — show ACTUAL current values). Confirm which sc maps to which column (Scorecard ID, Date, Bank PD, Bank LGD, CAS PD, CAS LGD, Type, Assessment).
+BEFORE (CAS LGD value):
+<View style={[styles.td, styles.sc6]}><Text style={styles.tdText}>{out((row as any)?.casLgd)}</Text></View>
+AFTER:
+<View style={[styles.td, styles.sc6]}><Text style={[styles.tdText, { textAlign: "center", width: "100%" }]}>{out((row as any)?.casLgd)}</Text></View>
 
-=== Header height (item 6) ===
-6. The th style padding/height. For reference, show another table's header (e.g. the findings table th) padding/height to see what "mirror other tables" means — what's the target smaller height.
+=== CHANGE 3 — Rebalance widths: reduce PD/LGD, add to Scorecard ID + Assessment ===
+Total stays 100%.
+BEFORE -> AFTER:
+sc1: 21.5% -> 24%     (Scorecard ID, more space)
+sc3: 7% -> 6%         (Bank PD)
+sc4: 7% -> 6%         (Bank LGD)
+sc5: 8% -> 6%         (CAS PD)
+sc6: 7% -> 6%         (CAS LGD)
+sc8: 21.5% -> 24%     (Scorecard Assessment, more space)
+(sc2=10%, sc7=18% unchanged. New total: 24+10+6+6+6+6+18+24 = 100%.)
 
-Read once. Findings only. No edits. Flag shared styles.
+For each, update BOTH flexBasis and width to the new percentage.
+
+CONSTRAINTS:
+- Keep total width exactly 100%.
+- Do NOT change the shared th/thText style definitions (only per-cell/value changes and width classes).
+- Do NOT change sc2, sc7.
+- Do NOT touch other tables or files.
+- Show the FULL diff.

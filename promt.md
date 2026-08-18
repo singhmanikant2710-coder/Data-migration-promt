@@ -1,15 +1,28 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+Fix: The minPresenceAhead={40} on the heading Text did not prevent orphaning (React-PDF 4.3.2 handles this more reliably via wrap={false} on a View). For the two BOUNDED distribution sections (Subreport03_DistByCount and Subreport04_DistByExposure, ~16 rows max), wrap the heading + table together by adding wrap={false} to their existing outer <View>, so the heading and its table always stay on the same page. Also remove the now-unnecessary minPresenceAhead from these two headings.
 
-minPresenceAhead={40} on the heading Text did not fix the orphan. I want to wrap the heading + table together for the BOUNDED distribution sections. Show me ONLY (no edits):
+=== Subreport03_DistByCount ===
+1. Add wrap={false} to the outer <View>:
+BEFORE: <View>   (the outer view wrapping the "Final PD Distribution (Count)" heading + table)
+AFTER:  <View wrap={false}>
 
-1. Subreport04_DistByExposure — the COMPLETE JSX from its outer <View> through the heading and the entire table to the closing </View>. I need to see the exact wrapping structure so I can wrap heading+table in a single <View wrap={false}> (this table is bounded ~16 rows, so wrap={false} is safe).
+2. Remove minPresenceAhead from its heading:
+BEFORE: <Text style={styles.sectionTitle} minPresenceAhead={40}>Final PD Distribution (Count)</Text>
+AFTER:  <Text style={styles.sectionTitle}>Final PD Distribution (Count)</Text>
 
-2. Subreport03_DistByCount — same complete JSX.
+=== Subreport04_DistByExposure ===
+3. Add wrap={false} to the outer <View>:
+BEFORE: <View>   (the outer view wrapping the "Final PD Distribution (Commitment)" heading + table)
+AFTER:  <View wrap={false}>
 
-3. Confirm: for these two bounded tables, is the outer <View> already a wrapper containing BOTH heading and table? If yes, I can just add wrap={false} to that existing outer View. Show me that outer View's current props.
+4. Remove minPresenceAhead from its heading:
+BEFORE: <Text style={styles.sectionTitle} minPresenceAhead={40}>Final PD Distribution (Commitment)</Text>
+AFTER:  <Text style={styles.sectionTitle}>Final PD Distribution (Commitment)</Text>
 
-4. What React-PDF version is in use (check package.json import or a comment)? Some versions handle minPresenceAhead on Text vs View differently.
-
-Read once. Findings only. No edits.
+CONSTRAINTS:
+- ONLY add wrap={false} to the outer <View> of Subreport03_DistByCount and Subreport04_DistByExposure, and remove minPresenceAhead from those two headings.
+- Do NOT change Subreport01/02 or the matrices (leave their minPresenceAhead as-is for now — those tables can be large, wrap={false} would be unsafe).
+- Do NOT modify the sectionTitle style, table rows, or any other structure.
+- Do NOT touch any other file.
+- Show the FULL diff. Be careful to add wrap={false} to the CORRECT outer View for each subreport (match by the heading text inside).

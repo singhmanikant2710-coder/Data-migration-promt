@@ -1,12 +1,34 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+Fix (Item 3, MatrixCommitment body rows): The diagonal value cells (tdClamp: padding 2, fontSize 9) and the right-side Bank PD Totals / # Changes / % Change cells (td: padding 6, fontSize 10) sit at different vertical positions within the same row because of mismatched padding and font size. Align them by giving the three right-side cells the same padding (2) and fontSize (9) as the value cells. Do NOT use alignItems (it caused line artifacts) and do NOT add tdClamp to these cells (they hold large numbers that must not clip).
 
-The MatrixCommitment body values don't vertically align across a row — the diagonal value cells sit higher than the "Bank PD Totals" column values in the same row. I need to center them WITHOUT alignItems on the row (that caused line artifacts). Show me ONLY (no edits):
+In the MatrixCommitment BODY rows, update the three right-side cells:
 
-1. The full MatrixCommitment body row JSX — the row <View> and EVERY child cell (the diagonal/value cells with tdClamp, the empty cells, the Bank PD Totals cell, # Changes, % Change cells). Show the complete style array on each.
-2. styles.tdClamp definition (all properties).
-3. styles.td definition (padding, lineHeight, any height).
-4. The difference between the value cells (which use tdClamp) and the Bank PD Totals / # Changes cells (which may NOT use tdClamp) — this padding/clamp difference is likely why they sit at different vertical positions.
+BEFORE (sum cell):
+<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center" }]}>{r.sum === 0 ? "0.0" : fmt(r.sum)}</Text>
+AFTER:
+<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center", fontSize: 9, padding: 2 }]}>{r.sum === 0 ? "0.0" : fmt(r.sum)}</Text>
 
-Read once. Findings only. No edits. I want to equalize vertical position via consistent padding/lineHeight per cell, not alignItems.
+BEFORE (rowChanges cell):
+<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center" }]}>{r.rowChanges === 0 ? "0.0" : fmt(r.rowChanges)}</Text>
+AFTER:
+<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center", fontSize: 9, padding: 2 }]}>{r.rowChanges === 0 ? "0.0" : fmt(r.rowChanges)}</Text>
+
+BEFORE (rowPct cell):
+<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center" }, styles.tdLast]}>{`${r.rowPct.toFixed(1)}%`}</Text>
+AFTER:
+<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center", fontSize: 9, padding: 2 }, styles.tdLast]}>{`${r.rowPct.toFixed(1)}%`}</Text>
+
+Also update the fromPd LABEL cell (leftmost) to match so the whole row aligns:
+BEFORE:
+<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0 }, styles.tdCenter]}>{String(r.fromPd)}</Text>
+AFTER:
+<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, fontSize: 9, padding: 2 }, styles.tdCenter]}>{String(r.fromPd)}</Text>
+
+CONSTRAINTS:
+- ONLY change the MatrixCommitment BODY row cells (label + sum + rowChanges + rowPct). Add fontSize: 9 and padding: 2 to match the value cells.
+- Do NOT add tdClamp/overflow:hidden to these cells (large numbers must not clip).
+- Do NOT use alignItems.
+- Do NOT change the diagonal value cells (already fontSize 9, padding 2 via tdClamp).
+- Do NOT touch MatrixCount, Detail, Subreports, or shared styles.
+- Show the FULL diff.

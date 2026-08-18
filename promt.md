@@ -1,34 +1,15 @@
-Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix (Item 3, MatrixCommitment body rows): The diagonal value cells (tdClamp: padding 2, fontSize 9) and the right-side Bank PD Totals / # Changes / % Change cells (td: padding 6, fontSize 10) sit at different vertical positions within the same row because of mismatched padding and font size. Align them by giving the three right-side cells the same padding (2) and fontSize (9) as the value cells. Do NOT use alignItems (it caused line artifacts) and do NOT add tdClamp to these cells (they hold large numbers that must not clip).
+File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-In the MatrixCommitment BODY rows, update the three right-side cells:
+For Item 4 (rename "Current Filter Payload" -> "Applied Report Filters" + move it directly below the details table). Show me ONLY (no edits):
 
-BEFORE (sum cell):
-<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center" }]}>{r.sum === 0 ? "0.0" : fmt(r.sum)}</Text>
-AFTER:
-<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center", fontSize: 9, padding: 2 }]}>{r.sum === 0 ? "0.0" : fmt(r.sum)}</Text>
+1. The has-items branch of CrmPdGradeMigrationDocument — the full Document return. Show every <Page>: the summary page, DetailTablePages, and the separate filter Page. Show how DetailTablePages is rendered and where the filter Page sits relative to it.
 
-BEFORE (rowChanges cell):
-<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center" }]}>{r.rowChanges === 0 ? "0.0" : fmt(r.rowChanges)}</Text>
-AFTER:
-<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center", fontSize: 9, padding: 2 }]}>{r.rowChanges === 0 ? "0.0" : fmt(r.rowChanges)}</Text>
+2. The DetailTablePages / DetailTablePage components — how they chunk (22 rows/page), and what's the LAST content inside the last detail page before its footer. Do these receive `filters`?
 
-BEFORE (rowPct cell):
-<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center" }, styles.tdLast]}>{`${r.rowPct.toFixed(1)}%`}</Text>
-AFTER:
-<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, textAlign: "center", fontSize: 9, padding: 2 }, styles.tdLast]}>{`${r.rowPct.toFixed(1)}%`}</Text>
+3. Both "Current Filter Payload" blocks (has-items + no-items) with surrounding JSX + footer.
 
-Also update the fromPd LABEL cell (leftmost) to match so the whole row aligns:
-BEFORE:
-<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0 }, styles.tdCenter]}>{String(r.fromPd)}</Text>
-AFTER:
-<Text style={[styles.td, { flexBasis: "8%", flexGrow: 0, flexShrink: 0, fontSize: 9, padding: 2 }, styles.tdCenter]}>{String(r.fromPd)}</Text>
+4. Since details use manual chunking (separate Page per chunk), tell me: can I append the filter block to the LAST detail page's content (so it appears right after the details), or is it cleaner to keep the filter Page but just rename it? Show enough structure to judge.
 
-CONSTRAINTS:
-- ONLY change the MatrixCommitment BODY row cells (label + sum + rowChanges + rowPct). Add fontSize: 9 and padding: 2 to match the value cells.
-- Do NOT add tdClamp/overflow:hidden to these cells (large numbers must not clip).
-- Do NOT use alignItems.
-- Do NOT change the diagonal value cells (already fontSize 9, padding 2 via tdClamp).
-- Do NOT touch MatrixCount, Detail, Subreports, or shared styles.
-- Show the FULL diff.
+Read once. Findings only. No edits.

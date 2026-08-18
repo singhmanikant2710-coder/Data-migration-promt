@@ -1,10 +1,13 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
 
-File: frontend/src/components/pdf/CrmPdGradeMigrationPDF.tsx
+Fix (Item 1): The section headings (light-red highlighted titles like "PD GRADE MIGRATION BY NUMBER OF ACCOUNTS", "PD MIGRATION TOTALS BY ACCOUNT", "FINAL PD DISTRIBUTION", "DETAIL", etc.) should be font size 11. These all use styles.sectionTitle (currently fontSize 10). Change it to 11.
 
-Show me ONLY (no edits):
-1. The `sectionTitle` style object — its current fontSize and all properties.
-2. Every place styles.sectionTitle is used (grep) — list each usage with the heading text near it (e.g. "PD GRADE MIGRATION BY NUMBER OF ACCOUNTS", "DETAIL", "Current Filter Payload", etc.).
-3. Confirm whether changing sectionTitle fontSize to 11 would affect ONLY the light-red section headings, or also other things (like the filter payload heading).
+BEFORE (sectionTitle style): fontSize: 10
+AFTER  (sectionTitle style): fontSize: 11
 
-Read once. Findings only. No edits.
+CONSTRAINTS:
+- ONLY change fontSize 10 -> 11 in the sectionTitle style object.
+- Do NOT change fontWeight, color, marginBottom, borders, paddingBottom, textTransform, or anything else.
+- Do NOT touch any other style (headerTitle, th, thDark, td, footer, etc.).
+- Do NOT touch any other file.
+- Only edit this one file. Show the diff.

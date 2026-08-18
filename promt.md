@@ -1,30 +1,21 @@
-Single-file edit: frontend/src/components/pdf/CrmFindingsObservationsPDF.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix (Item 1a follow-up): Geoff wants the header DATE font to be 9 (mirroring CRM Summary, where the date is fontSize 9). Currently headerMeta (the date) is 14. Change ONLY headerMeta fontSize to 9. Leave headerTitle at 14.
+File: frontend/src/components/pdf/CrmSummaryPDF.tsx
 
-BEFORE (headerMeta style): fontSize: 14
-AFTER  (headerMeta style): fontSize: 9
+Geoff wants several refinements to the Scorecard Assessment table. Show me ONLY (no edits):
 
-CONSTRAINTS:
-- ONLY change fontSize 14 -> 9 in the headerMeta style object.
-- Do NOT change headerTitle (stays 14).
-- Do NOT change color, textAlign, or anything else in headerMeta.
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
+=== Column headers (items 1, 2) ===
+1. The Scorecard Assessment table header row JSX — the header cells for Scorecard ID, Date, Bank PD, Bank LGD, CAS PD, CAS LGD, Scorecard Type, Scorecard Assessment. Show each header cell's full style array and current textAlign.
+2. The header cell style (th) and header text style (thText) definitions — current textAlign, and any height/padding.
+3. Show exactly how "CAS PD" / "CAS LGD" / "BANK PD" / "BANK LGD" header text is rendered (are they single strings? Can I make "CAS PD" wrap to two lines?).
 
-Single-file edit: frontend/src/components/pdf/CrmFindingsObservationsPDF.tsx
+=== Values (item 3) ===
+4. The VALUE cells for CAS PD and CAS LGD (data rows) — their current textAlign. Show the value cell JSX + styles.
 
-Fix (Item 2 follow-up): "Observation" still runs into the border. Widen SEVERITY (f3) by one more step and reduce COMMENTS (f6) to compensate.
+=== Column widths (items 4, 5) ===
+5. All column width classes sc1-sc8 with current % values (we previously set sc1=21.5%, sc3-6=7%/8%, sc8=21.5% etc — show ACTUAL current values). Confirm which sc maps to which column (Scorecard ID, Date, Bank PD, Bank LGD, CAS PD, CAS LGD, Type, Assessment).
 
-BEFORE:
-f3: { flexGrow: 2, flexShrink: 1, flexBasis: 0 }   // SEVERITY
-f6: { flexGrow: 7, flexShrink: 1, flexBasis: 0 }   // COMMENTS
-AFTER:
-f3: { flexGrow: 3, flexShrink: 1, flexBasis: 0 }   // SEVERITY
-f6: { flexGrow: 6, flexShrink: 1, flexBasis: 0 }   // COMMENTS
+=== Header height (item 6) ===
+6. The th style padding/height. For reference, show another table's header (e.g. the findings table th) padding/height to see what "mirror other tables" means — what's the target smaller height.
 
-CONSTRAINTS:
-- ONLY change flexGrow for f3 (2->3) and f6 (7->6).
-- Do NOT change f1, f2, f4, f5, or flexShrink/flexBasis.
-- Do NOT touch any other file.
-- Only edit this one file. Show the diff.
+Read once. Findings only. No edits. Flag shared styles.

@@ -1,13 +1,18 @@
-READ-ONLY. Diagnostics only. Do NOT change anything. Do NOT summarize with comments — show the ACTUAL JSX code.
+Show me the actual source code — NOT a summary, NOT comments, NOT placeholders like /* Grid */.
 
 File: frontend/src/app/load-samples/page.tsx
 
-Show me the LITERAL JSX (not summaries, not /* comments */) for these two sections:
+Use the view/read tool to open the file and paste the REAL lines of code (with line numbers) for the range that contains BOTH:
+1. The "Select Sample" section (the JSX block that renders the dark-blue "Select Sample" header, its filter fields, its table, and pagination).
+2. The "Load Samples" section (the JSX block that renders the "Load Samples" header, its table, and pagination).
 
-1. The "Select Sample" section: starting from the <div> that contains the dark-blue "Select Sample" header, show every line of JSX including all nested <div className="...">, the filters, the <div className="overflow-x-auto"> (and the min-w-[900px] div inside it), the <DataTable>, and pagination — until that section's closing </div>. Show the real className strings.
+Specifically:
+- Run a search for the text "Select Sample" and "Load Samples" in the return/JSX of the component to locate the two header <div>s.
+- Then paste the full JSX from just before the "Select Sample" header <div> through the end of the "Load Samples" section's closing </div>.
+- Include EVERY nested <div className="...">, the <div className="overflow-x-auto"> wrappers, the <div className="min-w-[900px]"> wrapper, the <DataTable ... /> tags, and pagination.
 
-2. The "Load Samples" section: the same — from the <div> with the "Load Samples" header, through its grid wrapper, <DataTable>, pagination, to its closing </div>.
-
-Paste the actual code lines. Do NOT replace code with placeholder comments like /* Grid */ — I need the real classNames and nesting to place the scroll wrappers correctly.
-
-Read once. Findings only. No edits.
+Rules:
+- Paste the literal code exactly as it is in the file, with real className strings.
+- Do NOT replace any code with comments or descriptions.
+- Do NOT edit anything — read only.
+- If the block is long, that's fine — paste all of it.

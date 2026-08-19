@@ -1,12 +1,12 @@
 READ-ONLY. Diagnostics only. Do NOT change anything.
 
-File: frontend/src/app/load-samples/page.tsx
+File: @/components/ui/SearchableSelect (the SearchableSelect component)
 
-Bug #188: The CRO Name dropdown doesn't show all its selections — it runs off the page (gets cut off) when there are more than 5 samples showing in the Select Sample window. Show me ONLY (no edits):
+For the flip-up fix, show me ONLY (no edits):
+1. The FULL position-calculation code block — where it computes menuPos (top, left, width, openUp). Show the getBoundingClientRect() usage, the `const openUp = false` line, the top clamping, and setMenuPos. I need the exact current logic to add flip-up.
+2. The menuMaxHeight variable — its default value (320) and where it's defined/used.
+3. Where menuPos.top is applied to the portal div (the style={{ top: menuPos.top, ... }}).
+4. Is openUp used anywhere else in the render (e.g. to adjust styling/margin when opening up)? Show any openUp references.
+5. Confirm: does the component measure the menu's actual height, or use a fixed menuMaxHeight? (This affects how I calculate whether to flip up.)
 
-1. The CRO Name dropdown component/element — how it's rendered (is it a custom dropdown, a <select>, or a component like SearchableSelect?). Show the JSX and any wrapping container.
-2. The dropdown's list/menu container styles — position (absolute/relative?), max-height, overflow, z-index. Show what controls how the dropdown list is displayed and whether it can scroll.
-3. The parent container(s) of the sample grid rows — do any have overflow: hidden / overflow: auto that would clip the dropdown when it opens? Show the grid/row wrapper styles.
-4. Is the CRO Name dropdown the same component used elsewhere (shared), or specific to this grid? If shared (e.g. SearchableSelect), note that so a fix here doesn't break other usages.
-
-Read once. Findings only. No edits. I want to find why the dropdown is clipped/runs off page — likely a parent overflow:hidden clipping an absolutely-positioned dropdown, or the dropdown lacking max-height + scroll.
+Read once. Findings only. No edits.

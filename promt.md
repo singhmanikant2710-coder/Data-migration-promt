@@ -1,18 +1,16 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/AppShell.tsx
 
-File: frontend/src/components/AppShell.tsx
+Fix: The <main> content wrapper uses overflow-x-hidden, which CLIPS page content wider than the viewport (cutting off the right side — Search button, pagination) instead of allowing horizontal scroll. Change it to overflow-x-auto so wide page content scrolls instead of being clipped.
 
-I'm considering changing the <main> wrapper's `overflow-x-hidden` to `overflow-x-auto` so wide content scrolls instead of being clipped. Before doing so, show me ONLY (no edits):
+BEFORE:
+<main className="flex-1 min-w-0 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-default scrollbar-gutter-stable p-4 md:p-6 pb-16">
 
-1. The COMPLETE <main> element and its full className, plus the div directly inside it that wraps {children}. Show exactly:
-   <main className="...">
-     <div className="...">{children}</div>
-   </main>
+AFTER:
+<main className="flex-1 min-w-0 min-h-0 overflow-x-auto overflow-y-auto scrollbar-default scrollbar-gutter-stable p-4 md:p-6 pb-16">
 
-2. Does the <main> have a fixed height or use flex in a way where changing overflow-x could also affect vertical scroll (overflow-y-auto is already there)? Show the height/flex classes so I confirm changing overflow-x won't disturb overflow-y.
-
-3. Is there any horizontal scrollbar styling (scrollbar-gutter-stable, scrollbar-default) that interacts with overflow-x? Show those classes.
-
-4. Confirm: the header (with whitespace-nowrap logo+title) is a SIBLING of main (outside it), or inside main? If the header is outside main, then main's overflow-x won't fix the header clipping — only the page-content clipping. Clarify which parts are inside vs outside main.
-
-Read once. Findings only. No edits. I want to confirm that overflow-x-hidden -> overflow-x-auto is safe and actually fixes the visible clipping.
+CONSTRAINTS (UAT is running — this is a SHARED layout affecting ALL pages):
+- ONLY change overflow-x-hidden -> overflow-x-auto on this one <main> element.
+- Do NOT change overflow-y-auto, the flex classes, min-w-0, min-h-0, padding, or scrollbar classes.
+- Do NOT change the header, footer, sidebar, or the inner content div.
+- Do NOT touch any other file.
+- Show the diff.

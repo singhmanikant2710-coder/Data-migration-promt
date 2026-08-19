@@ -1,16 +1,12 @@
-Single-file edit: frontend/src/components/AppShell.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix: The <main> content wrapper uses overflow-x-hidden, which CLIPS page content wider than the viewport (cutting off the right side — Search button, pagination) instead of allowing horizontal scroll. Change it to overflow-x-auto so wide page content scrolls instead of being clipped.
+File: frontend/src/app/load-samples/page.tsx
 
-BEFORE:
-<main className="flex-1 min-w-0 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-default scrollbar-gutter-stable p-4 md:p-6 pb-16">
+In NORMAL mode the page fits the screen fine. Only in CREATE mode (new sample row) does the grid become too wide and cut off the page — because in create mode the EIC/Type/Target dropdowns are widened AND the inner div has min-w-[1000px].
 
-AFTER:
-<main className="flex-1 min-w-0 min-h-0 overflow-x-auto overflow-y-auto scrollbar-default scrollbar-gutter-stable p-4 md:p-6 pb-16">
+Show me ONLY (no edits):
+1. The current width classes on the EIC Name, Type, Target (BU) cells in CREATE/edit mode (the isCreating widths — earlier set to w-48/w-40). Show them.
+2. The min-w-[1000px] div for the Select Sample grid — confirm its current value.
+3. Roughly, in create mode, add up: Sample Name + Start date (w-10rem) + End date (w-10rem) + EIC (w-48) + Type (w-40) + Target (w-48) + Save/Cancel buttons. Is the total likely more than 1000px? This tells me whether to reduce the isCreating dropdown widths OR lower the min-w so it fits the screen.
 
-CONSTRAINTS (UAT is running — this is a SHARED layout affecting ALL pages):
-- ONLY change overflow-x-hidden -> overflow-x-auto on this one <main> element.
-- Do NOT change overflow-y-auto, the flex classes, min-w-0, min-h-0, padding, or scrollbar classes.
-- Do NOT change the header, footer, sidebar, or the inner content div.
-- Do NOT touch any other file.
-- Show the diff.
+Read once. Findings only. No edits.

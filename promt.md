@@ -1,36 +1,12 @@
-Subject: UAT Update – CAS Changes & QA Deployment
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Hi Geoff,
+File: frontend/src/app/load-samples/page.tsx
 
-I’m sharing the updated Excel sheet with you for your reference. I’ve also completed the minor cosmetic changes you mentioned.
+Bug #188: The CRO Name dropdown doesn't show all its selections — it runs off the page (gets cut off) when there are more than 5 samples showing in the Select Sample window. Show me ONLY (no edits):
 
-For the changes that were not visible or were not working as expected on your side, I rechecked them from my end and confirmed that they are working as expected. I have also redeployed the latest changes to the QA environment for another round of validation.
+1. The CRO Name dropdown component/element — how it's rendered (is it a custom dropdown, a <select>, or a component like SearchableSelect?). Show the JSX and any wrapping container.
+2. The dropdown's list/menu container styles — position (absolute/relative?), max-height, overflow, z-index. Show what controls how the dropdown list is displayed and whether it can scroll.
+3. The parent container(s) of the sample grid rows — do any have overflow: hidden / overflow: auto that would clip the dropdown when it opens? Show the grid/row wrapper styles.
+4. Is the CRO Name dropdown the same component used elsewhere (shared), or specific to this grid? If shared (e.g. SearchableSelect), note that so a fix here doesn't break other usages.
 
-I’ve included all the details and updates in the Excel sheet for your reference.
-
-Whenever you get a chance to perform UAT, please let us know if you come across any issue that is not visible in QA or if you notice any unexpected behavior/bug. We’ll be happy to investigate and address it.
-
-Thank you for your time and continued support.
-
-Best regards,
-Manikant
-
-
-
-
-Subject: CASR New Functionality – Analysis & UAT Details
-
-Hi Sobhan,
-
-I wanted to share the CASR New Functionality Excel sheet with you for your reference.
-
-I have prepared this based on the new functionality that Geoff has been adding through the reported bugs. I have also documented my understanding and analysis of the expected behavior in the Excel sheet, along with the relevant details for each item.
-
-This is based on my current understanding and analysis of the functionality, so I would really appreciate your guidance if there are any areas that need clarification or correction.
-
-Please have a look whenever convenient, and let me know if you would like me to add or update anything in the analysis.
-
-Thank you for your time and guidance.
-
-Best regards,
-Manikant
+Read once. Findings only. No edits. I want to find why the dropdown is clipped/runs off page — likely a parent overflow:hidden clipping an absolutely-positioned dropdown, or the dropdown lacking max-height + scroll.

@@ -1,23 +1,14 @@
-Single-file edit: frontend/src/app/load-samples/page.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix: Restore readable create-mode field sizes and set the grid min-width so create-mode content scrolls fully (Save/Cancel are inside the scroll container, confirmed). Normal/search mode unchanged. Do NOT touch AppShell.
+Files: 
+- frontend/src/app/review-queue/page.tsx (the Review Queue page)
+- frontend/src/app/load-samples/page.tsx (for comparison)
 
-1. EIC Name — w-40 -> w-44 (create mode only):
-   wrapper: className={isCreating ? "w-44 min-w-0" : "w-28 min-w-0"}
-   SearchableSelect: className={isCreating ? "w-44" : "w-32"}
+The Review Queue page has the EXACT desired behaviour: the card fits the screen, and the wide table inside it scrolls horizontally WITHIN the card (with a scrollbar at the bottom of the grid). I want to apply the same pattern to Load Samples.
 
-2. Target (BU) — w-40 -> w-44 (create mode only):
-   wrapper: className={isCreating ? "w-44 min-w-0" : "w-28 min-w-0"}
-   SearchableSelect: className={isCreating ? "w-44" : "w-32"}
+Show me ONLY (no edits):
+1. In review-queue/page.tsx: the grid/table wrapper structure — the div(s) around its DataTable. Show the EXACT classNames: the outer card div, the overflow-x-auto wrapper, and any min-w / w-full on the inner div. I want to see how Review Queue achieves "card fits screen + inner table scrolls".
+2. In load-samples/page.tsx: the SAME wrapper structure around the Select Sample DataTable (the overflow-x-auto + min-w-[1200px] divs), so I can compare what's different.
+3. Specifically: does Review Queue use overflow-x-auto WITHOUT a large fixed min-w (letting the table's natural column widths trigger scroll), while Load Samples forces min-w-[1200px]? Compare the two approaches.
 
-3. Type — w-40 -> w-44 (create mode only):
-   Select: className={isCreating ? "w-44" : "w-28"}
-
-4. Select Sample grid inner div — min-w-[900px] -> min-w-[1200px] so create-mode scrolls fully to Save/Cancel:
-   <div className="min-w-[1200px]">
-
-CONSTRAINTS:
-- Non-creating widths stay w-28/w-32 (search/view mode unchanged).
-- Do NOT touch AppShell, shared components, DataTable, columns logic, handlers.
-- Load Samples grid min-w unchanged.
-- Show the diff.
+Read once. Findings only. No edits. I want to copy Review Queue's exact scroll pattern to Load Samples.

@@ -1,26 +1,36 @@
-READ-ONLY. Diagnostics only. Do NOT change ANYTHING. Do NOT edit. UAT is in progress — I only need to understand the current structure before any change.
+Single-file edit: frontend/src/app/load-samples/page.tsx
 
-FILE: frontend/src/app/load-samples/page.tsx
+Fix: The two card grids use `overflow-x-auto` on a div whose inner child has `min-w-max`. Because the scroll div lacks `w-full` and the inner uses unbounded `min-w-max`, the content stretches the whole card beyond the viewport, cutting off the right side of the page (Search button, pagination). Constrain the scroll container to full width and give the inner a bounded min-width so the table scrolls INSIDE the card instead of overflowing the page.
 
-Use the view/read tool. Paste the ACTUAL literal JSX code (with line numbers) — NOT summaries, NOT /* comments */. I need to see the real structure to plan a safe scroll fix without breaking anything.
+=== Select Sample card ===
+Line 2127 - add w-full to the scroll container:
+BEFORE:
+<div className="mt-3 border border-slate-200 rounded-lg shadow-sm overflow-x-auto">
+AFTER:
+<div className="mt-3 border border-slate-200 rounded-lg shadow-sm overflow-x-auto w-full">
 
-Show me:
+Line 2128 - replace min-w-max with a bounded min-width:
+BEFORE:
+<div className="min-w-max">
+AFTER:
+<div className="min-w-[1000px]">
 
-1. The complete "Select Sample" card — from its outermost wrapping <div> (the one forming the card / holding the blue "Select Sample" header) through: the header bar, the filter row (Sample Start Date, End Date, Year, Name, Closed, Search button), the "Showing X of Y" bar, the grid wrapper div(s), the <DataTable>, and pagination — down to that card's closing </div>. Include EVERY nested <div className="..."> exactly as written.
+=== Load Samples card ===
+Line 2322 - add w-full to the scroll container:
+BEFORE:
+<div className="mt-3 border border-slate-200 rounded-lg shadow-sm overflow-x-auto">
+AFTER:
+<div className="mt-3 border border-slate-200 rounded-lg shadow-sm overflow-x-auto w-full">
 
-2. The complete "Load Samples" card — same, from its outer <div> through header/buttons, the grid wrapper div(s), <DataTable>, pagination, to its closing </div>.
+Line 2323 - replace min-w-max with a bounded min-width:
+BEFORE:
+<div className="min-w-max">
+AFTER:
+<div className="min-w-[1000px]">
 
-3. Specifically point out (with line numbers) EVERY place that currently has:
-   - overflow-x-auto
-   - min-w-[...] or min-w-max
-   - max-w-... or w-full
-   - any fixed width / min-width class
-   in these two card sections.
-
-4. The outermost page container div and its className (the one wrapping both cards).
-
-RULES:
-- Paste real code lines with line numbers, exactly as in the file.
-- Do NOT replace code with descriptions or comments.
-- Do NOT edit anything — this is read-only for planning.
-- If long, paste all of it.
+CONSTRAINTS (UAT is running — must not break anything):
+- ONLY change these 4 lines (2127, 2128, 2322, 2323): add `w-full` to the two scroll containers, and change `min-w-max` -> `min-w-[1000px]` on the two inner divs.
+- Do NOT change any DataTable props, columns, render functions, dropdowns, date pickers, pagination, filters, state, or handlers.
+- Do NOT change any other div, className, or file.
+- Do NOT touch the outer page container (line 2034) or the filter rows.
+- Show the FULL diff of exactly these 4 line changes.

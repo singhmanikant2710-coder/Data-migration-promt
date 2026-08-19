@@ -1,103 +1,73 @@
-You need to fix ONLY the UI layout/responsiveness issue on the Samples page. 
-Do NOT change or break any existing business logic, functionality, API calls, state management, validation, sorting, filtering, pagination, CRUD behavior, or existing component behavior.
+The grid scrolling issue is now working correctly. DO NOT change the grid/table implementation again.
 
-I have attached screenshots for reference:
-1. Samples main page in normal mode.
-2. Samples page after clicking "Create Sample".
-3. Review Queue screen, which is the desired layout/scrolling reference.
+I tested the UI after your previous fix and attached the latest screenshots.
 
-CURRENT ISSUE:
-When I click "Create Sample" on the Samples page, the editable row makes some fields/columns unnecessarily wide. This causes the overall page to expand horizontally and the page/layout appears pushed or broken.
+The normal Samples page looks good.
 
-Also, on the main Samples page, the top filter boxes are unnecessarily large and some controls are getting too close/overlapping instead of maintaining a clean layout.
+However, there is ONE remaining issue in Create Sample mode:
 
-EXPECTED UI BEHAVIOR:
+The top filter/action row is still wider than the available page/container width. On the right side, the Search button is partially cut off / pushed outside the visible container.
 
-1. MAIN PAGE MUST REMAIN FIXED
-- The overall Samples page/container should remain within the viewport.
-- Do NOT introduce horizontal scrolling on the entire page.
-- Header, navigation, filters, buttons and surrounding layout must remain stable.
-- The page should not shift/push sideways when Create Sample is clicked.
+This means the top filter section is still causing horizontal overflow.
 
-2. TOP FILTER SECTION
-Keep these controls compact and properly aligned:
-- Sample Start Date
-- Sample End Date
-- Sample Year
-- Sample Name
-- Closed
-- Search
-- Clear
+Please fix ONLY this remaining issue.
 
-Reduce unnecessary widths where appropriate.
-Maintain consistent spacing between controls.
-No controls should overlap each other.
-No text, dropdown, calendar icon or button should be clipped.
-Do not unnecessarily increase the height of the filter section.
+Requirements:
 
-If the available viewport becomes smaller, the controls may wrap naturally, but they must never overlap or break the page.
+1. Keep the current grid implementation exactly as it is.
+   - Do NOT remove overflow-x-auto.
+   - Do NOT remove the grid horizontal scrollbar.
+   - Do NOT change DataTable behavior.
+   - Do NOT change table-fixed/min-width implementation.
 
-3. SAMPLE GRID
-The Samples grid contains many columns, so the GRID itself should handle horizontal scrolling.
+2. Fix ONLY the top filter/action row:
+   - Sample Start Date
+   - Sample End Date
+   - Sample Year
+   - Sample Name
+   - Closed
+   - Search
+   - Clear
 
-Use the Review Queue screenshot as the visual/reference pattern:
-- Main page remains fixed.
-- Grid/table has its own horizontal scrollbar.
-- Wide columns stay inside the grid.
-- Horizontal scrolling must happen ONLY inside the grid.
+3. These controls must fit completely inside the Samples page container.
+   - Search must never be cut off.
+   - Clear must never be cut off.
+   - No control should go outside the container.
+   - No page-level horizontal scrolling should be created.
 
-The horizontal scrollbar should remain available/visible for the grid when the content is wider than the available grid area.
+4. Use the available width efficiently.
+   - Keep the controls compact.
+   - Reduce unnecessary fixed/min widths if any.
+   - Allow the filter row to flex/wrap naturally when required.
+   - Do NOT give the entire page horizontal scrolling.
 
-4. CREATE SAMPLE MODE
-When "Create Sample" is clicked:
-- Editable inputs should remain fully usable.
-- Do not allow their width to expand the entire page.
-- Any extra width required by editable columns must remain contained inside the grid's scrollable area.
-- The overall page width must NOT increase.
-- The page must look structurally the same as the normal Samples page.
+5. Important:
+   The horizontal scrollbar should exist ONLY for the wide Sample/Load Samples grids, NOT for the filter section and NOT for the entire page.
 
-5. IMPORTANT: DO NOT COPY THE REVIEW QUEUE UI
-Use Review Queue ONLY as a reference for the layout/scroll behavior.
-Do not change Samples page functionality or styling unnecessarily.
+6. Preserve everything else:
+   - No business logic changes.
+   - No API changes.
+   - No state changes.
+   - No filtering/search behavior changes.
+   - No sorting/pagination changes.
+   - No Create Sample functionality changes.
+   - No unrelated refactoring.
 
-6. PRESERVE EXISTING CODE
-Before making changes:
-- Inspect the existing layout and identify the actual cause of the overflow/width issue.
-- Make the smallest possible change.
-- Reuse existing components, classes and patterns wherever possible.
-- Do not rewrite the page.
-- Do not refactor unrelated code.
-- Do not remove existing functionality.
-- Do not change data structures or APIs.
-- Do not change business logic.
-- Do not modify unrelated screens/components.
+Make the smallest possible CSS/layout-only change.
 
-7. VALIDATION
-After implementing the fix, verify BOTH states:
+Final expected behavior:
 
-A. Normal Samples page:
-- Top filters are aligned and compact.
-- No overlap.
-- No unnecessary page-level horizontal scroll.
-- Grid scroll works independently.
+MAIN PAGE
+→ fixed/stable
+→ no horizontal page overflow
 
-B. Create Sample mode:
-- Editable row works correctly.
-- All fields remain accessible.
-- Page does not expand or shift horizontally.
-- Grid can scroll horizontally when required.
-- No existing functionality is affected.
+FILTER ROW
+→ compact
+→ aligned
+→ all controls fully visible
+→ Search + Clear fully visible
 
-IMPORTANT:
-Do not make assumptions or make broad UI changes.
-First identify the specific CSS/layout/container causing the page-level overflow, then apply the minimal targeted fix.
-
-The final result should follow this principle:
-
-MAIN PAGE = FIXED / STABLE
-TOP FILTERS = COMPACT / ALIGNED
-GRID = INDEPENDENT HORIZONTAL SCROLL
-CREATE MODE = DOES NOT EXPAND THE PAGE
-EXISTING FUNCTIONALITY = 100% PRESERVED
-
-Before finishing, check for unintended changes and ensure the existing application still builds successfully.
+GRID
+→ independent horizontal scroll
+→ wide editable columns remain inside grid
+→ Create Sample does not expand the page

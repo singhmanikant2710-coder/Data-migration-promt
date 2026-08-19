@@ -1,12 +1,18 @@
 READ-ONLY. Diagnostics only. Do NOT change anything.
 
-File: frontend/src/app/load-samples/page.tsx (and its layout if relevant)
+File: frontend/src/components/AppShell.tsx
 
-The card grids now scroll correctly inside their cards. But the WHOLE page is still slightly wider than the screen — the left edge ("CASRR" logo) and right edge (Search button, pagination) get cut off. This is a PAGE-LEVEL overflow, not the cards.
+I'm considering changing the <main> wrapper's `overflow-x-hidden` to `overflow-x-auto` so wide content scrolls instead of being clipped. Before doing so, show me ONLY (no edits):
 
-Show me ONLY (no edits):
-1. The outermost page container (line ~2034: <div className="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-4">) and EVERYTHING that wraps it — go UP from line 2034 to the component's top-level return. Show any parent <div>, <main>, <section> and their classNames.
-2. Is this page wrapped by a layout file? Check for frontend/src/app/load-samples/layout.tsx OR a parent layout (frontend/src/app/layout.tsx). If a layout wraps this page with a sidebar/shell that has fixed width or padding, show that layout's main content wrapper and its className.
-3. Specifically look for: any element with a fixed width, a width larger than the viewport, negative margins, or missing overflow handling that would make the whole page exceed the screen width. Also check if there's a sidebar (the "«" pin icon on the left suggests a collapsible sidebar) whose width isn't accounted for.
+1. The COMPLETE <main> element and its full className, plus the div directly inside it that wraps {children}. Show exactly:
+   <main className="...">
+     <div className="...">{children}</div>
+   </main>
 
-Read once. Findings only. No edits. I want to find why the whole page (not the cards) exceeds the viewport width.
+2. Does the <main> have a fixed height or use flex in a way where changing overflow-x could also affect vertical scroll (overflow-y-auto is already there)? Show the height/flex classes so I confirm changing overflow-x won't disturb overflow-y.
+
+3. Is there any horizontal scrollbar styling (scrollbar-gutter-stable, scrollbar-default) that interacts with overflow-x? Show those classes.
+
+4. Confirm: the header (with whitespace-nowrap logo+title) is a SIBLING of main (outside it), or inside main? If the header is outside main, then main's overflow-x won't fix the header clipping — only the page-content clipping. Clarify which parts are inside vs outside main.
+
+Read once. Findings only. No edits. I want to confirm that overflow-x-hidden -> overflow-x-auto is safe and actually fixes the visible clipping.

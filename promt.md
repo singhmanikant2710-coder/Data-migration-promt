@@ -1,14 +1,38 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/app/load-samples/page.tsx
 
-Files: 
-- frontend/src/app/review-queue/page.tsx (the Review Queue page)
-- frontend/src/app/load-samples/page.tsx (for comparison)
+Fix: Make the Load Samples grids behave EXACTLY like the Review Queue page (card fits the screen, inner table scrolls horizontally within the card). Review Queue does NOT use a fixed min-w; instead it uses overflow-x-auto + a full-width DataTable, letting natural column widths trigger scroll. Remove the forced min-w-[...] wrapper and let the table scroll naturally.
 
-The Review Queue page has the EXACT desired behaviour: the card fits the screen, and the wide table inside it scrolls horizontally WITHIN the card (with a scrollbar at the bottom of the grid). I want to apply the same pattern to Load Samples.
+=== Select Sample grid ===
+BEFORE:
+<div className="mt-3 border border-slate-200 rounded-lg shadow-sm overflow-x-auto w-full">
+  <div className="min-w-[1200px]">
+    <DataTable<Sample> ... />
+  </div>
+</div>
 
-Show me ONLY (no edits):
-1. In review-queue/page.tsx: the grid/table wrapper structure — the div(s) around its DataTable. Show the EXACT classNames: the outer card div, the overflow-x-auto wrapper, and any min-w / w-full on the inner div. I want to see how Review Queue achieves "card fits screen + inner table scrolls".
-2. In load-samples/page.tsx: the SAME wrapper structure around the Select Sample DataTable (the overflow-x-auto + min-w-[1200px] divs), so I can compare what's different.
-3. Specifically: does Review Queue use overflow-x-auto WITHOUT a large fixed min-w (letting the table's natural column widths trigger scroll), while Load Samples forces min-w-[1200px]? Compare the two approaches.
+AFTER (remove the min-w wrapper, add w-full to DataTable — Review Queue pattern):
+<div className="mt-3 border border-slate-200 rounded-lg shadow-sm overflow-x-auto w-full">
+  <DataTable<Sample> ... className="w-full" />
+</div>
 
-Read once. Findings only. No edits. I want to copy Review Queue's exact scroll pattern to Load Samples.
+(If the DataTable already has a className, append " w-full" to it instead of overwriting. Do NOT change any other DataTable prop.)
+
+=== Load Samples (child) grid ===
+Apply the SAME change — remove its min-w-[1000px] inner wrapper and add w-full to that DataTable, so it also matches Review Queue.
+BEFORE:
+<div className="... overflow-x-auto ...">
+  <div className="min-w-[1000px]">
+    <DataTable ... />
+  </div>
+</div>
+AFTER:
+<div className="... overflow-x-auto ...">
+  <DataTable ... className="w-full" />
+</div>
+
+CONSTRAINTS:
+- Remove ONLY the min-w-[...] inner wrapper divs (both grids) and add w-full to each DataTable's className.
+- Keep the outer overflow-x-auto wrapper divs as they are.
+- Do NOT change any DataTable props, columns, the isCreating dropdown widths (keep w-44), or any logic/handlers.
+- Do NOT touch AppShell or shared components.
+- Show the FULL diff.

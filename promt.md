@@ -1,29 +1,13 @@
-Single-file edit: frontend/src/app/load-samples/page.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix: In CREATE mode the grid exceeds the screen width (~1100px+ vs min-w-[1000px]), cutting off the right side (Search/pagination). In normal mode the page fits fine. Reduce the create-mode dropdown widths slightly (they were over-widened) and lower the grid min-width so the grid fits the screen in create mode, while still scrolling only when genuinely needed. Do NOT touch AppShell.
+File: frontend/src/app/load-samples/page.tsx
 
-=== Reduce isCreating dropdown widths (w-48 -> w-40, w-40 stays) ===
-EIC Name cell — change isCreating width from w-48 to w-40:
-BEFORE: className={isCreating ? "w-48 min-w-0" : "w-28 min-w-0"}   (wrapper)
-AFTER:  className={isCreating ? "w-40 min-w-0" : "w-28 min-w-0"}
-BEFORE: className={isCreating ? "w-48" : "w-32"}                    (SearchableSelect)
-AFTER:  className={isCreating ? "w-40" : "w-32"}
+The user wants: keep the create-mode fields at a readable size (NOT shrink them), and let the grid SCROLL horizontally so EIC/Type/Target and the Save/Cancel buttons are fully reachable (instead of shrinking everything to fit).
 
-Target (BU) cell — same change (w-48 -> w-40):
-BEFORE: className={isCreating ? "w-48 min-w-0" : "w-28 min-w-0"}   (wrapper)
-AFTER:  className={isCreating ? "w-40 min-w-0" : "w-28 min-w-0"}
-BEFORE: className={isCreating ? "w-48" : "w-32"}                    (SearchableSelect)
-AFTER:  className={isCreating ? "w-40" : "w-32"}
+Show me ONLY (no edits):
+1. Current isCreating widths for EIC Name, Type, Target (BU) (should be w-40 now). Show them.
+2. Current min-w on the Select Sample grid inner div (should be min-w-[900px] now).
+3. The Save/Cancel action cell at the end of the create/edit row — its JSX and width. Is it INSIDE the same scrollable grid, or outside? This matters: if it's inside the min-w container, scrolling will reach it; if outside, it won't.
+4. Add up the create-mode row total with readable widths: Sample Name (est) + Start(160) + End(160) + EIC + Type + Target + Save/Cancel. I want to set min-w slightly ABOVE this total so the scroll reaches the last button.
 
-Type — keep w-40 as is (already reasonable). No change.
-
-=== Lower the Select Sample grid min-width so it fits the screen ===
-BEFORE: <div className="min-w-[1000px]">
-AFTER:  <div className="min-w-[900px]">
-
-CONSTRAINTS:
-- Do NOT touch AppShell or any shared component.
-- Do NOT change the Load Samples grid's min-w (leave it as is).
-- Do NOT change any DataTable props, columns logic, dropdowns options, or handlers.
-- Keep the non-creating (normal) widths exactly as-is (w-28/w-32).
-- Show the diff.
+Read once. Findings only. No edits.

@@ -1,14 +1,10 @@
-Single-file edit: frontend/src/app/load-samples/page.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix (#176 Item 1): The Type dropdown's first option has no label, so no "Select..." default shows. Add the label.
+File: frontend/src/app/load-samples/page.tsx
 
-BEFORE:
-<option value=""></option>
-AFTER:
-<option value="">Select...</option>
+Show me ONLY (no edits):
+1. The COMPLETE parentColumns useMemo array — every column object in full (sample_name, sample_start_date, sample_end_date, sample_quarter, eic_Name, sample_type, sample_target, closed) with their exact render functions, in the exact order they appear. I need the full literal array to build a conditional version.
+2. The useMemo's dependency array (already partially shown: [editingParentId, parentDraft, eicOptions, eicLoading, targetOptions, targetLoading]) — confirm it's complete.
+3. Confirm the exact value of NEW_ID and how editingParentId is compared to it elsewhere (e.g. `editingParentId === NEW_ID`).
 
-CONSTRAINTS:
-- ONLY add the label text "Select..." to this one empty option.
-- Do NOT change any other option, the onChange logic, or value handling.
-- Do NOT touch any other file.
-- Show the diff.
+Read once. Findings only. No edits.

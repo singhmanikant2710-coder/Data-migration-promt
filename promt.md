@@ -1,25 +1,19 @@
 Edit ONLY frontend/src/components/pdf/pageSetup.ts. Auto-approve OFF. Output diff, no auto-apply.
 
-Switch ensureFontsRegistered() from jsDelivr CDN URLs to LOCAL bundled font files.
-CDN fetch is unreliable in this environment; local files are required.
+The font files are now served from the same public/assets folder as the existing
+logos, at:
+  frontend/public/assets/fonts/DejaVuSans.ttf
+  frontend/public/assets/fonts/DejaVuSans-Bold.ttf
 
-Font files are now at:
-  frontend/src/assets/fonts/DejaVuSans.ttf
-  frontend/src/assets/fonts/DejaVuSans-Bold.ttf
-First verify this exact folder and both files exist. If elsewhere, stop and tell me.
+In ensureFontsRegistered(), replace the two jsDelivr CDN `src` URLs with these
+public URL paths (note: the "public" segment is NOT part of the URL):
+  regular -> src: "/assets/fonts/DejaVuSans.ttf",  fontWeight: "normal"
+  bold    -> src: "/assets/fonts/DejaVuSans-Bold.ttf", fontWeight: "bold"
 
-Replace the two CDN `src` URLs in Font.register with the local files, using the
-pattern that actually works in this Next.js + @react-pdf/renderer project. Prefer:
-  import DejaVuSans from "../assets/fonts/DejaVuSans.ttf";
-  import DejaVuSansBold from "../assets/fonts/DejaVuSans-Bold.ttf";
-  ...src: DejaVuSans ... src: DejaVuSansBold
-(adjust the relative path from pageSetup.ts). 
+Confirm this matches how existing PDF components reference logos from
+public/assets (e.g. FHB_Logo.png is referenced as "/assets/FHB_Logo.png"). If
+the logo pattern differs, use that same proven pattern for the fonts.
 
-If .ttf module imports require a webpack/Next.js asset-loader or next.config
-change to work, DO NOT add it silently — report exactly what config is needed
-and where, and STOP for my approval. As an alternative, tell me if moving the
-fonts to frontend/public/fonts and using src: "/fonts/DejaVuSans.ttf" would be
-simpler and needs no config.
-
-Keep family "DejaVuSans", normal + bold, the guard flag, try/catch. Change
-nothing else. Show the diff.
+Keep family "DejaVuSans", the guard flag, and try/catch. Do NOT add any webpack
+rule, next.config change, or TS declaration — this needs none. Change nothing
+else. Show the diff.

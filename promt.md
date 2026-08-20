@@ -1,46 +1,60 @@
-READ-ONLY DIAGNOSTIC — DO NOT EDIT ANY FILE. Investigation only.
+Edit ONLY this file: frontend/src/components/pdf/HtmlRichText.tsx
+Do not touch any other file. Make a manual diff review possible — keep changes minimal and localized to the two functions named below. Auto-approve stays OFF.
 
-Context: In the CASRR review-info memo PDF, Rich Text fields that contain
-pasted content from Word/Excel are rendering incorrectly. Specifically:
-  (a) HTML tags/entities appear as literal text in the PDF — e.g. "<div>",
-      "<span style=\"font-size: 0.875rem\">", "&nbsp;" show up verbatim.
-  (b) "≥" and "≤" symbols render as "e" and "d".
-  (c) Pasted tables stretch to full page width.
-  (d) Pasted images enlarge / lose their original size.
+We are fixing two PDF-rendering bugs in the Rich Text → react-pdf pipeline:
 
-I need to understand the current Rich Text → PDF rendering pipeline before
-proposing any fix. Report back ONLY findings, no edits.
+BUG #192 — Encoded HTML tags render as literal text.
+Root cause: parseHtmlToAst() scans the raw input for "<" to tokenize tags, but
+content pasted from Word arrives entity-encoded (e.g. "&lt;div&gt;",
+"&lt;span style=&quot;font-size: 0.875rem&quot;&gt;"). Because these are never
+decoded BEFORE tokenization, they are treated as text and appear verbatim in
+the PDF. The existing comment already says input should be pre-decoded, but the
+code does not do it.
 
-Please investigate and report:
+BUG #191 — Named HTML entities are not decoded.
+Root cause: decodeEntities() handles &nbsp; &lt; &gt; &quot; &#39; &apos;
+numeric (&#dec; / &#xhex;) and &amp;, but omits common NAMED entities. In
+particular &ge; and &le; (≥ and ≤) survive as literal text, and other pasted
+symbols like &ndash; &mdash; &hellip; &rsquo; etc. also survive.
 
-1. Which component(s) render Rich Text / HTML field values into the
-   @react-pdf/renderer memo PDF? Search under
-   src/app/review/[ecif]/review-info/components/ for any code that takes an
-   HTML string and outputs PDF nodes (look in CrmFindingsAndRatingsSection,
-   RiskRatingJustificationSection, ReviewInfoSection, and any shared
-   html/richtext helper).
+Make exactly these two changes:
 
-2. Is there an existing HTML-parsing / html-to-react-pdf utility in the
-   codebase (e.g. a parser, sanitizer, or a "renderHtml"/"parseRichText"
-   helper)? List the file path(s) and show how it maps HTML tags → PDF
-   <Text>/<View> nodes. If tags like <div>/<span> are NOT in its tag map,
-   note that.
+CHANGE 1 — Extend decodeEntities() with a named-entity map.
+Add the following named entities to the replacement chain, applied BEFORE the
+"&amp; MUST be last" line (so ampersand decoding still runs last):
 
-3. How are HTML entities decoded (&nbsp;, &ge;, &le;, &amp;)? Find any
-   decode/replace logic and show the exact mapping table. Confirm whether
-   &ge;/&le; (≥/≤) are handled at all.
+  &ge; → "≥"        &le; → "≤"
+  &ndash; → "–"     &mdash; → "—"
+  &hellip; → "…"
+  &lsquo; → "‘"     &rsquo; → "’"
+  &ldquo; → "“"     &rdquo; → "”"
+  &bull; → "•"      &middot; → "·"
+  &times; → "×"     &divide; → "÷"
+  &deg; → "°"       &plusmn; → "±"
+  &copy; → "©"      &reg; → "®"      &trade; → "™"
+  &euro; → "€"      &pound; → "£"    &yen; → "¥"     &cent; → "¢"
 
-4. For pasted tables: show how <table>/<tr>/<td> (or the field's table data)
-   are converted to PDF, and where column/table width is set. Is width
-   hard-coded to 100% / full page?
+Keep it as case-insensitive .replace() calls consistent with the existing
+style, or a single lookup map — your choice, but keep the multi-pass loop and
+keep &amp; strictly last. Do NOT remove or reorder any existing replacement.
 
-5. For pasted images: show how <img> or image data in Rich Text is rendered
-   in PDF, and where width/height is derived.
+CHANGE 2 — Pre-decode encoded markup before tokenization in parseHtmlToAst().
+At the very start of parseHtmlToAst(), before any scanning for "<", detect
+whether the input contains encoded tags (i.e. it contains "&lt;" or "&gt;" and
+does NOT already contain a real "<" ... ">" tag). If it looks entity-encoded,
+run a single decode pass so "&lt;div&gt;" becomes "<div>" and can be tokenized
+as real markup.
 
-6. Confirm which shared style object(s) these use, so I know what is shared
-   vs. component-specific before any change.
+Guard against double-decoding of legitimately-escaped text: only pre-decode the
+angle-bracket/quote entities needed for tag recognition here
+(&lt; &gt; &quot; &#39; &apos; and numeric forms) — do NOT decode &amp; in this
+pre-pass, so that "&amp;lt;" intended as literal "&lt;" is preserved. Text-run
+decoding via decodeEntities() still runs afterward as today.
 
-Output format: for each of the 6 points, give the file path, the relevant
-code snippet (read-only), and a one-line summary of what it does. End with a
-short list of the root-cause file(s) for each of the 4 bugs (#191 entities,
-#192 tags, #193 table width, #194 image size). DO NOT modify anything.
+Constraints:
+- Do not change styles, table rendering, or image rendering (those are separate
+  tickets pending approval).
+- Do not modify InitialMemoPDF.tsx / FinalMemoPDF.tsx.
+- Preserve the existing 5-pass loop and the "&amp; last" invariant.
+- Output only the edited HtmlRichText.tsx changes for diff review; do not
+  auto-apply.

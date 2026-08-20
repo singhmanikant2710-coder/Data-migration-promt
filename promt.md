@@ -1,43 +1,57 @@
-Fix Bug #189 in the Covenants UI only.
+Single-file edit: frontend/src/app/review/[ecif]/review-info/components/sections/CovenantsSection.tsx
 
-IMPORTANT:
-- Make the smallest possible change.
-- Do NOT modify any unrelated tab, component, functionality, API contract, database schema, or shared logic.
-- Do NOT refactor existing code.
-- First trace the existing save flow before changing Issue 2.
+Fix Bug #189 — Covenants screen.
 
-ISSUE 1 — Color:
-In CovenantsSection.tsx, "Is Stepped Up Servicing Required" currently has:
-Yes = Green
-No = Red
+ISSUE 1 — Color coding:
+For "Is Stepped Up Servicing Required", Geoff expects:
+- Yes = RED
+- No = GREEN
 
-Change ONLY the color mapping to:
-Yes = Red
-No = Green
+Currently the color logic is reversed:
+- Yes = GREEN
+- No = RED
 
-ISSUE 2 — N/A becomes No:
-These 3 fields already have Yes/No/N/A options:
+Change ONLY the existing color mapping:
+
+BEFORE:
+Yes → #047857 (green)
+No  → #dc2626 (red)
+
+AFTER:
+Yes → #dc2626 (red)
+No  → #047857 (green)
+
+ISSUE 2 — N/A must remain N/A:
+These three existing dropdowns already support "Yes", "No", and "N/A":
+
 - accuratelyDefinedTracked
 - accuratelyCalculated
 - breachesMitigated
 
-Currently:
-Select N/A → Save → value becomes No.
+Currently selecting "N/A" and saving eventually results in "No".
 
-CovenantsSection.tsx already passes N/A through setField(), so find where the value changes from "N/A" to "No" in the existing save/data flow.
+The existing onChange code already passes the selected string through changes.setField(), so inspect this file for any existing logic that converts/defaults these values from "N/A" to "No".
 
-Fix only that conversion so:
+If the conversion exists in this file, change ONLY that logic so:
+
 Yes → Yes
 No → No
 N/A → N/A
 
-Do NOT change the existing Yes/No behavior.
+Do NOT change the existing dropdown options or onChange behavior.
 
-After the fix:
-- Verify N/A remains N/A after Save and reload.
-- Verify Yes/No still work.
-- Verify existing Covenants functionality is unchanged.
-- Run TypeScript/build/lint if available.
-- Review the final diff and ensure only Bug #189 changes are included.
+CONSTRAINTS:
+- ONLY edit frontend/src/app/review/[ecif]/review-info/components/sections/CovenantsSection.tsx
+- Do NOT touch any other file.
+- Do NOT refactor or restructure the component.
+- Do NOT change any unrelated Covenants fields.
+- Do NOT change Save behavior except the specific N/A → No conversion if it exists in this file.
+- Do NOT change API/backend/database code.
+- Do NOT change PDF code.
+- Do NOT modify any other tab or existing functionality.
+- Preserve all existing Yes/No behavior.
+- Keep the change minimal.
 
-If N/A cannot be persisted because of an actual backend/data-model boolean restriction, DO NOT change the backend/schema. Stop and tell me exactly where that restriction exists.
+If the N/A → No conversion is NOT present in this file, do NOT invent a fix or modify unrelated code. Report that the conversion occurs outside this file.
+
+After editing, show the exact diff.

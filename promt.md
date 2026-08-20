@@ -1,31 +1,26 @@
-READ-ONLY. Do NOT edit. Critical: confirm where the Initial Memo PDF is generated.
+READ-ONLY. Do NOT edit. Investigate and report only.
 
-The network tab shows the memo download triggers a fetch to an "initial-memo"
-endpoint (initiator api.ts:280), returning ~511 kB. This strongly suggests the
-PDF is generated SERVER-SIDE, not in the browser via ReviewPDFModal.
+Two bugs to fix in the memo PDF rich-text rendering (HtmlRichText.tsx), for
+content pasted from Word/Excel:
 
-Report only, no edits:
+#193 — Pasted tables stretch to the full page width instead of sizing to content.
+#194 — Pasted images enlarge / lose their original size.
 
-1. Open frontend/src/services/api (or wherever api.ts is) around line 280. What
-   does the "initial-memo" call do? Show the endpoint URL it fetches.
+Report the current state so I can write a bounded fix:
 
-2. Find the SERVER/API route that handles "initial-memo". Is it a Next.js API
-   route (e.g. app/api/.../initial-memo/route.ts) or a backend .NET endpoint?
-   Show the file. Does it call pdf(...).toBuffer()/renderToStream() with
-   @react-pdf/renderer ON THE SERVER to produce the PDF?
+1. In HtmlRichText.tsx, show the current table styles (styles.table, tableRow,
+   tableCell) and renderTableAst(). Confirm: does styles.table have any width
+   constraint? Do cells use flexGrow:1 / flexBasis:0 (equal-width, fill-parent)?
+   Is any HTML width attribute or inline CSS width read at all?
 
-3. If the PDF is generated server-side:
-   - Confirm ReviewPDFModal's client-side pdf().toBlob() is NOT the path used for
-     the actual downloaded Initial Memo (maybe it's only used elsewhere).
-   - Identify which PDF component the server renders (InitialMemoPDF? ReviewPDF?).
-   - Explain how fonts must be registered server-side: NOT window.location.origin
-     (no window on server) and NOT a browser URL — it needs either an absolute
-     filesystem path to the .ttf, or a fetched/bundled font buffer, registered
-     before pdf().toBuffer() runs on the server.
+2. Show the current image handling: styles.image and renderImageAst(). Confirm
+   the fixed height (e.g. height:120), maxWidth, and whether any width/height
+   from the <img> attributes or inline CSS is read.
 
-4. Tell me definitively: for the Initial Memo the user downloads, is the PDF
-   built on the CLIENT or the SERVER, and in which exact file must the font be
-   registered for THAT path?
+3. Confirm these are the ONLY places tables and images are rendered in this file,
+   and that changing them won't affect the memo Page layout elsewhere.
 
-Output: the api.ts call + the server route + client-vs-server verdict + where
-fonts must be registered server-side. No edits.
+4. Note whether a shared style object is used that other components also rely on
+   (so I don't change something with wider impact).
+
+Output: current table code + current image code + confirmation of scope. No edits.

@@ -1,98 +1,86 @@
-READ-ONLY INVESTIGATION ONLY.
+Apply the minimal fix identified in the READ-ONLY investigation for Bug #189.
 
-DO NOT modify, create, delete, or apply ANY file changes.
-DO NOT write a fix yet.
-DO NOT keep scanning unrelated files.
+Root cause is confirmed
 
-We have a regression in Bug #189.
-
-Known behavior
-
-Before the latest Bug #189 change:
-
-- N/A was working correctly.
-- User could select N/A.
-- After Save and page reload, N/A remained N/A.
-
-After the latest change:
-
-- Yes/No colors are now correct.
-- But N/A is broken.
-- User selects N/A → clicks Save → page reloads → UI shows No.
-
-We need to find EXACTLY where this regression is happening.
-
-Your task
-
-Perform a READ-ONLY investigation and identify the exact source of the problem.
-
-Start with this file:
+Only modify:
 
 "frontend/src/app/review/[ecif]/review-info/components/sections/CovenantsSection.tsx"
 
-Focus ONLY on these three fields:
+The regression was introduced by these three onChange handlers:
 
-1. "accuratelyDefinedTracked"
-2. "accuratelyCalculated"
-3. "breachesMitigated"
+- accuratelyDefinedTracked
+- accuratelyCalculated
+- breachesMitigated
 
-Trace their complete data flow:
-
-"Dropdown value"
-→ "onChange"
-→ "React state"
-→ "changes.setField()"
-→ "Save"
-→ "API request"
-→ "backend/API"
-→ "database/persistence"
-→ "API response"
-→ "initial state"
-→ "UI"
-
-IMPORTANT
-
-The current code contains logic similar to:
+They currently contain logic equivalent to:
 
 "const val = raw === "N/A" ? "No" : raw;"
 
-Confirm whether this is the regression.
+This is incorrectly converting "N/A" to "No".
 
-Also determine whether "changes.setField()" receives:
+Required change
 
-- "N/A"
-  or
-- "No"
+Remove ONLY the N/A → No coercion.
 
-when the user selects N/A.
+The selected value must flow through unchanged:
 
-Do NOT assume the database is the problem.
+"const val = e.target.value as "Yes" | "No" | "N/A";"
 
-Because N/A worked before the latest change, compare the CURRENT implementation against the previous implementation/git diff if available.
+Then pass "val" directly to:
 
-Find exactly what changed between the working and broken behavior.
+- setAccuratelyDefinedTracked(val)
+- setAccuratelyCalculated(val)
+- setBreachesMitigated(val)
 
-Output ONLY this investigation report
+And, where applicable, pass the same "val" to "changes.setField()".
 
-1. Exact file(s) involved
-2. Exact function/handler involved
-3. Exact line/logic causing N/A → No
-4. Where the value changes from N/A to No
-   - UI state?
-   - Save handler?
-   - API payload?
-   - Backend?
-   - Database?
-   - Response mapping?
-5. Previous working logic, if available
-6. Latest change that introduced the regression
-7. Minimal fix required
-8. Exact files that need modification
+VERY IMPORTANT
 
-DO NOT modify any file.
+Do NOT modify:
 
-DO NOT suggest broad changes.
+- useCovenants.ts
+- backend/API
+- database
+- other components
+- other fields
+- existing color mapping
 
-DO NOT continue reading unrelated files.
+The color fix is already working and MUST remain unchanged:
 
-Stop investigation once the exact root cause and required file/function are identified.
+- Yes → RED
+- No → GREEN
+
+The purpose of this change is ONLY to restore the previously working N/A behavior.
+
+Expected final behavior
+
+For all three Covenant fields:
+
+"Yes → Save → reload → Yes + RED"
+
+"No → Save → reload → No + GREEN"
+
+"N/A → Save → reload → N/A"
+
+Validation
+
+After applying the change:
+
+1. Select N/A in "Are Monitoring Covenants Accurately Tracked and Defined".
+2. Click Save.
+3. Wait for page reload.
+4. Verify it displays N/A.
+5. Repeat for the other two Covenant fields.
+6. Verify Yes remains RED.
+7. Verify No remains GREEN.
+
+Also verify that the Save payload contains "N/A" when N/A is selected.
+
+Do not make any additional refactoring or unrelated changes.
+
+After editing, report:
+
+- exact file changed
+- exact lines changed
+- confirmation that N/A is now passed unchanged
+- confirmation that the existing Yes/No color fix was preserved

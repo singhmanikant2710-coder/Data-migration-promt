@@ -1,13 +1,26 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+Single-file edit: frontend/src/components/pdf/ScorecardResultsPDF.tsx
 
-File: frontend/src/components/pdf/ScorecardResultsPDF.tsx
+Fix (per Geoff): The Scorecard ID cell in the details table should show ONLY the Scorecard_id_bank value. Currently formatScorecardId returns both bank and system IDs (`${bank} ${system}`) when they differ, so the cell shows two IDs. Change it to always return only the bank ID.
 
-Geoff wants the Scorecard ID cell in the details table to show ONLY the Scorecard_id_bank value — currently it shows both bank and system IDs together when they differ.
+BEFORE:
+function formatScorecardId(row: ScorecardRow | any): string | null {
+  const bank = (row?.scorecardIdBank ?? "").toString().trim();
+  const system = (row?.scorecardIdSystem ?? "").toString().trim();
 
-Show me ONLY (no edits):
-1. The current formatScorecardId function — full body. Confirm it returns `${bank} ${system}` (or bank\nsystem) when bank !== system.
-2. Where formatScorecardId is called in buildGroups (the id assignment) and how the id is rendered in the Scorecard ID cell.
-3. Confirm the field names: scorecardIdBank and scorecardIdSystem (the row properties it reads).
-4. Is formatScorecardId used ANYWHERE else in this file (or others)? If it's only used for this details cell, changing it to bank-only is safe.
+  if (bank && system && bank !== system) {
+    return `${bank} ${system}`;
+  }
+  return bank || system || null;
+}
 
-Read once. Findings only. No edits.
+AFTER:
+function formatScorecardId(row: ScorecardRow | any): string | null {
+  const bank = (row?.scorecardIdBank ?? "").toString().trim();
+  return bank || null;
+}
+
+CONSTRAINTS:
+- ONLY change formatScorecardId to return the bank ID only (never the system ID).
+- Do NOT change buildGroups, the cell rendering, the de-dup logic, or anything else.
+- Do NOT touch any other file.
+- Show the diff.

@@ -1,16 +1,13 @@
-Single-file edit: frontend/src/app/load-samples/page.tsx
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-Fix (#176a, per Geoff): All three dropdowns (EIC, Type, Target) should show "Select..." as a default prompt but NOT allow "Select..." to be chosen as an option. EIC and Target use SearchableSelect where "Select..." is a placeholder (not selectable) — correct. Type uses a native <Select>, where the "Select..." <option> is currently selectable (wrong). Make it a non-selectable placeholder by adding disabled + hidden to that option, so it shows as the default prompt but can't be picked, matching the other two dropdowns.
+File: frontend/src/components/pdf/ScorecardResultsPDF.tsx
 
-BEFORE:
-<option value="">Select...</option>
+Geoff wants the Scorecard ID cell in the details table to show ONLY the Scorecard_id_bank value — currently it shows both bank and system IDs together when they differ.
 
-AFTER:
-<option value="" disabled hidden>Select...</option>
+Show me ONLY (no edits):
+1. The current formatScorecardId function — full body. Confirm it returns `${bank} ${system}` (or bank\nsystem) when bank !== system.
+2. Where formatScorecardId is called in buildGroups (the id assignment) and how the id is rendered in the Scorecard ID cell.
+3. Confirm the field names: scorecardIdBank and scorecardIdSystem (the row properties it reads).
+4. Is formatScorecardId used ANYWHERE else in this file (or others)? If it's only used for this details cell, changing it to bank-only is safe.
 
-CONSTRAINTS:
-- ONLY change this one <option> (add disabled hidden).
-- Do NOT change the other Type options (Examination, Continous, CCL, Others).
-- Do NOT change the Select's value/onChange logic.
-- Do NOT touch EIC, Target, or any other file.
-- Show the diff.
+Read once. Findings only. No edits.

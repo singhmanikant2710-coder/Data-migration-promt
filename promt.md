@@ -1,86 +1,103 @@
-Apply the minimal fix identified in the READ-ONLY investigation for Bug #189.
+READ-ONLY INVESTIGATION ONLY.
+DO NOT MODIFY ANY FILE OR CODE.
 
-Root cause is confirmed
+We have now confirmed the following:
 
-Only modify:
+1. Chrome Network Save request contains:
+   accuratelyDefinedTracked: "N/A"
 
-"frontend/src/app/review/[ecif]/review-info/components/sections/CovenantsSection.tsx"
+2. The backend calls:
+   SaveCovenantsInfoAsync(...)
 
-The regression was introduced by these three onChange handlers:
+3. In:
+   backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
 
-- accuratelyDefinedTracked
-- accuratelyCalculated
-- breachesMitigated
+   SaveCovenantsInfoAsync directly executes:
 
-They currently contain logic equivalent to:
+   UPDATE dbo.[02_CORE_02_Reviews]
+   SET
+       [Covenant_tracking_accuracy] = @accDefinedTracked,
+       [Covenant_validation_accuracy] = @accCalculated,
+       [Covenant_breaches_addressed] = @breachesMitigated
+   WHERE [Review_id] = @id
 
-"const val = raw === "N/A" ? "No" : raw;"
+4. The parameters are NVARCHAR and directly receive:
+   accuratelyDefinedTracked
+   accuratelyCalculated
+   breachesMitigated
 
-This is incorrectly converting "N/A" to "No".
+There is NO N/A → No conversion in this repository method.
 
-Required change
+Therefore continue the investigation AFTER SqlReviewRepository.cs.
 
-Remove ONLY the N/A → No coercion.
+IMPORTANT:
+Do NOT re-read frontend files.
+Do NOT investigate CovenantsSection.tsx.
+Do NOT modify anything.
 
-The selected value must flow through unchanged:
+Find the exact reason why the database/GET response changes "N/A" back to "No".
 
-"const val = e.target.value as "Yes" | "No" | "N/A";"
+Investigate in this exact order:
 
-Then pass "val" directly to:
+1. Find the GET/reload API endpoint that returns the Covenant "info" object.
 
-- setAccuratelyDefinedTracked(val)
-- setAccuratelyCalculated(val)
-- setBreachesMitigated(val)
+2. Find the exact repository method/query used by that GET endpoint.
 
-And, where applicable, pass the same "val" to "changes.setField()".
+3. Find where these database columns are mapped:
+   - Covenant_tracking_accuracy
+   - Covenant_validation_accuracy
+   - Covenant_breaches_addressed
 
-VERY IMPORTANT
+4. Check whether the GET query/mapping converts:
+   "N/A" → "No"
 
-Do NOT modify:
+5. Check the database definition of:
+   dbo.[02_CORE_02_Reviews]
 
-- useCovenants.ts
-- backend/API
-- database
-- other components
-- other fields
-- existing color mapping
+   Specifically determine the data type and constraints of:
+   - Covenant_tracking_accuracy
+   - Covenant_validation_accuracy
+   - Covenant_breaches_addressed
 
-The color fix is already working and MUST remain unchanged:
+6. Search the codebase/database scripts for:
+   - triggers on dbo.[02_CORE_02_Reviews]
+   - UPDATE statements against these three columns
+   - CASE expressions
+   - COALESCE / ISNULL
+   - Yes/No normalization
+   - "N/A"
+   - "Covenant_tracking_accuracy"
+   - "Covenant_validation_accuracy"
+   - "Covenant_breaches_addressed"
 
-- Yes → RED
-- No → GREEN
+7. IMPORTANT:
+   Determine whether another save operation is overwriting N/A with No AFTER SaveCovenantsInfoAsync executes.
 
-The purpose of this change is ONLY to restore the previously working N/A behavior.
+We need to establish this exact data flow:
 
-Expected final behavior
+"N/A" from browser
+→ Controller
+→ SaveCovenantsInfoAsync
+→ SQL UPDATE
+→ DATABASE VALUE
+→ GET QUERY
+→ API RESPONSE
 
-For all three Covenant fields:
+For each step tell me the actual value:
+N/A or No.
 
-"Yes → Save → reload → Yes + RED"
+OUTPUT ONLY:
 
-"No → Save → reload → No + GREEN"
+A. Save method confirmed: whether it preserves N/A
+B. Exact GET endpoint
+C. Exact GET repository method
+D. Exact SQL/query used by GET
+E. Exact DB columns
+F. DB data type for each column
+G. Any trigger/constraint/default/normalization found
+H. Exact location where N/A becomes No
+I. Exact file + method + line number
+J. Minimal fix required
 
-"N/A → Save → reload → N/A"
-
-Validation
-
-After applying the change:
-
-1. Select N/A in "Are Monitoring Covenants Accurately Tracked and Defined".
-2. Click Save.
-3. Wait for page reload.
-4. Verify it displays N/A.
-5. Repeat for the other two Covenant fields.
-6. Verify Yes remains RED.
-7. Verify No remains GREEN.
-
-Also verify that the Save payload contains "N/A" when N/A is selected.
-
-Do not make any additional refactoring or unrelated changes.
-
-After editing, report:
-
-- exact file changed
-- exact lines changed
-- confirmation that N/A is now passed unchanged
-- confirmation that the existing Yes/No color fix was preserved
+DO NOT MODIFY ANYTHING.
+STOP after root cause is proven.

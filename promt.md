@@ -1,376 +1,159 @@
-FIX REQUEST — Covenants N/A VALUE IS LOST AFTER SAVE + RELOAD
+We need to fix a UAT bug in the CASR application related to Rich Text Fields / Tables and PDF rendering.
 
-Issue:
-In the Review Form → Covenants section, the three fields below support:
-- Yes
-- No
-- N/A
+BUG:
+In the Review Form, users can paste rich-text content from Word/Excel or enter formatted rich text.
 
-When I select "N/A" and click Save, the save request payload correctly contains "N/A".
+When this content is rendered in the PDF/report, raw HTML markup is displayed as visible text instead of being interpreted/rendered.
 
-Example from Network → save request:
-covenants.info.accuratelyDefinedTracked = "N/A"
-covenants.info.accuratelyCalculated = "N/A"
-covenants.info.breachesMitigated = "N/A"
+Examples currently visible in the generated PDF/report:
+<div>
+<span style="font-size: 0.875rem;">
+</span>
+</div>
 
-However, after the page reloads, the GET review API returns "No" instead of "N/A".
+The actual expected output is the formatted content itself, without showing any HTML tags.
 
-This means the value is being lost/converted somewhere in the GET/read/response mapping path.
+Example:
+Current:
+"Annual review tracking ... <span style="font-size: 0.875rem;">05/06/2026</span> ..."
+
+Expected:
+"Annual review tracking ... 05/06/2026 ..."
 
 IMPORTANT:
-The database/save side is already sending "N/A" correctly. Do NOT unnecessarily change the save logic or database logic.
-
-Observed evidence:
-1. Save request payload contains:
-   accuratelyDefinedTracked: "N/A"
-   accuratelyCalculated: "N/A"
-   breachesMitigated: "N/A"
-
-2. SQL repository SaveCovenantsInfoAsync currently accepts these as nullable strings:
-   string? accuratelyDefinedTracked
-   string? accuratelyCalculated
-   string? breachesMitigated
-
-3. SaveCovenantsInfoAsync updates:
-   [Covenant_tracking_accuracy] = @accDefinedTracked
-   [Covenant_validation_accuracy] = @accCalculated
-   [Covenant_breaches_addressed] = @breachesMitigated
-
-4. The GET/read side reads these database values using GetString():
-   trackAcc = rdo0.IsDBNull(4) ? null : rdo0.GetString(4);
-   calcAcc = rdo0.IsDBNull(5) ? null : rdo0.GetString(5);
-   breaches = rdo0.IsDBNull(6) ? null : rdo0.GetString(6);
-
-Therefore, "N/A" should be preserved.
-
-ROOT CAUSE FOUND:
-In the GET Covenants mapping there is a helper method:
-
-   static string Yn(string? v)
-
-Current behavior is effectively:
-
-   var s = (v ?? string.Empty).Trim().ToLowerInvariant();
-
-   if (s == "yes" || s == "y" || s == "true" || s == "1")
-       return "Yes";
-
-   if (s == "no" || s == "n" || s == "false" || s == "0")
-       return "No";
-
-   return "No";
-
-The final:
-   return "No";
-
-is converting "N/A" into "No".
-
-This is why:
-DB = "N/A"
-→ GetString() = "N/A"
-→ Yn("N/A")
-→ "No"
-→ GET API returns "No"
-→ UI shows "No" after reload.
-
-REQUIRED FIX:
-Modify ONLY the normalization/mapping logic so that "N/A" is preserved.
-
-Expected mapping:
-
-   "Yes" / "yes" / "Y" / "true" / "1" → "Yes"
-   "No" / "no" / "N" / "false" / "0" → "No"
-   "N/A" / "n/a" / "N/a" → "N/A"
-
-For unknown/empty values, preserve the existing behavior unless there is a strong reason not to.
-
-Most importantly:
-- "N/A" MUST NOT become "No".
-- Existing Yes/No behavior MUST remain exactly the same.
-- Existing color logic MUST remain unchanged:
-    Yes → red
-    No → green
-- Do not modify unrelated fields.
-- Do not modify SUS Required logic.
-- Do not modify dates.
-- Do not modify narrative.
-- Do not modify covenant rows.
-- Do not modify transactions, checklist, policy exceptions, collateral, etc.
-- Do not modify database schema.
-- Do not create a new database migration.
-- Do not refactor unrelated code.
-- Do not change API contracts unnecessarily.
-
-FILES / METHODS TO CHECK:
-
-1. FRONTEND
-File:
-frontend/src/app/review/[ecif]/review-info/components/sections/CovenantsSection.tsx
-
-Relevant handlers:
-- accuratelyDefinedTracked onChange
-- accuratelyCalculated onChange
-- breachesMitigated onChange
-
-The frontend was already changed so that N/A is passed directly:
-
-   const val = e.target.value as "Yes" | "No" | "N/A";
-   setAccuratelyDefinedTracked(val);
-
-   if (isEditing && changes) {
-       changes.setField("covenants", "info", {
-           accuratelyDefinedTracked: val
-       });
-   }
-
-Similarly for:
-- accuratelyCalculated
-- breachesMitigated
-
-DO NOT undo this frontend behavior.
-
-The save payload must continue sending:
-"N/A"
-
-2. BACKEND CONTROLLER
-File:
-backend/src/Casrr.Api/Controllers/CovenantsController.cs
-
-Relevant:
-CovenantsController
-
-Also inspect the ReviewController Save endpoint because the screenshot shows the main save flow eventually calls:
-
-   _svc.SaveAsync(dto, emp, ct);
-
-Do not change the controller unless absolutely necessary.
-
-The controller should continue accepting the existing DTO and passing the Covenants data through.
-
-3. BACKEND SERVICE
-Review the service method responsible for saving the Review Form, visible in the ReviewController flow:
-
-   _svc.SaveAsync(dto, emp, ct)
-
-Relevant Covenants processing calls:
-
-   _repo.SaveCovenantsInfoAsync(
-       resolvedReviewId,
-       lastAnnual,
-       nextAnnual,
-       susRequired,
-       lastSusDate,
-       accuratelyDefinedTracked,
-       accuratelyCalculated,
-       breachesMitigated,
-       narrative,
-       ct);
-
-DO NOT remove or change the existing save behavior.
-
-4. REPOSITORY INTERFACE
-File:
-backend/src/Casrr.Infrastructure/Interfaces/IReviewRepository.cs
-
-Relevant method:
-
-   Task SaveCovenantsInfoAsync(
-       int reviewId,
-       DateTime? lastAnnualReview,
-       DateTime? nextAnnualReview,
-       bool? steppedUpServicingRequired,
-       DateTime? lastSusDate,
-       string? accuratelyDefinedTracked,
-       string? accuratelyCalculated,
-       string? breachesMitigated,
-       string? narrative,
-       CancellationToken ct);
-
-Do not change the public contract unless absolutely required.
-
-5. SQL REPOSITORY — SAVE
-File:
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
-
-Relevant method around line 1099:
-
-   public async Task SaveCovenantsInfoAsync(...)
-
-Current SQL:
-
-   UPDATE dbo.[02_CORE_02_Reviews]
-   SET
-       [Last_annual_review_date] = @lastAnnualReview,
-       [Next_annual_review_date] = @nextAnnualReview,
-       [Stepped_up_servicing] = @susRequired,
-       [Last_SUS_date] = @lastSusDate,
-       [Covenant_tracking_accuracy] = @accDefinedTracked,
-       [Covenant_validation_accuracy] = @accCalculated,
-       [Covenant_breaches_addressed] = @breachesMitigated,
-       [Covenant_information] = @narrative
-   WHERE [Review_id] = @id;
-
-Current parameters use NVARCHAR for the three accuracy fields.
-
-DO NOT change this save SQL unless investigation proves it is necessary.
-
-6. SQL REPOSITORY — GET / READ
-Same file:
-
-backend/src/Casrr.Infrastructure/SqlServer/SqlReviewRepository.cs
-
-Relevant method:
-
-   private async Task<CovenantsSection> GetCovenantsSectionAsync(
-       int? reviewId,
-       CancellationToken ct)
-
-This method reads:
-
-   trackAcc = rdo0.IsDBNull(4) ? null : rdo0.GetString(4);
-   calcAcc = rdo0.IsDBNull(5) ? null : rdo0.GetString(5);
-   breaches = rdo0.IsDBNull(6) ? null : rdo0.GetString(6);
-
-This proves the DB value can reach the C# variables as a string.
-
-IMPORTANT:
-There is also SUS parsing:
-
-   var v = rdo0.GetValue(2);
-   if (v is bool b)
-       sus = b ? "Yes" : "No";
-   else
-       sus = Convert.ToString(v, CultureInfo.InvariantCulture);
-
-DO NOT modify this SUS Required logic.
-It is a separate field and is not the N/A issue.
-
-7. EXACT ROOT-CAUSE AREA
-Inside:
-
-   GetCovenantsSectionAsync(...)
-
-there is currently a helper similar to:
-
-   static string Yn(string? v)
-   {
-       var s = (v ?? string.Empty).Trim().ToLowerInvariant();
-
-       if (s == "yes" || s == "y" || s == "true" || s == "1")
-           return "Yes";
-
-       if (s == "no" || s == "n" || s == "false" || s == "0")
-           return "No";
-
-       return "No";
-   }
-
-This helper is used for the covenant accuracy/breach fields.
-
-CHANGE ONLY THIS LOGIC.
-
-Preferred safe implementation:
-
-   static string Yn(string? v)
-   {
-       var s = (v ?? string.Empty).Trim();
-
-       if (s.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
-           s.Equals("y", StringComparison.OrdinalIgnoreCase) ||
-           s.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-           s == "1")
-           return "Yes";
-
-       if (s.Equals("no", StringComparison.OrdinalIgnoreCase) ||
-           s.Equals("n", StringComparison.OrdinalIgnoreCase) ||
-           s.Equals("false", StringComparison.OrdinalIgnoreCase) ||
-           s == "0")
-           return "No";
-
-       if (s.Equals("n/a", StringComparison.OrdinalIgnoreCase))
-           return "N/A";
-
-       return "No";
-   }
-
-The key requirement is:
-"N/A" must return "N/A".
-
-If the existing codebase has a better equivalent style, you may use it, but keep the change minimal.
-
-EXPECTED END-TO-END RESULT:
+Do NOT simply strip all HTML tags blindly if that would destroy tables, line breaks, bold/italic formatting, alignment, lists, or other supported rich-text formatting.
+
+We need the smallest safe fix in the existing PDF/report rendering pipeline.
+
+REQUIREMENTS:
+
+1. FIRST inspect the repository and identify the exact code path responsible for:
+   - Review Form rich-text data
+   - API response/model mapping
+   - PDF/report generation
+   - HTML/rich-text conversion/rendering
+   - Any existing HTML sanitizer/parser/helper
+
+2. Do NOT guess file paths.
+   Search the repository and provide the exact file path(s) and exact method/function names before editing.
+
+3. Trace one affected field end-to-end:
+   UI Rich Text
+      -> API
+      -> backend/model
+      -> PDF/report generation
+      -> final rendered PDF
+
+4. Determine why HTML such as:
+   <div>...</div>
+   <span ...>...</span>
+   is being treated as plain text instead of HTML/rich text.
+
+5. Prefer using the application's EXISTING HTML/rich-text parser or rendering utility if one already exists.
+   Do not introduce a new dependency unless absolutely necessary.
+
+6. The fix must preserve supported formatting:
+   - normal text
+   - line breaks
+   - paragraphs
+   - bold
+   - italic
+   - lists
+   - tables
+   - table rows/cells
+   - alignment
+   - reasonable inline styles where currently supported
+
+7. For unsupported or unsafe HTML, handle it safely rather than exposing raw markup in the PDF.
+
+8. Pay special attention to HTML entities and encoded content.
+   Make sure content is not being:
+   - HTML-encoded twice
+   - decoded too late
+   - converted to plain text before PDF rendering
+   - escaped before being passed to the HTML renderer
+
+9. Do NOT change database schemas, API contracts, save logic, or unrelated review functionality unless the root cause absolutely requires it.
+
+10. Do NOT modify existing save/update behavior.
+    This is primarily a rendering/output fix.
+
+11. Do NOT break existing PDF functionality for:
+    - plain text fields
+    - rich text fields
+    - tables
+    - images
+    - scorecard sections
+    - Covenants
+    - Policy Exceptions
+    - Risk Rating Justification
+    - CRM Findings
+    - other Review Form sections
+
+12. Before editing, inspect the existing implementation and explain:
+    - exact root cause
+    - exact file path
+    - exact method
+    - why the current implementation outputs raw HTML
+    - safest minimal fix
+
+13. Then make ONLY the minimal targeted code change.
+
+14. After the change:
+    - build the affected project
+    - fix only errors introduced by this change
+    - do not refactor unrelated code
+
+15. Validate these cases:
 
 CASE 1:
-User selects "Yes"
-→ Save
-→ DB = "Yes"
-→ Reload
-→ API = "Yes"
-→ UI = "Yes"
-→ Existing RED styling remains.
+Plain text
+Expected: unchanged.
 
 CASE 2:
-User selects "No"
-→ Save
-→ DB = "No"
-→ Reload
-→ API = "No"
-→ UI = "No"
-→ Existing GREEN styling remains.
+Rich text containing <div> and <span>
+Expected: HTML tags are not visible; text and supported formatting render correctly.
 
 CASE 3:
-User selects "N/A"
-→ Save
-→ DB = "N/A"
-→ Reload
-→ API = "N/A"
-→ UI = "N/A"
+Rich text copied from Microsoft Word
+Expected: no raw HTML tags in PDF and no unnecessary formatting corruption.
 
 CASE 4:
-Existing records containing "Yes" or "No"
-→ Must continue displaying exactly as before.
+HTML table copied from Excel/Word
+Expected: table remains a table and does not stretch/break unexpectedly.
 
 CASE 5:
-Existing records containing NULL/empty values
-→ Do not introduce unrelated behavior changes.
+Text containing:
+<, >, &, quotes
+Expected: displayed correctly and safely.
 
-VALIDATION REQUIRED:
-After making the change, verify the complete flow:
+CASE 6:
+Existing PDF sections that already work
+Expected: no regression.
 
-1. Select N/A for accuratelyDefinedTracked.
-2. Save.
-3. Inspect Network → save request.
-4. Confirm payload contains:
-   accuratelyDefinedTracked: "N/A"
-5. Reload page.
-6. Inspect GET review API response.
-7. Confirm:
-   accuratelyDefinedTracked: "N/A"
-8. Repeat for:
-   accuratelyCalculated
-   breachesMitigated
-9. Verify Yes still returns Yes.
-10. Verify No still returns No.
-11. Verify existing Yes/No colors remain unchanged.
+IMPORTANT SAFETY RULE:
+Do NOT make broad changes to the PDF renderer.
+Do NOT replace the existing PDF generation library.
+Do NOT rewrite the rich-text system.
+Do NOT modify unrelated components.
+Do NOT change API/database contracts.
+Do NOT change save logic.
 
-DO NOT make broad refactors.
+Use the smallest possible fix at the point where rich-text HTML is incorrectly being converted/rendered as plain text.
 
-DO NOT change the database schema.
+Before making any change, inspect the relevant files and give me:
 
-DO NOT change the save API contract.
+1. Exact file path
+2. Exact method/function
+3. Root cause
+4. Current behavior
+5. Proposed minimal change
 
-DO NOT change SUS Required parsing.
+Then edit the code.
 
-DO NOT change unrelated Covenants functionality.
-
-This should be a minimal, targeted fix to the GET-side Yn()/normalization logic that currently converts unknown values such as "N/A" to "No".
-
-Before editing, inspect the exact usages of Yn() in GetCovenantsSectionAsync and confirm which three fields use it. Then make the smallest possible change.
-
-After editing, provide:
-1. Exact file changed.
-2. Exact method changed.
-3. Before → after summary.
-4. Confirmation that Save logic was not changed.
-5. Confirmation that Yes/No behavior and styling were preserved.
-6. Confirmation that N/A now survives Save → DB → GET → UI reload.
+After editing, give me a concise change summary with:
+- File changed
+- Method changed
+- Exact fix
+- Why existing functionality is preserved
+- Build/test result

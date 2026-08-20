@@ -1,60 +1,33 @@
-Edit ONLY this file: frontend/src/components/pdf/HtmlRichText.tsx
-Do not touch any other file. Make a manual diff review possible — keep changes minimal and localized to the two functions named below. Auto-approve stays OFF.
+READ-ONLY — DO NOT EDIT. Investigation only.
 
-We are fixing two PDF-rendering bugs in the Rich Text → react-pdf pipeline:
+In the CASRR memo PDF (Customer Background / rich-text sections), after our
+recent entity-decoding fix, stray "&" characters now appear in the rendered
+output, e.g. "Parks Holdings, LLC.&", a lone "&" on its own line, and
+"TTBA/Lending Authority: &". Also a stray "-" appears ("common ownership.-").
 
-BUG #192 — Encoded HTML tags render as literal text.
-Root cause: parseHtmlToAst() scans the raw input for "<" to tokenize tags, but
-content pasted from Word arrives entity-encoded (e.g. "&lt;div&gt;",
-"&lt;span style=&quot;font-size: 0.875rem&quot;&gt;"). Because these are never
-decoded BEFORE tokenization, they are treated as text and appear verbatim in
-the PDF. The existing comment already says input should be pre-decoded, but the
-code does not do it.
+I need to know WHY, before deciding if this is a defect or correct rendering
+of the source data. Report only, no edits.
 
-BUG #191 — Named HTML entities are not decoded.
-Root cause: decodeEntities() handles &nbsp; &lt; &gt; &quot; &#39; &apos;
-numeric (&#dec; / &#xhex;) and &amp;, but omits common NAMED entities. In
-particular &ge; and &le; (≥ and ≤) survive as literal text, and other pasted
-symbols like &ndash; &mdash; &hellip; &rsquo; etc. also survive.
+1. Pull the raw stored value for this review's Customer Background field
+   (read-only DB access on Dev). Show the exact raw string around
+   "LLC." and "Lending Authority" — I need to see whether the source contains
+   "&", "&amp;", "&amp;nbsp;", "&nbsp;", or a double-encoded entity there.
 
-Make exactly these two changes:
+2. In HtmlRichText.decodeEntities(), trace what happens to these specific
+   inputs, step by step through the multi-pass loop, and show the final output:
+     a) "LLC.&nbsp;"
+     b) "LLC.&amp;nbsp;"      (double-encoded)
+     c) "&amp;&amp;"
+     d) "authority: &amp; "
+   For each, tell me the exact final string and how many passes it takes.
 
-CHANGE 1 — Extend decodeEntities() with a named-entity map.
-Add the following named entities to the replacement chain, applied BEFORE the
-"&amp; MUST be last" line (so ampersand decoding still runs last):
+3. Confirm the ORDER of replacements in decodeEntities relative to the new
+   named-entity block: specifically, is there any input where "&amp;" runs and
+   produces a bare "&" that a later/earlier pass then fails to combine with a
+   following "nbsp;" or "amp;" — i.e. a double-decode or half-decode path.
 
-  &ge; → "≥"        &le; → "≤"
-  &ndash; → "–"     &mdash; → "—"
-  &hellip; → "…"
-  &lsquo; → "‘"     &rsquo; → "’"
-  &ldquo; → "“"     &rdquo; → "”"
-  &bull; → "•"      &middot; → "·"
-  &times; → "×"     &divide; → "÷"
-  &deg; → "°"       &plusmn; → "±"
-  &copy; → "©"      &reg; → "®"      &trade; → "™"
-  &euro; → "€"      &pound; → "£"    &yen; → "¥"     &cent; → "¢"
+4. State clearly: is the stray "&" (and "-") most likely (A) faithful
+   rendering of literal "&"/"-" that genuinely exists in the source data, or
+   (B) an artifact of our decode changes. Give the evidence for your conclusion.
 
-Keep it as case-insensitive .replace() calls consistent with the existing
-style, or a single lookup map — your choice, but keep the multi-pass loop and
-keep &amp; strictly last. Do NOT remove or reorder any existing replacement.
-
-CHANGE 2 — Pre-decode encoded markup before tokenization in parseHtmlToAst().
-At the very start of parseHtmlToAst(), before any scanning for "<", detect
-whether the input contains encoded tags (i.e. it contains "&lt;" or "&gt;" and
-does NOT already contain a real "<" ... ">" tag). If it looks entity-encoded,
-run a single decode pass so "&lt;div&gt;" becomes "<div>" and can be tokenized
-as real markup.
-
-Guard against double-decoding of legitimately-escaped text: only pre-decode the
-angle-bracket/quote entities needed for tag recognition here
-(&lt; &gt; &quot; &#39; &apos; and numeric forms) — do NOT decode &amp; in this
-pre-pass, so that "&amp;lt;" intended as literal "&lt;" is preserved. Text-run
-decoding via decodeEntities() still runs afterward as today.
-
-Constraints:
-- Do not change styles, table rendering, or image rendering (those are separate
-  tickets pending approval).
-- Do not modify InitialMemoPDF.tsx / FinalMemoPDF.tsx.
-- Preserve the existing 5-pass loop and the "&amp; last" invariant.
-- Output only the edited HtmlRichText.tsx changes for diff review; do not
-  auto-apply.
+Output: raw source snippet + the 4 trace results + your A/B conclusion. No edits.

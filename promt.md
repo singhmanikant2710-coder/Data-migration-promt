@@ -1,26 +1,69 @@
-READ-ONLY. Do NOT edit. Investigate and report only.
+Edit ONLY frontend/src/components/pdf/HtmlRichText.tsx. Auto-approve OFF.
+Output diffs, no auto-apply. Do NOT touch entity decoding, parsing, or any other
+component. These changes are scoped to the table styles + renderTableAst and the
+image styles + renderImageAst only.
 
-Two bugs to fix in the memo PDF rich-text rendering (HtmlRichText.tsx), for
-content pasted from Word/Excel:
+Add ONE small local helper (place it near the other helpers in this file) to
+parse a CSS/attr length into a value+unit, reused by both table and image code:
 
-#193 — Pasted tables stretch to the full page width instead of sizing to content.
-#194 — Pasted images enlarge / lose their original size.
+  function parseLen(raw?: string | number | null): { value: number; unit: "px" | "%" } | null {
+    if (raw == null) return null;
+    const s = String(raw).trim();
+    if (!s) return null;
+    const m = s.match(/^(-?\d*\.?\d+)\s*(px|%)?$/i);
+    if (!m) return null;
+    const value = parseFloat(m[1]);
+    if (!isFinite(value) || value <= 0) return null;
+    const unit = (m[2]?.toLowerCase() === "%" ? "%" : "px") as "px" | "%";
+    return { value, unit };
+  }
 
-Report the current state so I can write a bounded fix:
+Also add a small helper to read an inline CSS property from a style attribute
+string (reuse the existing style parser if one already exists; if parseCssStyle
+exists and returns a map, use it instead of duplicating):
 
-1. In HtmlRichText.tsx, show the current table styles (styles.table, tableRow,
-   tableCell) and renderTableAst(). Confirm: does styles.table have any width
-   constraint? Do cells use flexGrow:1 / flexBasis:0 (equal-width, fill-parent)?
-   Is any HTML width attribute or inline CSS width read at all?
+  function readInlineStyleProp(node: AstNode, prop: string): string | null {
+    if (node.type !== "element") return null;
+    const style = node.attrs?.style;
+    if (!style || typeof style !== "string") return null;
+    const re = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, "i");
+    const m = style.match(re);
+    return m ? m[1].trim() : null;
+  }
 
-2. Show the current image handling: styles.image and renderImageAst(). Confirm
-   the fixed height (e.g. height:120), maxWidth, and whether any width/height
-   from the <img> attributes or inline CSS is read.
+#193 — Tables: size to content, respect explicit cell widths (best-effort).
 
-3. Confirm these are the ONLY places tables and images are rendered in this file,
-   and that changing them won't affect the memo Page layout elsewhere.
+1. In styles.table, ADD:  alignSelf: "flex-start"  and  width: "auto"
+   (keep existing borders/marginBottom). This stops the table from filling the
+   whole page.
 
-4. Note whether a shared style object is used that other components also rely on
-   (so I don't change something with wider impact).
+2. In renderTableAst, for EACH cell compute an optional explicit width from
+   cell.attrs.width OR inline CSS "width" (via readInlineStyleProp + parseLen).
+   Build a per-cell style:
+     - If a % width is found: apply { flexGrow: 0, flexBasis: `${value}%` }.
+     - If a px width is found AND it is reasonable (<= ~500, i.e. not absurdly
+       larger than a page): apply { flexGrow: 0, width: value }.
+       If the px value is absurd (> ~500), ignore it (fall back to default).
+     - If NO explicit width: keep the current behavior for that cell
+       (flexGrow: 1, flexBasis: 0 — do not add anything).
+   Merge this per-cell width style into the existing cell style array AFTER
+   styles.tableCell so it overrides flex only when a width was found. Do not
+   change borders, padding, header styling, or the row/cell iteration logic.
 
-Output: current table code + current image code + confirmation of scope. No edits.
+#194 — Images: respect pasted dimensions, stop forced upscaling.
+
+1. In styles.image, REMOVE  height: 120. Keep maxWidth: "100%" and
+   objectFit: "contain". Do NOT set a fixed height.
+
+2. In renderImageAst, read width/height from node.attrs.width, node.attrs.height,
+   and inline CSS "width"/"height" (via readInlineStyleProp + parseLen). Build a
+   per-image style object:
+     - width: if % -> `${value}%`; if px and reasonable (<= ~500) -> value; else omit.
+     - height: same rule; else omit (let it scale by aspect ratio).
+     - Always include maxWidth: "100%" and objectFit: "contain".
+     - If NEITHER width nor height is found, render with only
+       { maxWidth: "100%", objectFit: "contain" } — no forced height, no upscaling.
+   Apply this computed style to the <Image>. Keep the existing src guard
+   (data: or http(s) only) unchanged.
+
+Show both diffs (helpers + table changes + image changes). No auto-apply.

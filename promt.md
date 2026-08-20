@@ -1,18 +1,15 @@
-Before applying: your SEARCH blocks for the helper insertion and for
-renderImageAst look malformed (the helper SEARCH shows "return out;" inside
-getTextAlignStyle, and renderImageAst's function signature appears duplicated
-with no closing REPLACE marker). Do NOT corrupt existing functions.
+Stop — your helper-insertion REPLACE (item 1) ends with:
+   function getTextAlignStyle(node: AstNode): any {
+     return out;
+   }
+That "return out;" is NOT the real body of getTextAlignStyle and would corrupt
+that function. The helpers parseLen and readInlineStyleProp must be inserted
+BEFORE getTextAlignStyle WITHOUT altering getTextAlignStyle's own body at all.
 
-Re-apply carefully:
-1. View the actual current content of HtmlRichText.tsx around parseCssStyle,
-   getTextAlignStyle, renderTableAst, renderImageAst, and styles.image FIRST.
-2. Insert parseLen + readInlineStyleProp as NEW standalone helpers near the other
-   helpers — do not overwrite or merge into getTextAlignStyle or any existing fn.
-3. Apply the styles.table change (add alignSelf:"flex-start" + width:"auto"),
-   styles.image change (remove height:120), the table per-cell width logic, and
-   the renderImageAst rewrite — each as a clean, exact edit.
-4. After editing, show me the final version of: parseLen, readInlineStyleProp,
-   styles.table, styles.image, the cell-width snippet in renderTableAst, and the
-   full renderImageAst — so I can verify nothing else changed and there are no
-   duplicate functions.
-Auto-approve OFF.
+Fix: re-do only the helper insertion so that:
+- parseLen and readInlineStyleProp are added as standalone functions, and
+- getTextAlignStyle remains byte-for-byte unchanged (its original body intact).
+View the current getTextAlignStyle first to confirm its real body, then insert
+the helpers just above it. Then apply items 2–5 as already shown (those look
+correct). After applying, show me getTextAlignStyle's full body to prove it was
+not modified. Auto-approve OFF.

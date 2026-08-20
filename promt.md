@@ -1,115 +1,98 @@
-Bug #189 is partially fixed.
+READ-ONLY INVESTIGATION ONLY.
 
-The color issue is now fixed:
+DO NOT modify, create, delete, or apply ANY file changes.
+DO NOT write a fix yet.
+DO NOT keep scanning unrelated files.
 
-- Yes = RED
-- No = GREEN
+We have a regression in Bug #189.
 
-Do NOT change the working color implementation.
+Known behavior
 
-The remaining issue is specifically with the N/A value.
+Before the latest Bug #189 change:
 
-Current behavior
+- N/A was working correctly.
+- User could select N/A.
+- After Save and page reload, N/A remained N/A.
 
-When the user selects "N/A" in any of these three Covenant fields:
+After the latest change:
 
-1. Are Monitoring Covenants Accurately Tracked and Defined
-2. Are Covenants Accurately Calculated and Validated
-3. Are Covenant Breaches Adequately Addressed and Mitigated
+- Yes/No colors are now correct.
+- But N/A is broken.
+- User selects N/A → clicks Save → page reloads → UI shows No.
 
-the UI allows selecting "N/A".
+We need to find EXACTLY where this regression is happening.
 
-However, after clicking Save:
+Your task
 
-- the page reloads
-- after reload, the field shows "No" instead of "N/A"
+Perform a READ-ONLY investigation and identify the exact source of the problem.
 
-Confirmed root cause in current implementation
+Start with this file:
 
-The current onChange implementation contains logic equivalent to:
+"frontend/src/app/review/[ecif]/review-info/components/sections/CovenantsSection.tsx"
+
+Focus ONLY on these three fields:
+
+1. "accuratelyDefinedTracked"
+2. "accuratelyCalculated"
+3. "breachesMitigated"
+
+Trace their complete data flow:
+
+"Dropdown value"
+→ "onChange"
+→ "React state"
+→ "changes.setField()"
+→ "Save"
+→ "API request"
+→ "backend/API"
+→ "database/persistence"
+→ "API response"
+→ "initial state"
+→ "UI"
+
+IMPORTANT
+
+The current code contains logic similar to:
 
 "const val = raw === "N/A" ? "No" : raw;"
 
-This explicitly converts "N/A" to "No".
+Confirm whether this is the regression.
 
-That logic is incorrect for the required behavior.
+Also determine whether "changes.setField()" receives:
 
-Required behavior
+- "N/A"
+  or
+- "No"
 
-If the user selects:
+when the user selects N/A.
 
-- "Yes" → persist "Yes" → after reload display "Yes" → RED
-- "No" → persist "No" → after reload display "No" → GREEN
-- "N/A" → persist "N/A" → after reload display "N/A"
+Do NOT assume the database is the problem.
 
-"N/A" must NOT be converted to "No" anywhere in the frontend.
+Because N/A worked before the latest change, compare the CURRENT implementation against the previous implementation/git diff if available.
 
-Important: Fix the complete persistence flow
+Find exactly what changed between the working and broken behavior.
 
-Do not simply change the dropdown display.
+Output ONLY this investigation report
 
-Trace the complete flow for all three fields:
+1. Exact file(s) involved
+2. Exact function/handler involved
+3. Exact line/logic causing N/A → No
+4. Where the value changes from N/A to No
+   - UI state?
+   - Save handler?
+   - API payload?
+   - Backend?
+   - Database?
+   - Response mapping?
+5. Previous working logic, if available
+6. Latest change that introduced the regression
+7. Minimal fix required
+8. Exact files that need modification
 
-"Dropdown → React state → Save handler → changes.setField → API request → backend → database/persistence → API response → initial state mapping → UI"
+DO NOT modify any file.
 
-First determine whether the backend/API/database already supports the literal value "N/A".
+DO NOT suggest broad changes.
 
-If the backend and persistence layer already support "N/A":
+DO NOT continue reading unrelated files.
 
-- remove the "N/A → No" normalization
-- pass the original selected value through unchanged
-- ensure "changes.setField()" receives "N/A"
-- ensure the response mapping does not convert "N/A" to "No"
-
-If the backend/API/database does NOT support "N/A", identify exactly where it is being rejected or transformed and make the smallest required change so "N/A" can be persisted and returned correctly.
-
-Do NOT silently convert "N/A" to another value.
-
-Specific frontend fix
-
-For each of the three affected fields, the onChange logic should preserve the raw value:
-
-"const val = e.target.value as "Yes" | "No" | "N/A";"
-
-Then pass "val" directly to:
-
-- the React state setter
-- "changes.setField()"
-
-Do not use:
-
-"raw === "N/A" ? "No" : raw"
-
-Validation
-
-Test each of the three fields independently.
-
-For each field:
-
-1. Select "N/A"
-2. Click Save
-3. Allow the page to reload
-4. Verify the field still displays "N/A"
-5. Inspect the Save/API request and confirm "N/A" was sent
-6. Inspect the API response after reload and confirm it contains "N/A"
-7. If possible, verify the persisted/database value is "N/A"
-
-Then verify:
-
-"Yes → Yes → RED"
-
-"No → No → GREEN"
-
-"N/A → N/A"
-
-Do not modify unrelated fields or functionality.
-
-Keep the existing color fix unchanged.
-
-Before editing, tell me:
-
-- exact file/function where N/A is being converted
-- whether the API/database supports N/A
-- exact reason N/A becomes No after reload
-
-Then make the minimal fix.
+Stop investigation once the exact root cause and required file/function are identified.

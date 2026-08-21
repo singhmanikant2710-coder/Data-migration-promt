@@ -1,37 +1,31 @@
-Hi Geoff,
+Edit ONLY InitialMemoPDF.tsx, FinalMemoPDF.tsx, ReviewPDF.tsx. Auto-approve OFF.
+Output diffs. Do NOT change pageSetup.ts (shared — would affect 15+ other PDFs).
 
-Two things — the reports status you asked about, and an update on #184.
+DejaVuSans is wider than Helvetica, causing overlap in TWO specific places:
+(a) the header bar (header VALUE at 11pt makes "Completed Date" value touch
+"Reviewer"), and (b) the Account Information table (cells at 10pt clip "Bank" and
+long account numbers). Reduce ONLY these to 9pt. Leave narrative, labels, section
+tables, and footers unchanged.
 
-=== REPORTS STATUS ===
+InitialMemoPDF.tsx:
+- styles.headerValue.fontSize: 11 -> 9
+- styles.headerLabel.fontSize: 10 -> 9   (keep label/value same size in header)
+- styles.thAcct.fontSize: 10 -> 9
+- styles.tdAcct.fontSize: 10 -> 9
+- Do NOT change styles.th/td (other tables), narrative (11), bodyLabel/bodyValue,
+  HtmlRichText baseFontSize, or footnote.
 
-I verified each report against the current codebase. The following are fully built and wired to run from the Reports page dropdown:
-• CRM Findings Summary Table
-• CRM Summary
-• CRM Findings and Observations
-• Unsatisfactory Transactional Ratings
-• Scorecard Results
-• PD Grade Migration
-• Policy Exceptions
-• Non-Compliant Covenants
-• CRO Production
-• Final Memos
-• Checklist Questionnaire
+FinalMemoPDF.tsx:
+- Same four changes: headerValue 11->9, headerLabel 10->9, thAcct 10->9,
+  tdAcct 10->9. Nothing else.
 
-On Checklist Questionnaire — this one is actually already wired up on our side (the report component and its data call exist and run). The output depends on the backend query returning data, so if you'd like to align it with your prototype query/design, we can — but the report itself isn't missing.
+ReviewPDF.tsx (Account Information table is the wide bespoke one):
+- Header card field Text elements currently { fontSize: 10 }: change to 9 (the
+  Customer #, Review ID, Sample, dates, Status, Reviewer, Approver rows).
+- In the Account Information table ONLY: the tiny/narrow header and value cells
+  that use { fontSize: 10 } inline -> 9.
+- Do NOT change: styles.page (already 9), narrativeText (9), the section tables
+  (Ratings/Regulatory/Covenants at 11), valueInline/labelInline (11), or
+  footerText (8).
 
-CRM Findings Only is the one still in discussion (covered below).
-
-1) Renaming "PD/LGD Grade Migration" to "PD Grade Migration": This is safe — it will NOT affect the report running. The report is matched internally by a stable identifier (it keys off "migration" in the name), not the exact display label, so renaming it in your Reports library will still route correctly. You can rename it without breaking anything.
-
-2) CRM Findings Only — extending Findings-only to other reports: Yes, this approach works. Rather than a separate report, we can add a "Findings only" filter/toggle on the Reports page that runs the existing CRM Findings and Observations report filtered to findings. The same pattern could extend to other reports like CRM Summary where a similar sub-filter makes sense — though I'd scope each one individually, since what "findings only" means may differ per report. Suggest we start with CRM Findings and Observations, then identify which others would genuinely benefit.
-
-=== #184 — Observations & Findings Excel Export (00-CRM Admin) ===
-
-Thanks for the clarification — that reframes it for me. My earlier note treated this as default-value/data-migration, but based on your explanation this is about the export producing null in columns L, M, N, O, P (CRM Component, Code, Severity, Category, Description) when "00-CRM Admin / No CRM Findings" is selected, and those needing to populate with their respective values on save.
-
-I'm investigating now to pin down whether the values exist on the saved record but the export isn't mapping them (export-side fix on us), or whether they're being stored as null on save (data-side). I'll confirm which it is and the fix path shortly — will update you once I've traced it end to end.
-
-Happy to walk through any of the above.
-
-Thanks,
-Manikant
+Keep exactly one <Text> per cell, no duplicates. Show all three diffs.

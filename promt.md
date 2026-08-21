@@ -1,16 +1,28 @@
-Hi Geoff,
+READ-ONLY DIAGNOSTIC. Do NOT edit, create, or delete any file. Do not run any commands. Only read and report.
 
-Thanks for re-sharing those designs from the 6.3c .mdb file — that's helpful. I dug into the four specifically and want to give you an accurate status (and correct one item from my earlier note):
+CONTEXT: Bug — "When downloading a PDF for a summary of the rolling 24 months, it only populates 6 months." The rolling-24-months PDF summary shows only 6 months of data instead of 24. I need you to trace where the month count is limited to 6 (or where 24 is expected but truncated).
 
-1) Unsatisfactory Transactional Ratings — NOT built as a standalone report. Correcting my earlier message: what exists today is an "Unsatisfactory CRM Ratings" section inside the CRM Summary report, but there is no separate Unsatisfactory Transactional Ratings report wired to the Reports dropdown. This one still needs to be built. (Apologies — I initially listed it as built based on the dropdown entry; on inspection the standalone report isn't there.)
+TASK: Trace the full data path for the Blackbook rolling-24-months PDF summary, from data source to PDF render, and report findings ONLY. Make ZERO changes.
 
-2) Non-Compliant Covenants (aka Covenant Violations) — Built. Both the Non-Compliant Covenants and Covenant Violations components are implemented and wired to run. One note: the Covenant Violations rendering sits behind a feature flag, so we may just need to enable/verify that flag. Your design will help us confirm the layout and columns match what you expect.
+Search and report on the following, quoting exact file paths + line numbers + the relevant code snippet for each:
 
-3) CRM Summary for Management / Review Summary (Findings Only) — Built. The Management Summary report exists and is wired, and it includes a "Findings Only" section that is currently behind a feature flag. So the capability is there; we'd align it to your 10_Review Summary design and enable the section.
+1. BACKEND — the summary data source:
+   - In backend/src/Bcat.Api/Controllers/BlackbookSummaryController.cs: find the endpoint that returns the rolling summary. Report its route, params, and what it calls.
+   - In backend/src/Bcat.Application/Services/BlackbookSummaryService.cs and IBlackbookSummaryService.cs: find the method building the summary. Report how many months it fetches/returns.
+   - In backend/src/Bcat.Application/Services/Calculations/TblMainCalcs.cs: check if any TTM / rolling / month-window logic caps the range.
+   - Search the whole backend for any literal "6", "Take(6)", "TOP 6", "MonthsBack", "24", "rolling", "trailing" that could bound the month window. List every match with path:line.
 
-4) CRM Findings for Management (Findings Only) — Not built as a distinct report. Today only the standard CRM Findings and Observations report exists. A management "findings-only" view currently lives only as an optional section within the Management Summary, not as its own report. This one would need to be built (or defined as a filtered variant of the existing CRM Findings report, per the Findings-only approach we discussed).
+2. BACKEND — the repository/query:
+   - In backend/src/Bcat.Infrastructure/SqlServer/* and Access/* repositories, find the query that pulls monthly rows for the summary. Report any TOP/FETCH/LIMIT, date filter, or month-count parameter. Quote the SQL and the C# that sets the range.
 
-Net: #2 and #3 are built (may need feature-flag enablement + design alignment). #1 and #4 still need building. Since these are net-new builds rather than fixes, I'll raise them with Brijesh/the team to scope and sequence — your designs will be the reference. Will follow up with a plan.
+3. FRONTEND — report + PDF render path:
+   - In frontend/src/app/blackbook/report/page.tsx: find where summary data is fetched and passed to the PDF. Report any .slice(), .take, array length caps, or "6"/"24" literals.
+   - Find the PDF summary component (likely a *PDF.tsx using @react-pdf/renderer that renders the rolling-24-month table). Report how it maps months to columns/rows and whether it caps the count.
+   - Report any month-window constant / config used by the frontend summary.
 
-Thanks,
-Manikant
+OUTPUT FORMAT:
+- A) Exact data path as a numbered chain: source query -> service -> controller -> API -> frontend fetch -> PDF component.
+- B) The single most likely place the count is limited to 6, with file path + line number + quoted code.
+- C) Any secondary suspects (ranked), each with path:line.
+- D) Confirm whether the 24-vs-6 limit is on the backend (data never returned) or frontend (data returned but not rendered). State which, based on evidence.
+- E) Do NOT propose or write a fix yet. Findings only.

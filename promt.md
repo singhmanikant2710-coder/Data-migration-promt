@@ -1,15 +1,23 @@
-READ-ONLY. Diagnostics only. Do NOT change anything.
+READ-ONLY DIAGNOSTIC. Do NOT edit/create/delete any file. Report exact code with line numbers only.
 
-The rolling-24-months data reaches the frontend fully (backend returns TOP 24), but the PDF shows only 6 months. The cap is in the frontend column-builder or PDF component. Pinpoint the exact slice/cap.
+CONTEXT: In BlackBookPdf.tsx the monthly summary is hard-capped to 6 rows via MONTHLY_FIRST_ROWS=6 and a single monthlyChunks slice. I need the surrounding rendering + pagination logic before I fix it, so I don't break page breaks or overflow the PDF.
 
-Show me ONLY (no edits):
+TASK: Open frontend/src/blackbook/pdf/BlackBookPdf.tsx and report ONLY these, each with exact path:line and quoted code:
 
-1. buildMonthSummaryColumns implementation — find it (likely frontend/src/blackbook/components/monthSummaryRegistry.ts or index.ts, or wherever it's defined). Show the full function. Look specifically for: any .slice(0, 6), .slice(-6), Take(6), a MAX constant, or a loop bounded to 6 that limits how many month columns are built from the series.
+1) The full block that defines: MONTHLY_FIRST_ROWS, monthlyRowsOnFirstPage, monthlyChunks, and seriesYearOnly. Quote ~15 lines of surrounding context.
 
-2. BlackBookPdf.tsx (frontend/src/blackbook/pdf/BlackBookPdf.tsx) — show how it renders columnsR24 / rolling24. Look for any slicing to 6, a fixed array of 6, or a per-page column limit that caps months. Show the rolling24 / columnsR24 rendering block.
+2) How monthlyChunks is consumed in the JSX: quote the .map(...) or render loop that turns each chunk into a <Page> / <View> table. Show how a "chunk" becomes rows, and whether each chunk = one PDF page.
 
-3. Any constant like MAX_MONTH_COLUMNS, MONTHS = 6, WINDOW = 6, or similar in the blackbook frontend (search frontend/src/blackbook for "6", ".slice", "MAX", "MONTHS", "WINDOW").
+3) Any existing multi-chunk pagination pattern in this same file used for OTHER tables (history sections, rolling24, etc.) — i.e. is there already a helper that splits an array into pages of N rows? Quote it. (e.g. a chunk(arr, size) util, or repeated slice with page breaks.)
 
-4. Confirm: at the point columnsR24 is built (page.tsx:410-432), is rolling24 already full (24) or already truncated before buildMonthSummaryColumns is called? Show what rolling24 contains right before that call (any slicing between fetch and column-building?).
+4) The definition of seriesYearOnly: how is it derived from the incoming props (series / rolling24)? Is it filtered to current year only? Quote the derivation with line numbers.
 
-Read once. Findings only. No edits. I need the EXACT line where months get capped to 6.
+5) The disabled rolling24 block: quote the `if (false && ...)` section and the R24_FIRST_ROWS logic, so I can see what "rolling 24" was meant to render and whether the intended 24-month view lives there vs. in the monthly grid.
+
+6) The section heading/title text rendered above the monthly grid and above the (disabled) rolling24 grid — quote the exact <Text> labels, so I know which grid the user actually sees labeled as the 24-month summary.
+
+OUTPUT:
+- A) Quoted blocks for items 1–6 with line numbers.
+- B) State plainly: is the "rolling 24 months" the user expects served by (i) the monthly grid capped at 6, or (ii) the disabled rolling24 block? Base it on the heading text from item 6.
+- C) Confirm whether rendering more than 6 rows requires page-splitting (i.e. would 24 rows overflow one page), based on how chunks map to pages.
+- D) No fix proposed. Findings only.

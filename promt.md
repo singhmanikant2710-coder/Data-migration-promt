@@ -1,29 +1,21 @@
-Edit ONLY InitialMemoPDF.tsx and FinalMemoPDF.tsx. Auto-approve OFF. Output diffs.
+Apply the Account Information table fix, but your FinalMemoPDF.tsx diff is
+malformed — several rows show BOTH the old (styles.td) and new (styles.tdAcct)
+<Text> cells being added together, which would create DUPLICATE cells and break
+the table (especially the Balance/Commitment cells and the empty-state rows).
 
-The "Account Information" table overflows with DejaVuSans (Commitment column
-clipped, long Account # bleeding into Scorecard ID). Root cause: 8 columns'
-flexBasis sums to 100%, and per-cell padding (6pt each side = 96pt/row) + borders
-push total width past the 540pt page content area. DejaVuSans is wider than
-Helvetica so it now clips.
+Re-apply carefully:
+1. InitialMemoPDF.tsx: apply as proposed (add thAcct/tdAcct with padding 4, use
+   them in the Account Information header + all data rows + empty state, add
+   wrapAnywhere to Account # c1 and remove wrap={false} from it). Columns
+   unchanged.
+2. FinalMemoPDF.tsx: apply the SAME intent, but each old <Text style={[styles.th
+   ...]}> / <Text style={[styles.td ...]}> in the Account Information table must
+   be REPLACED (not duplicated) by the thAcct/tdAcct version. Do NOT leave both.
+   Ensure exactly one <Text> per cell.
+3. Confirm styles.wrapAnywhere already exists in BOTH files (it's used for
+   Scorecard ID). If it doesn't exist in FinalMemoPDF, tell me before using it.
+4. Do not touch any other table or shared th/td padding.
 
-Apply the safest minimal fix to THIS table only (do not touch shared style tokens
-or other memo tables):
-
-1. Reduce this table's cell padding: in the th and td styles used by the Account
-   Information table, change padding from 6 to 4 (recovers ~32pt/row). If th/td
-   are shared with other tables, create table-specific variants (e.g. thAcct/
-   tdAcct) with padding 4 and apply only to the Account Information table cells —
-   do NOT change padding for other tables.
-
-2. Enable wrapping on the Account # column (c1) so long digit-only account
-   numbers break instead of overflowing into Scorecard ID. Apply the same
-   wrapAnywhere style (wordBreak: "breakAll") that Scorecard ID (c2) already uses,
-   to the Account # cells. Remove wrap={false} from the Account # cells if it
-   prevents wrapping.
-
-3. Only if still tight after 1+2: trim the four narrow PD/LGD columns (c3-c6)
-   from 6% to 5.5% each to free ~2% slack. Keep Account #, Scorecard ID, Balance,
-   Commitment widths unchanged.
-
-Apply the SAME changes to both InitialMemoPDF.tsx and FinalMemoPDF.tsx (they
-share this table). Show both diffs. No auto-apply.
+After applying, run tsc mentally and show me: the final thAcct/tdAcct style defs,
+the full Account Information header + one data row + empty-state row for
+FinalMemoPDF, so I can confirm there are no duplicate cells. Auto-approve OFF.

@@ -1,46 +1,27 @@
-Fix the "Account Information" table overflow in the CASRR memo PDFs caused by the
-DejaVuSans font being wider than the old Helvetica.
+Apply the Account Information table fix, but ReviewPDF.tsx (Part 3, sections C
+and D) is malformed and would break the build. Files 1 (InitialMemoPDF) and 2
+(FinalMemoPDF) look correct — apply those.
 
-CONTEXT (already done, do NOT touch): DejaVuSans is registered and used
-(fontFamily "DejaVuSans") in InitialMemoPDF.tsx, FinalMemoPDF.tsx, and
-ReviewPDF.tsx (CAS Linesheet). ≥/≤ now render correctly everywhere. Font setup is
-complete.
+For ReviewPDF.tsx, your diff has errors:
+1. Duplicate <View style={styles.tableRow}> opening tags in the first data row,
+   plus an orphan "})()}</Text>" fragment.
+2. Invalid JSX/TS: "{r?.outstandingBalance as any : "-"}" and
+   "{r?.committedExposure as any : "-"}" — this is a broken ternary (missing "?")
+   and won't compile.
+3. Duplicate Balance/Commitment <Text> cells (both the old 14%/15% and new 13%).
 
-REMAINING BUG (in all three): the 8-column "Account Information" table overflows
-because DejaVuSans is wider. The "Commitment" header/column is clipped at the
-right edge, and long Account # values overlap into the Scorecard ID column.
-Columns use flexBasis percentages summing to 100%, and per-cell padding (6pt each
-side) + borders push past the ~540pt Letter-portrait content width.
+Re-do ReviewPDF.tsx cleanly. For its bespoke Account Information table only:
+- Header + first row + subsequent rows + empty-state row.
+- Account Number column: flexBasis 14% -> 21%, add styles.wrapAnywhere.
+- Scorecard ID column: 25% -> 29%.
+- Balance: 15% -> 13%. Commitment: 14% -> 13%.
+- Narrow PD/LGD (tableCellHeaderNarrow/tableCellValueNarrow): flexBasis 8% -> 5%.
+- Keep the existing ternaries intact (e.g. r?.outstandingBalance != null ?
+  formatCurrency(...) : "-"). Do NOT alter the value expressions — only change
+  flexBasis and add wrapAnywhere.
+- EXACTLY one <Text> per cell, one <View> per row. No duplicates, no orphan
+  fragments.
 
-Edit these files (whichever actually contain this Account Information table):
-  - frontend/src/components/pdf/InitialMemoPDF.tsx
-  - frontend/src/components/pdf/FinalMemoPDF.tsx
-  - frontend/src/components/pdf/ReviewPDF.tsx   (CAS Linesheet)
-FIRST confirm the table exists in ReviewPDF.tsx with the same cols8Accounts /
-th / td pattern. If ReviewPDF uses a shared table component instead, tell me
-where, and fix it there once. Apply the SAME changes consistently. Auto-approve
-OFF. Do not touch other tables, shared tokens, or the font setup.
-
-Do exactly this in each file's Account Information table:
-
-1. Add two table-specific styles (leave existing th/td untouched for other tables):
-     thAcct: same as th but padding: 4 (not 6)
-     tdAcct: same as td but padding: 4 (not 6)
-
-2. In the Account Information table ONLY, replace every styles.th with
-   styles.thAcct and every styles.td with styles.tdAcct — header row, ALL data
-   rows, and empty-state row. CRITICAL: REPLACE each cell, never duplicate it.
-   Exactly one <Text> per cell (no leftover styles.td next to styles.tdAcct).
-
-3. Account # column (c1): apply styles.wrapAnywhere to its cells and remove any
-   wrap={false} on Account # cells, so long digit-only account numbers wrap
-   instead of bleeding into Scorecard ID. (Scorecard ID c2 already uses
-   wrapAnywhere — keep it.)
-
-4. Free horizontal slack so Commitment isn't clipped: change cols8Accounts
-   c3, c4, c5, c6 from flexBasis "6%" to "5%" each. Keep c1 21%, c2 29%, c7 13%,
-   c8 13%. New total = 96%.
-
-After editing, verify per file: no duplicate <Text> cells; styles.wrapAnywhere
-exists (if missing in any file, tell me before using it); tsc has no new errors.
-Show all diffs for review — do NOT auto-apply.
+After editing, show me the full Account Information block from ReviewPDF.tsx
+(header + first row + one subsequent row + empty-state) so I can confirm no
+duplicates and no broken ternaries. Then run tsc. Auto-approve OFF.

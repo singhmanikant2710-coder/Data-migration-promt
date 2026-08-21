@@ -1,27 +1,28 @@
-Apply the Account Information table fix, but ReviewPDF.tsx (Part 3, sections C
-and D) is malformed and would break the build. Files 1 (InitialMemoPDF) and 2
-(FinalMemoPDF) look correct — apply those.
+Edit ONLY InitialMemoPDF.tsx, FinalMemoPDF.tsx, ReviewPDF.tsx. Auto-approve OFF.
+Output diffs. Two small remaining issues in the Account Information table.
 
-For ReviewPDF.tsx, your diff has errors:
-1. Duplicate <View style={styles.tableRow}> opening tags in the first data row,
-   plus an orphan "})()}</Text>" fragment.
-2. Invalid JSX/TS: "{r?.outstandingBalance as any : "-"}" and
-   "{r?.committedExposure as any : "-"}" — this is a broken ternary (missing "?")
-   and won't compile.
-3. Duplicate Balance/Commitment <Text> cells (both the old 14%/15% and new 13%).
+ISSUE 1 — "Bank" clipped in headers:
+After narrowing PD/LGD columns to 5%, the "Bank PD" / "Bank LGD" (and check CAS
+PD / CAS LGD) headers clip the last letter. Make these header labels wrap to two
+lines so they fit:
+  "Bank PD" -> "Bank{"\n"}PD",  "Bank LGD" -> "Bank{"\n"}LGD",
+  "CAS PD" -> "CAS{"\n"}PD",    "CAS LGD" -> "CAS{"\n"}LGD"
+Ensure these header cells use wrap (not wrap={false}).
 
-Re-do ReviewPDF.tsx cleanly. For its bespoke Account Information table only:
-- Header + first row + subsequent rows + empty-state row.
-- Account Number column: flexBasis 14% -> 21%, add styles.wrapAnywhere.
-- Scorecard ID column: 25% -> 29%.
-- Balance: 15% -> 13%. Commitment: 14% -> 13%.
-- Narrow PD/LGD (tableCellHeaderNarrow/tableCellValueNarrow): flexBasis 8% -> 5%.
-- Keep the existing ternaries intact (e.g. r?.outstandingBalance != null ?
-  formatCurrency(...) : "-"). Do NOT alter the value expressions — only change
-  flexBasis and add wrapAnywhere.
-- EXACTLY one <Text> per cell, one <View> per row. No duplicates, no orphan
-  fragments.
+ISSUE 2 — long Account # overlaps Scorecard ID:
+Long account numbers like "85206228-3950183819" don't break within the Account #
+column (c1) and visually touch/overlap the Scorecard ID column.
+Fix so Account # wraps hard inside its own column:
+  - Confirm styles.wrapAnywhere (wordBreak: "breakAll") is actually applied to
+    EVERY Account # cell (header not needed, but all data rows + first row +
+    empty state). Add it where missing.
+  - Remove any wrap={false} on Account # cells.
+  - Ensure the Account # cell has minWidth: 0 so flexBasis can shrink and wrap
+    works (react-pdf needs minWidth:0 for text to break inside a flex column).
+  - In ReviewPDF.tsx the Account # cell uses formatAccountNumber(...) inside a
+    tableCellValueTiny with an inline flexBasis — make sure wrapAnywhere AND
+    minWidth:0 are both on that cell.
 
-After editing, show me the full Account Information block from ReviewPDF.tsx
-(header + first row + one subsequent row + empty-state) so I can confirm no
-duplicates and no broken ternaries. Then run tsc. Auto-approve OFF.
+Do NOT change column widths (Commitment currently fits — don't break it). Apply
+consistently across all three files. EXACTLY one <Text> per cell, no duplicates.
+Show diffs.

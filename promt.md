@@ -1,31 +1,23 @@
-Edit ONLY InitialMemoPDF.tsx, FinalMemoPDF.tsx, ReviewPDF.tsx. Auto-approve OFF.
-Output diffs. Do NOT change pageSetup.ts (shared — would affect 15+ other PDFs).
+READ-ONLY. Diagnostics only. Do NOT change anything.
 
-DejaVuSans is wider than Helvetica, causing overlap in TWO specific places:
-(a) the header bar (header VALUE at 11pt makes "Completed Date" value touch
-"Reviewer"), and (b) the Account Information table (cells at 10pt clip "Bank" and
-long account numbers). Reduce ONLY these to 9pt. Leave narrative, labels, section
-tables, and footers unchanged.
+Files: frontend/src/app/reports/page.tsx and frontend/src/components/pdf/
 
-InitialMemoPDF.tsx:
-- styles.headerValue.fontSize: 11 -> 9
-- styles.headerLabel.fontSize: 10 -> 9   (keep label/value same size in header)
-- styles.thAcct.fontSize: 10 -> 9
-- styles.tdAcct.fontSize: 10 -> 9
-- Do NOT change styles.th/td (other tables), narrative (11), bodyLabel/bodyValue,
-  HtmlRichText baseFontSize, or footnote.
+Geoff clarified these 4 reports may NOT have been fully built by Krishnan before departure. I need to verify each one's ACTUAL status. Show me ONLY (no edits):
 
-FinalMemoPDF.tsx:
-- Same four changes: headerValue 11->9, headerLabel 10->9, thAcct 10->9,
-  tdAcct 10->9. Nothing else.
+1. UNSATISFACTORY TRANSACTIONAL RATINGS:
+   - Is there a PDF component for it (search components/pdf/ for "Unsatisfactory")?
+   - In reports/page.tsx, is it in the dropdown, and does onGeneratePdf have a detector + run for it, or does it fall through to "not implemented"?
 
-ReviewPDF.tsx (Account Information table is the wide bespoke one):
-- Header card field Text elements currently { fontSize: 10 }: change to 9 (the
-  Customer #, Review ID, Sample, dates, Status, Reviewer, Approver rows).
-- In the Account Information table ONLY: the tiny/narrow header and value cells
-  that use { fontSize: 10 } inline -> 9.
-- Do NOT change: styles.page (already 9), narrativeText (9), the section tables
-  (Ratings/Regulatory/Covenants at 11), valueInline/labelInline (11), or
-  footerText (8).
+2. NON-COMPLIANT COVENANTS (aka Covenant Violations):
+   - There are imports for BOTH NonCompliantCovenantsDocument AND CovenantViolationsPDF. Show both components' status — are they real implementations or stubs/placeholders? Show the first ~30 lines of each file.
+   - How does the dropdown route to them?
 
-Keep exactly one <Text> per cell, no duplicates. Show all three diffs.
+3. CRM SUMMARY FOR MANAGEMENT (Findings Only) / "Review Summary" (10_Review Summary):
+   - Is there any "management summary" report? (ManagementSummaryPDF was imported.) Is it built or stub? Show its status and whether it's a findings-only variant.
+
+4. CRM FINDINGS FOR MANAGEMENT (Findings Only) (04_CRM Findings):
+   - Is there a findings-only / "for management" variant of CRM Findings, separate from the standard CRM Findings and Observations? Or only the standard one?
+
+For each: BUILT (real component + wired + data), PARTIAL (component exists but stub/not wired), or NOT BUILT (missing). Show evidence (file existence, first lines, routing).
+
+Read once. Findings only. No edits. I need accurate per-report status to respond to Geoff about what still needs building.

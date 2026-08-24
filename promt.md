@@ -1,29 +1,20 @@
-SINGLE-FILE, MINIMAL, BOUNDED EDIT. Only edit frontend/src/app/blackbook/edit/page.tsx. Do not touch any other file. Do not refactor. Show me the diff before applying. Do not run the terminal.
+Hi John, could you please help us by updating the latest available data in the BCAT Legacy environment?
 
-GOAL: Fix "TTM/YTD values not pulling for a newly entered month" (BCAT defect #35, also #29/#30/#31). Root cause: buildMonthSummaryColumns is called with plain `enrichedSeries` and plain `rolling24`, which do NOT include the user's in-flight edits for the newly entered month. The file already builds `seriesWithEdits` and `rolling24WithEdits` (edits merged + hydrated to canonical cur* keys), and every other consumer (MonthSummaryTable, DetailGrid, DetailHeaderTiles, industry mappers) already uses those. Only the column builder was left on the plain arrays.
+We need to test our changes against the latest data because BCAT is a complex application, and without proper regression testing on realistic/latest data, it would be difficult for us to confidently push the changes.
 
-EXACT CHANGE — apply to BOTH call sites of buildMonthSummaryColumns in this file:
+It would be really helpful if you could update the latest data in BCAT Legacy so that we can perform proper end-to-end and regression testing. Thanks a lot for your support!
 
-1) The main `monthSummaryColumns` useMemo (currently):
-   buildMonthSummaryColumns({
-     series: enrichedSeries,
-     rolling24,
-     ...
-   })
-   with dep array [enrichedSeries, rolling24, industry, name, customLabels]
 
-   CHANGE TO:
-   - series: enrichedSeries        -> series: seriesWithEdits
-   - rolling24,                    -> rolling24: rolling24WithEdits
-   - dep array [enrichedSeries, rolling24, ...] -> [seriesWithEdits, rolling24WithEdits, industry, name, customLabels]
 
-2) The seeding call site (the `cols = buildMonthSummaryColumns({ series: enrichedSeries, rolling24, ... })` block used to discover editable fields):
-   - Apply the SAME two swaps: series -> seriesWithEdits, rolling24 -> rolling24WithEdits.
-   - If this call site is inside a function/effect that does NOT already close over seriesWithEdits/rolling24WithEdits in scope, tell me instead of guessing — do not move code around.
+Hi Geoff, could you please take around a week to perform a thorough end-to-end testing of the BCAT application?
 
-CRITICAL SAFETY CHECKS before applying (report findings if any fail, do NOT force the edit):
-a) Confirm `seriesWithEdits` and `rolling24WithEdits` are DECLARED (via useMemo) BEFORE both buildMonthSummaryColumns call sites in source order. If either call site is above their declaration, a TDZ/ReferenceError will occur — in that case STOP and report; do not reorder.
-b) Confirm `seriesWithEdits` / `rolling24WithEdits` do NOT depend (directly or transitively through their own useMemo deps) on `monthSummaryColumns` — i.e. no circular dependency. Report the dep arrays of both WithEdits memos.
-c) Do NOT change the definitions of seriesWithEdits / rolling24WithEdits, buildMonthSummaryColumns, or any calc function. Only swap the two arguments + the two dep arrays at the call sites.
+Since BCAT is a complex application, we want to make sure we cover the existing functionality properly and avoid missing any regression issues.
 
-After the change: show me the unified diff (only the changed lines + context). Do not build, do not run anything. I will review the diff before you apply.
+During the testing, could you please categorize the findings accordingly:
+
+- Any issue with existing functionality → add it as a Bug
+- Anything that is a newly expected/required capability → add it as a New Functionality/Enhancement
+
+This will help us clearly distinguish between regression bugs and new functionality, and will give us better confidence before we push the changes further.
+
+Really appreciate your time and support in doing a complete validation. Thank you!

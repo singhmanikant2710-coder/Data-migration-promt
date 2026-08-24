@@ -1,7 +1,11 @@
-READ-ONLY. Read frontend/src/app/blackbook/edit/page.tsx ONCE only. Do not re-read, do not open other files. Answer two narrow questions, then stop.
+READ-ONLY. Read frontend/src/app/blackbook/edit/page.tsx ONCE only. Do not re-read or open other files. Answer, then stop.
 
-1) Find the function normalizeEditsForBackend. Quote its full body verbatim. (I need to see how a user's entered month values — e.g. month PBT, interest expense — are keyed before the PUT to /api/v1/main/batch. Specifically whether they map to keys like curInterestExpense, curFixedCharges, curEBITDA, curCashAvailableForFixedCharges.)
+Search the file for these four identifiers and report EVERY usage line (with 2 lines of context above/below each), verbatim:
+1) rolling24WithEdits
+2) seriesWithEdits
+3) buildMonthSummaryColumns
+4) enrichedSeries
 
-2) Find every line containing the string "edits[" AND every line that reads or spreads `edits` into the data passed to buildMonthSummaryColumns or into series/enrichedSeries. Quote those lines only (with the 2 lines above and below each for context).
+For each of the four, I need to see: where it is DEFINED and everywhere it is PASSED/CONSUMED. In particular, quote the exact argument object passed into buildMonthSummaryColumns (which array variable is used for `series:` and for `rolling24:`).
 
-Output only: the normalizeEditsForBackend body, then the edits[...] lines. Then stop. Do not analyze, do not propose anything.
+Output only those quoted usage lines grouped by identifier. Then stop. No analysis, no fix.

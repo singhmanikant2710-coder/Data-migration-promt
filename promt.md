@@ -1,15 +1,25 @@
-Thanks John, that's clear — legacy is the source of truth, and where the template-specific source fields don't exist, the corresponding TTM/YTD simply won't calculate (rather than showing 0). I'll match that behavior exactly. Going ahead with the fix now.
+Perfect, that settles it — trailing 12 calendar months, across all templates, regardless of fiscal year. That's exactly what I'll implement, and it also resolves the Sept-30 year-end case (BHG, #29) since the window will no longer be cut at the fiscal boundary.
 
-On your questions:
+Implementing now. I'll have it tested against the legacy app for the first couple of industries before tomorrow's session.
 
-One thing I'd like to confirm with the LOB/business owner (not blocking, but good to align on):
-- For the trailing-12-month window specifically, legacy takes the current month plus the previous 11 regardless of fiscal year (it crosses the fiscal year-end). I want to confirm the business expects TTM to keep spanning the fiscal boundary that way — this is the behavior I'll implement, and it's also what fixes the Sept-30 year-end case (#29, BHG). Just want them to confirm that's the intended reading of "trailing twelve months."
 
-On being ready for an update tomorrow:
-- Yes, I think we're in good shape. I've confirmed the root cause with database evidence and a legacy side-by-side, the approach is decided (match legacy, populate the TTM/YTD components at save time, year-agnostic), and I'm implementing it now. By tomorrow I expect to have the fix in and tested against the legacy app for at least the first couple of industries (IndirectAuto and Manufacturing), so we can show a concrete before/after.
-- Please do invite the business owner — it'd be a good session to confirm the fiscal-boundary point above and walk them through the legacy vs. new comparison.
+READ-ONLY. No edits, no terminal. Read files, quote verbatim, findings only. This is the last check before I write the TTM populate fix. Keep it focused — do not loop.
 
-I'll keep you posted on progress today.
+CONTEXT: John (client) approved matching legacy: at save time, populate the TTM component table (dbo.tblMainTTMCalculations) with a trailing-12-month SUM/AVG, year-agnostic (current month + previous 11, crossing fiscal-year boundary). Key rule: if a source field doesn't exist / has no value, its TTM must NOT be computed (stay null, not 0). The read path TryMergeTtmIntoSeries already reads from dbo.tblMainTTMCalculations.
 
-Thanks,
-Manikant
+I need to confirm the target table before writing to it. Report ONLY:
+
+1) TABLE SCHEMA: In backend (search Bcat.Infrastructure SqlServer, any migration/SQL scripts, or EF model) find the definition of dbo.tblMainTTMCalculations. List its columns (names + types). I specifically need to confirm these exist: curInterestExpenseTTM, curProfitBeforeTaxesTTM, curDepreciationTTM, curAmortizationTTM, curDistributionsTTM, curCPLDTTM, curFixedChargesTTM, curNetChargeOffTTM, curAveragePrincipalNRTTM, curAverageGrossNRTTM, strCustomerName, strMonthKey, and any key/ID column. Quote the schema/definition verbatim if found. If the table definition isn't in the codebase (only referenced at read), say so.
+
+2) EXISTING WRITES: Search the entire backend for any INSERT/UPDATE/MERGE into dbo.tblMainTTMCalculations. Is there ANY code that writes to this table today, or is it only ever read (via TryMergeTtmIntoSeries) and populated by migration? Quote every write site with path, or state "no write sites found — table is read-only in current code."
+
+3) THE SAVE ENTRY POINT: In SqlMainRepository.cs, quote the exact method + line where RecomputePbtTtmAsync is called inside the upsert path (I saw it before), and confirm the surrounding variables available there: the connection (con), transaction (tx), customer (cust), fiscal year (fy), monthKey, and cancellation token (ct). I need to know exactly what's in scope at that point so a new populate call can be added alongside it.
+
+4) MONTHKEY LOOKUP: Legacy uses tblLookupMonthkey.ID to bound the 12-month window (ID between anchor-11 and anchor). Does the new app's SQL Server DB have an equivalent tblLookupMonthkey (or a way to order months)? Or does the new app just order by strMonthKey string? Search for "tblLookupMonthkey" or "MonthKey" ordering in SqlMainRepository and quote how months are sequenced. (This matters: to get "previous 11 months" I need a reliable month ordering.)
+
+OUTPUT:
+- A) tblMainTTMCalculations schema (or "not in codebase").
+- B) Existing write sites (or "read-only today").
+- C) The save-path call site for RecomputePbtTtmAsync + variables in scope, quoted.
+- D) How months are ordered/sequenced for windowing (tblLookupMonthkey vs strMonthKey), quoted.
+- No fix yet. Findings only.

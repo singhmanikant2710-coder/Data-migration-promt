@@ -1,15 +1,56 @@
-READ-ONLY. Read ONE file only: backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs. Read it ONCE. Do NOT re-read. Do NOT open any other file. Do NOT analyze, do NOT summarize, do NOT give a verdict. Only copy verbatim the exact code blocks asked below, then STOP.
+Run this to export legacy Access objects to text so they can be read. This is READ-ONLY on the .accdb (opens, exports definitions, closes). Do NOT modify the .accdb. Run it, then tell me the output folder path. Do not loop.
 
-Quote these, each as a verbatim code block exactly as written in the file:
+Save as export-legacy.ps1 in the repo root and run it:
 
-1) The full method RecomputePbtTtmAsync (from its signature to its closing brace) — every line, including the SQL string.
+$ErrorActionPreference = "Stop"
+$accdb = "legacy\FileUpload\BCAT2016_VM.accdb"   # adjust if the TTM logic lives in the other .accdb
+$outDir = "legacy\_exported"
+New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-2) The exact line(s) where RecomputePbtTtmAsync is CALLED inside the save/upsert path (the await RecomputePbtTtmAsync(...) call with its arguments), plus the 3 lines above and 3 lines below it.
+$access = New-Object -ComObject Access.Application
+$access.OpenCurrentDatabase((Resolve-Path $accdb).Path)
+$db = $access.CurrentDb()
 
-3) The method RecomputeOtherYtdsAsync (full body, signature to closing brace) — this is the closest existing example of recomputing multiple aggregate columns, I need to see its exact structure.
+# Export all Queries (SQL)
+$qsql = ""
+foreach ($q in $db.QueryDefs) {
+    if ($q.Name -notlike "~*") {
+        $qsql += "`n`n-- ===== QUERY: $($q.Name) =====`n" + $q.SQL
+    }
+}
+Set-Content -Path "$outDir\queries.sql" -Value $qsql -Encoding UTF8
 
-4) The method TryMergeTtmIntoSeries (full body) — I need to see exactly which TTM column names it reads and from which table (dbo.tblMainTTMCalculations), verbatim.
+# Export all modules + form/report code-behind (VBA)
+foreach ($comp in $access.VBE.ActiveVBProject.VBComponents) {
+    $lines = $comp.CodeModule.CountOfLines
+    if ($lines -gt 0) {
+        $code = $comp.CodeModule.Lines(1, $lines)
+        Set-Content -Path "$outDir\VBA_$($comp.Name).txt" -Value $code -Encoding UTF8
+    }
+}
 
-5) Any helper these methods use to run an UPDATE against tblMain with a windowed SUM(...) OVER(... ROWS BETWEEN 11 PRECEDING AND CURRENT ROW ...) — quote that SQL verbatim (it likely appears inside RecomputePbtTtmAsync; if it's a shared helper, quote the helper too).
+$access.CloseCurrentDatabase()
+$access.Quit()
+Write-Host "Exported to $outDir"
 
-OUTPUT: only the five verbatim code blocks, labeled 1-5. Nothing else. Then STOP. Do not propose changes, do not explain, do not loop.
+After it runs, list the files created in legacy\_exported and STOP. Do not analyze yet.
+
+
+READ-ONLY. Read only files under legacy\_exported\ (queries.sql and VBA_*.txt). Do NOT read any .accdb (binary). Do NOT open the current app's backend/frontend. Search these exported text files ONCE for the TTM logic. No loop — find, quote, stop.
+
+Find and quote VERBATIM (with the source filename for each):
+
+1) The exact formula/expression for Interest Expense TTM. Search for: "curInterestExpenseTTM", "InterestExpenseTTM", "InterestTTM", "Interest Coverage TTM". Quote the full SQL SELECT or VBA expression that computes it. I need to see: is it a trailing-12-month SUM of monthly interest, and over what window/date filter?
+
+2) The exact formula for Interest Coverage TTM (e.g. is it EBIT TTM / Interest Expense TTM, or CAFC / Interest, or something else?). Quote it verbatim.
+
+3) The exact formula for EBIT TTM (search "EBITTTM", "curEBITTTM", "EBIT"). Confirm whether EBIT TTM = PBT TTM + Interest Expense TTM, or a different composition. Quote it.
+
+4) How the 12-month window is defined in legacy: is it a fixed count of 12 rows, a date-range (monthKey between X and Y), or a running SUM? Quote the WHERE/JOIN/window that bounds it to 12 months.
+
+5) Whether the TTM sum resets or is affected by fiscal year boundary (relevant to Sept-30 year-end customers). Quote any intFiscalYear / fiscal filter used in the TTM computation.
+
+OUTPUT:
+- For each of 1-5: the source filename + verbatim quoted formula.
+- One-line plain statement per item of what the formula does.
+- Then STOP. Do not compare to the new app yet, do not propose changes.

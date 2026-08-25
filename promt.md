@@ -54,3 +54,18 @@ OUTPUT:
 - For each of 1-5: the source filename + verbatim quoted formula.
 - One-line plain statement per item of what the formula does.
 - Then STOP. Do not compare to the new app yet, do not propose changes.
+
+
+$ErrorActionPreference = "Stop"
+$accdb = "legacy\BCAT2016_VM.accdb"
+$outDir = "legacy\_exported"
+New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+$access = New-Object -ComObject Access.Application
+$access.OpenCurrentDatabase((Resolve-Path $accdb).Path)
+$db = $access.CurrentDb()
+$qsql = ""
+foreach ($q in $db.QueryDefs) { if ($q.Name -notlike "~*") { $qsql += "`r`n-- ===== QUERY: $($q.Name) =====`r`n" + $q.SQL } }
+Set-Content -Path "$outDir\queries.sql" -Value $qsql -Encoding UTF8
+foreach ($comp in $access.VBE.ActiveVBProject.VBComponents) { $lines = $comp.CodeModule.CountOfLines; if ($lines -gt 0) { $code = $comp.CodeModule.Lines(1, $lines); Set-Content -Path "$outDir\VBA_$($comp.Name).txt" -Value $code -Encoding UTF8 } }
+$access.CloseCurrentDatabase(); $access.Quit()
+Write-Host "Exported to $outDir"

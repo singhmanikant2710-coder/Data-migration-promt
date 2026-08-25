@@ -1,20 +1,13 @@
-The files ARE in this repo. Exact relative paths from repo root (c:/Users/CC438/source/repos/fhn-bcat):
+READ-ONLY. Read these files ONCE (absolute paths, folder starts with underscore, it exists):
+1) C:\Users\CC438\source\repos\fhn-bcat\legacy\_exported\VBA_Form_frm005IndirectAutoMain.txt
+2) C:\Users\CC438\source\repos\fhn-bcat\legacy\_exported\queries.sql
 
-1) legacy/_exported/queries.sql
-2) legacy/_exported/VBA_Form_frm005IndirectAutoMainCurrentEdit.txt
+Do NOT read other files. Find the Interest Coverage TTM and EBIT TTM display formulas, quote verbatim, then STOP.
 
-Note: the folder name starts with an underscore ("_exported"). It is not hidden — it exists. If your read tool skips underscore-prefixed folders, read the files by their full absolute paths instead:
+1) Interest Coverage TTM: search "InterestCoverage", "IntCoverage", "Coverage" in the IndirectAuto form. Quote the exact expression that computes the displayed ratio. I need the exact numerator and denominator (e.g. curEBITTTM / curInterestExpenseTTM, or curCashAvailableForFixedChargesTTM / curInterestExpenseTTM).
 
-1) C:\Users\CC438\source\repos\fhn-bcat\legacy\_exported\queries.sql
-2) C:\Users\CC438\source\repos\fhn-bcat\legacy\_exported\VBA_Form_frm005IndirectAutoMainCurrentEdit.txt
+2) EBIT TTM: search "EBIT", "EBITTTM". Quote how EBIT TTM is composed (e.g. curProfitBeforeTaxesTTM + curInterestExpenseTTM). 
 
-READ-ONLY. Read these two files ONCE each, then STOP. Do not read any other file. Do not open the current app.
+3) In queries.sql, search for any query that computes "perInterestCoverageTTM" or a coverage ratio using curInterestExpenseTTM. Quote it if present.
 
-Find and quote VERBATIM (with filename + surrounding lines):
-1) Interest Expense TTM formula — search "InterestExpenseTTM", "curInterestExpenseTTM", "InterestTTM". Is it a SUM of monthly interest over the trailing 12 months? How is the 12-month window bounded?
-2) Interest Coverage TTM — search "InterestCoverageTTM", "perInterestCoverageTTM". Quote numerator/denominator.
-3) EBIT TTM — search "EBITTTM", "curEBITTTM", "EBIT". Quote composition (PBT TTM + Interest Expense TTM, or other?).
-4) The 12-month window bound (WHERE/date-range/TOP/SUM) — verbatim.
-5) Any FiscalYear/FiscalMonth reference in the TTM calc.
-
-For each: filename + verbatim quote + one plain line. If not found in these two files, say "NOT FOUND in these two files" (do not guess, do not open more files). Then STOP.
+For each: filename + verbatim quote + one plain line. If not found, say "NOT FOUND". Then STOP.

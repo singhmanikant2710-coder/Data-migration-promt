@@ -1,10 +1,8 @@
-SINGLE-FILE, ADD-ONLY, BOUNDED EDIT. Only edit backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs. Do NOT remove, rename, or modify any existing method or line. ADD only: one new method + one new call. Show the unified diff BEFORE applying. Do not run terminal/build. If anything needs changing existing code, STOP and ask.
+Now APPLY the change we reviewed. Only edit backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs. Add-only — do not modify or remove any existing method or line.
 
-GOAL (client-approved): At save time, populate dbo.tblMainTTMCalculations for the saved month with trailing-12-month TTM values, year-agnostic (current month + previous 11, crossing fiscal-year boundaries, NO fiscal-year filter). Where a source has no value the TTM stays NULL (no COALESCE on outputs). The read path TryMergeTtmIntoSeries already reads this table.
+Apply exactly these two additions (the version we finalized, with the corrections — no duplicate columns, no space in aliases, curCPLTD consistent):
 
-CONFIRMED: target table dbo.tblMainTTMCalculations has composite PK (strCustomerName, strMonthKey). Source monthly columns exist in dbo.tblMain: curInterestExpense, curProfitBeforeTaxes, curDepreciation, curAmortization, curDistributions, curCPLTD, curNetChargeOff, curPrincipalNR, curAverageGrossNR. strMonthKey is YYYYMM (string ORDER BY = chronological).
-
-STEP 1 — ADD this method immediately AFTER the existing RecomputePbtTtmAsync (do not modify RecomputePbtTtmAsync). Use EXACTLY this method body (do not add/duplicate columns, do not add spaces in aliases, do not add COALESCE):
+1) ADD this new method immediately AFTER the existing RecomputePbtTtmAsync method:
 
 private static async Task RecomputeTtmCalculationsAsync(SqlConnection con, SqlTransaction? tx, string cust, CancellationToken ct)
 {
@@ -94,7 +92,7 @@ WHEN NOT MATCHED THEN
     catch { /* fail-open on persist */ }
 }
 
-STEP 2 — ADD this call immediately AFTER the existing RecomputePbtTtmAsync call block (do not modify that block), using in-scope con, tx, cust, ct:
+2) ADD this call immediately AFTER the existing "await RecomputePbtTtmAsync(con, tx, cust, fy, ct)" try/catch block (do not modify that block), using in-scope con, tx, cust, ct:
 
 // Recompute all trailing-12-month TTM components (year-agnostic) into tblMainTTMCalculations after persist
 try
@@ -103,9 +101,4 @@ try
 }
 catch { /* fail-open on TTM recompute */ }
 
-VERIFY BEFORE SHOWING DIFF (report; do not force):
-a) The method compiles in context: AddParam, SqlDbType, con.CreateCommand, ExecuteReaderAsync/ExecuteNonQueryAsync are all already used in this file (confirm). If MERGE/System.Linq Any() needs a using that's missing, report it instead of adding random usings — tell me which using is needed.
-b) Confirm the MERGE statement ends with a semicolon (required by SQL Server MERGE).
-c) Confirm no existing method/line changed; RecomputePbtTtmAsync untouched.
-
-Show the unified diff. Apply nothing until I confirm.
+Apply now. After applying, confirm: the method was added after RecomputePbtTtmAsync, the call was added after the RecomputePbtTtmAsync call, and no existing code was changed. Do not run build. Then STOP.

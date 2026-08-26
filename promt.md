@@ -1,36 +1,41 @@
-Do NOT apply the previous diff — it introduced a typo: "curCPLTDTMM" (TMM) instead of "curCPLTDTTM" (TTM). That column name is wrong and would break the CPLTD merge.
+Edit ONLY the file backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs, inside the method TryMergeTtmIntoSeries. Do not touch any other file or method.
 
-Make ONLY these 4 changes in TryMergeTtmIntoSeries — change ONLY the dict KEY (left side) to add "cur" prefix. Do NOT change the Read(...) arguments. Do NOT touch ANY other line.
+Find this exact block of 10 lines:
 
-1) dict["InterestExpenseTTM"] = Read("curInterestExpenseTTM", "InterestExpenseTTM", "InterestTTM");
-   ->
-   dict["curInterestExpenseTTM"] = Read("curInterestExpenseTTM", "InterestExpenseTTM", "InterestTTM");
+                    dict["curProfitBeforeTaxesTTM"] = Read("curProfitBeforeTaxesTTM", "PBTTTM", "curPBTTTM");
+                    dict["InterestExpenseTTM"] = Read("curInterestExpenseTTM", "InterestExpenseTTM", "InterestTTM");
+                    dict["DepreciationTTM"] = Read("curDepreciationTTM", "DepreciationTTM");
+                    dict["AmortizationTTM"] = Read("curAmortizationTTM", "AmortizationTTM");
+                    dict["DistributionsTTM"] = Read("curDistributionsTTM", "DistributionsTTM");
+                    dict["curCPLTDTTM"] = Read("curCPLTDTTM", "CPLTDTTM");
+                    dict["curFixedChargesTTM"] = Read("curFixedChargesTTM", "FixedChargesTTM", "FixedChargeTTM");
+                    dict["curNetChargeOffTTM"] = Read("curNetChargeOffTTM", "NetChargeOffTTM", "NetCOTTM");
+                    dict["curAveragePrincipalNRTTM"] = Read("curAveragePrincipalNRTTM", "AveragePrincipalNRTTM", "AvgPrincipalNRTTM");
+                    dict["curAverageGrossNRTTM"] = Read("curAverageGrossNRTTM", "AverageGrossNRTTM", "AvgGrossNRTTM");
 
-2) dict["DepreciationTTM"] = Read("curDepreciationTTM", "DepreciationTTM");
-   ->
-   dict["curDepreciationTTM"] = Read("curDepreciationTTM", "DepreciationTTM");
+Replace it with this exact block (only the first 4 dictionary KEYS change to add the "cur" prefix; every other line stays byte-for-byte identical):
 
-3) dict["AmortizationTTM"] = Read("curAmortizationTTM", "AmortizationTTM");
-   ->
-   dict["curAmortizationTTM"] = Read("curAmortizationTTM", "AmortizationTTM");
+                    dict["curProfitBeforeTaxesTTM"] = Read("curProfitBeforeTaxesTTM", "PBTTTM", "curPBTTTM");
+                    dict["curInterestExpenseTTM"] = Read("curInterestExpenseTTM", "InterestExpenseTTM", "InterestTTM");
+                    dict["curDepreciationTTM"] = Read("curDepreciationTTM", "DepreciationTTM");
+                    dict["curAmortizationTTM"] = Read("curAmortizationTTM", "AmortizationTTM");
+                    dict["curDistributionsTTM"] = Read("curDistributionsTTM", "DistributionsTTM");
+                    dict["curCPLTDTTM"] = Read("curCPLTDTTM", "CPLTDTTM");
+                    dict["curFixedChargesTTM"] = Read("curFixedChargesTTM", "FixedChargesTTM", "FixedChargeTTM");
+                    dict["curNetChargeOffTTM"] = Read("curNetChargeOffTTM", "NetChargeOffTTM", "NetCOTTM");
+                    dict["curAveragePrincipalNRTTM"] = Read("curAveragePrincipalNRTTM", "AveragePrincipalNRTTM", "AvgPrincipalNRTTM");
+                    dict["curAverageGrossNRTTM"] = Read("curAverageGrossNRTTM", "AverageGrossNRTTM", "AvgGrossNRTTM");
 
-4) dict["DistributionsTTM"] = Read("curDistributionsTTM", "DistributionsTTM");
-   ->
-   dict["curDistributionsTTM"] = Read("curDistributionsTTM", "DistributionsTTM");
+The ONLY differences between the old and new block are these 4 dictionary keys:
+- "InterestExpenseTTM"  becomes  "curInterestExpenseTTM"
+- "DepreciationTTM"     becomes  "curDepreciationTTM"
+- "AmortizationTTM"     becomes  "curAmortizationTTM"
+- "DistributionsTTM"    becomes  "curDistributionsTTM"
 
-CRITICAL — leave these EXACTLY as they already are, do NOT modify them at all:
-- dict["curProfitBeforeTaxesTTM"] = Read("curProfitBeforeTaxesTTM", "PBTTTM", "curPBTTTM");
-- dict["curCPLTDTTM"] = Read("curCPLTDTTM", "CPLTDTTM");   <-- must stay curCPLTDTTM (TTM, not TMM). Do NOT change this line.
-- dict["curFixedChargesTTM"] = ...
-- dict["curNetChargeOffTTM"] = ...
-- dict["curAveragePrincipalNRTTM"] = ...
-- dict["curAverageGrossNRTTM"] = ...
+CRITICAL RULES:
+- Do NOT change any Read(...) arguments — they stay exactly as written.
+- Do NOT change the line dict["curCPLTDTTM"] = Read("curCPLTDTTM", "CPLTDTTM"); — it must stay spelled "curCPLTDTTM" with "TTM". Never write "TMM".
+- Do NOT change the other 5 lines (curProfitBeforeTaxesTTM, curFixedChargesTTM, curNetChargeOffTTM, curAveragePrincipalNRTTM, curAverageGrossNRTTM).
+- Do NOT modify the write loop, the YTD fallback, or anything else in the method.
 
-Only the 4 lines above change (adding "cur" to the key). Every other line stays byte-for-byte identical. Do NOT introduce "TMM" anywhere — it must be "TTM".
-
-VERIFY BEFORE SHOWING DIFF:
-a) Exactly 4 dict keys changed (Interest, Depreciation, Amortization, Distributions), each gained "cur" prefix.
-b) curCPLTDTTM line is UNCHANGED and spelled with "TTM" (not "TMM").
-c) No Read(...) arguments changed. No other lines touched.
-
-Show the corrected unified diff. Apply nothing until I confirm.
+After editing, show me the final 10 lines exactly as they now appear in the file so I can verify. Do not run build.

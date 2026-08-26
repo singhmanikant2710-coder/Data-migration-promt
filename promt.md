@@ -1,21 +1,23 @@
-READ-ONLY. No edits. Find why UI shows Interest Expense TTM = $0 and PBT TTM = 167000, when tblMainTTMCalculations has curInterestExpenseTTM=387000 and curProfitBeforeTaxesTTM=350000. The merge from tblMainTTMCalculations to the UI is broken or using wrong keys. Quote, stop.
+SINGLE-FILE, BOUNDED EDIT. Only edit backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs, only the method TryMergeTtmIntoSeries. Show unified diff BEFORE applying. Do not run build.
 
-Trace exactly:
+BUG FOUND: In TryMergeTtmIntoSeries, the dict[...] KEYS are inconsistent. Some use the canonical "cur" prefix, others don't. The frontend reads canonical cur*-prefixed keys (e.g. curInterestExpenseTTM), but the merge writes non-prefixed keys (e.g. "InterestExpenseTTM"), so the frontend never picks them up — Interest Expense TTM shows $0 even though tblMainTTMCalculations has 387000.
 
-1) SqlMainRepository.cs TryMergeTtmIntoSeries: quote the FULL method. I need to see:
-   - The exact dict[...] = Read(...) assignments — what KEY names does it store (e.g. dict["InterestExpenseTTM"] vs dict["curInterestExpenseTTM"])?
-   - The final loop that writes into p.Values — what key names end up on the row? Quote the loop.
-   - Is TryMergeTtmIntoSeries actually CALLED in the read path that feeds the edit page? Quote the call site (which method calls it, e.g. in GetCurrentYearSeries / GetRolling24Months).
+FIX: Change the dict KEY names to the canonical cur*-prefixed form for the 4 that are wrong. Only change the dict KEY (left side); keep the Read(...) arguments (right side, the actual DB column names) exactly as they are.
 
-2) Whether TryMergeTtmIntoSeries is called for the arrays the UI uses. The UI Month/TTM panel reads from series/seriesWithEdits (current-year) and/or rolling24. Confirm which repository read method feeds those, and whether that method calls TryMergeTtmIntoSeries. If the current-year read does NOT call it, that explains why the merged TTM values never reach the panel.
+EXACT CHANGES:
+1) dict["InterestExpenseTTM"] = Read(...)   ->   dict["curInterestExpenseTTM"] = Read(...)
+2) dict["DepreciationTTM"] = Read(...)      ->   dict["curDepreciationTTM"] = Read(...)
+3) dict["AmortizationTTM"] = Read(...)      ->   dict["curAmortizationTTM"] = Read(...)
+4) dict["DistributionsTTM"] = Read(...)     ->   dict["curDistributionsTTM"] = Read(...)
 
-3) The frontend read for "Interest Expense TTM" and "PBT TTM" in the Month/TTM panel: in monthSummaryProfiles / the panel mapping (mapIndirectAuto or the top-strip/panel builder), quote the exact alias/field it reads for "Interest Expense TTM" and "PBT TTM". Which key does it expect — curInterestExpenseTTM, InterestExpenseTTM, or something else?
+Keep these unchanged (already correct):
+- dict["curProfitBeforeTaxesTTM"], dict["curCPLTDTTM"], dict["curFixedChargesTTM"], dict["curNetChargeOffTTM"], dict["curAveragePrincipalNRTTM"], dict["curAverageGrossNRTTM"]
 
-4) Cross-check: does the KEY that TryMergeTtmIntoSeries writes match the KEY the frontend panel reads? List both exact strings side by side. Also: does the existing RecomputePbtTtmAsync write curProfitBeforeTaxesTTM into tblMain (=167000) which the frontend reads INSTEAD of the tblMainTTMCalculations value (=350000)? That would explain PBT TTM showing 167000 not 350000.
+Do NOT change the Read(...) arguments (the DB column names inside Read are fine). Do NOT change anything else in the method — not the write loop, not the YTD fallback, nothing.
 
-OUTPUT:
-- A) TryMergeTtmIntoSeries key assignments + write loop keys (quoted).
-- B) Is it called for the current-year series the UI panel uses? yes/no + quoted call site.
-- C) Frontend panel's expected keys for Interest Expense TTM / PBT TTM (quoted).
-- D) State plainly the broken link: (i) merge not called for the UI's array, (ii) key-name mismatch between merge output and frontend read, or (iii) frontend reads tblMain columns (0 / stale 167000) instead of merged values. Identify which.
-- No fix yet. Findings only.
+VERIFY BEFORE SHOWING DIFF:
+a) Only the 4 dict KEY names got the "cur" prefix; Read(...) args unchanged.
+b) All 10 dict keys now use the cur* canonical prefix consistently.
+c) No other lines changed.
+
+Show the unified diff. Apply nothing until I confirm.

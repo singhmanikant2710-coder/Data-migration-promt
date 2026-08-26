@@ -1,23 +1,36 @@
-SINGLE-FILE, BOUNDED EDIT. Only edit backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs, only the method TryMergeTtmIntoSeries. Show unified diff BEFORE applying. Do not run build.
+Do NOT apply the previous diff — it introduced a typo: "curCPLTDTMM" (TMM) instead of "curCPLTDTTM" (TTM). That column name is wrong and would break the CPLTD merge.
 
-BUG FOUND: In TryMergeTtmIntoSeries, the dict[...] KEYS are inconsistent. Some use the canonical "cur" prefix, others don't. The frontend reads canonical cur*-prefixed keys (e.g. curInterestExpenseTTM), but the merge writes non-prefixed keys (e.g. "InterestExpenseTTM"), so the frontend never picks them up — Interest Expense TTM shows $0 even though tblMainTTMCalculations has 387000.
+Make ONLY these 4 changes in TryMergeTtmIntoSeries — change ONLY the dict KEY (left side) to add "cur" prefix. Do NOT change the Read(...) arguments. Do NOT touch ANY other line.
 
-FIX: Change the dict KEY names to the canonical cur*-prefixed form for the 4 that are wrong. Only change the dict KEY (left side); keep the Read(...) arguments (right side, the actual DB column names) exactly as they are.
+1) dict["InterestExpenseTTM"] = Read("curInterestExpenseTTM", "InterestExpenseTTM", "InterestTTM");
+   ->
+   dict["curInterestExpenseTTM"] = Read("curInterestExpenseTTM", "InterestExpenseTTM", "InterestTTM");
 
-EXACT CHANGES:
-1) dict["InterestExpenseTTM"] = Read(...)   ->   dict["curInterestExpenseTTM"] = Read(...)
-2) dict["DepreciationTTM"] = Read(...)      ->   dict["curDepreciationTTM"] = Read(...)
-3) dict["AmortizationTTM"] = Read(...)      ->   dict["curAmortizationTTM"] = Read(...)
-4) dict["DistributionsTTM"] = Read(...)     ->   dict["curDistributionsTTM"] = Read(...)
+2) dict["DepreciationTTM"] = Read("curDepreciationTTM", "DepreciationTTM");
+   ->
+   dict["curDepreciationTTM"] = Read("curDepreciationTTM", "DepreciationTTM");
 
-Keep these unchanged (already correct):
-- dict["curProfitBeforeTaxesTTM"], dict["curCPLTDTTM"], dict["curFixedChargesTTM"], dict["curNetChargeOffTTM"], dict["curAveragePrincipalNRTTM"], dict["curAverageGrossNRTTM"]
+3) dict["AmortizationTTM"] = Read("curAmortizationTTM", "AmortizationTTM");
+   ->
+   dict["curAmortizationTTM"] = Read("curAmortizationTTM", "AmortizationTTM");
 
-Do NOT change the Read(...) arguments (the DB column names inside Read are fine). Do NOT change anything else in the method — not the write loop, not the YTD fallback, nothing.
+4) dict["DistributionsTTM"] = Read("curDistributionsTTM", "DistributionsTTM");
+   ->
+   dict["curDistributionsTTM"] = Read("curDistributionsTTM", "DistributionsTTM");
+
+CRITICAL — leave these EXACTLY as they already are, do NOT modify them at all:
+- dict["curProfitBeforeTaxesTTM"] = Read("curProfitBeforeTaxesTTM", "PBTTTM", "curPBTTTM");
+- dict["curCPLTDTTM"] = Read("curCPLTDTTM", "CPLTDTTM");   <-- must stay curCPLTDTTM (TTM, not TMM). Do NOT change this line.
+- dict["curFixedChargesTTM"] = ...
+- dict["curNetChargeOffTTM"] = ...
+- dict["curAveragePrincipalNRTTM"] = ...
+- dict["curAverageGrossNRTTM"] = ...
+
+Only the 4 lines above change (adding "cur" to the key). Every other line stays byte-for-byte identical. Do NOT introduce "TMM" anywhere — it must be "TTM".
 
 VERIFY BEFORE SHOWING DIFF:
-a) Only the 4 dict KEY names got the "cur" prefix; Read(...) args unchanged.
-b) All 10 dict keys now use the cur* canonical prefix consistently.
-c) No other lines changed.
+a) Exactly 4 dict keys changed (Interest, Depreciation, Amortization, Distributions), each gained "cur" prefix.
+b) curCPLTDTTM line is UNCHANGED and spelled with "TTM" (not "TMM").
+c) No Read(...) arguments changed. No other lines touched.
 
-Show the unified diff. Apply nothing until I confirm.
+Show the corrected unified diff. Apply nothing until I confirm.

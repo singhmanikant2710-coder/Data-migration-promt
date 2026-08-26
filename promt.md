@@ -1,18 +1,33 @@
-READ-ONLY. No edits. Find how UI shows 24 months but PDF shows only 15. Quote, stop.
+SINGLE-FILE, BOUNDED EDIT. Only edit frontend/src/blackbook/pdf/BlackBookPdf.tsx. Show unified diff BEFORE applying. Do not run build. Do not touch other files.
 
-CONTEXT: The rolling-summary PDF now fits one page but shows only ~15 months (current fiscal year 8 + prior fiscal year 7), because it renders fiscal-year sections (seriesYearOnly + historyYearOnly). But the UI Monthly Summary shows a full trailing-24-month set. The PDF should match the UI: show the same trailing 24 months, not fiscal-year-split.
+CONTEXT: The PDF must show the SAME trailing-24 months as the UI. The UI Monthly Summary uses rolling24 (trailing-24, up to 24 rows). The PDF currently renders fiscal-year-split sections (seriesYearOnly current-year + historyYearOnly prior-year), which sums to only ~15 for this customer. The PDF already receives a `rolling24` prop (full trailing-24). Client wants all 24 on ONE page. Fix: render rolling24 as ONE single-chunk section (like the current-year grid), and gate the fiscal-year history sections since rolling24 already contains all 24 months.
 
-1) In frontend/src/app/blackbook/edit/page.tsx (or wherever the UI Monthly Summary table gets its rows): which array does the UI table iterate to show all months? Is it rolling24 / rolling24WithEdits (trailing 24) or seriesYearOnly (current FY only)? Quote the prop/array passed to the UI monthly table.
+EXACT CHANGES:
 
-2) In frontend/src/blackbook/pdf/BlackBookPdf.tsx: confirm the PDF receives a `rolling24` prop. Quote the BlackBookPdf props and where rolling24 comes in. Is rolling24 the full trailing-24 array (same as UI), separate from series/seriesYearOnly?
+1) Make the main monthly grid render the full trailing-24 `rolling24` instead of current-fiscal-year-only. Find:
+   const monthlyChunks = seriesYearOnly.length > 0 ? [seriesYearOnly] : [];
+   Change to (use rolling24, sorted ascending by monthKey, as a single chunk):
+   const monthlyChunks = (Array.isArray(rolling24) && rolling24.length > 0)
+     ? [[...rolling24].sort((a, b) => normMonthKeyInt((a as any)?.monthKey) - normMonthKeyInt((b as any)?.monthKey))]
+     : [];
+   (This renders all trailing-24 months in one section, matching the UI. Use the existing normMonthKeyInt helper already used in this file for sorting.)
 
-3) Quote the disabled rolling24 render block in BlackBookPdf (the if (false && r24Chunks...) section) fully — this is likely the intended "24 months in one grid" renderer. Show how r24Chunks is built (splitForPages(rolling24, ...)) and how it maps to rows.
+2) Gate the prior-year (FY-1) history section — it's now redundant since rolling24 already includes those months. Find:
+   {historyYearOnly.length > 0 && (
+   Change to:
+   {false && historyYearOnly.length > 0 && (
+   (Replace in place — do not duplicate the line. The FY-2 section is already gated with false &&; leave it.)
 
-4) Confirm: if we render `rolling24` (trailing 24) as ONE section instead of the fiscal-year-split (seriesYearOnly + historyYearOnly + historyYear2Only), would that match the UI's 24 months? What's the row count of rolling24 for this customer (should be up to 24)?
+DO NOT:
+- Do NOT change the disabled rolling24 multi-page block (if (false && r24Chunks...)) — leave it disabled; we are NOT using it (it paginates across pages; client wants one page).
+- Do NOT change styles, panels, headings for the current grid, or the Page size.
+- Do NOT touch backend or any other file.
 
-OUTPUT:
-- A) UI table's source array (quoted) — rolling24 or seriesYearOnly?
-- B) PDF's rolling24 prop (quoted) — is it the full trailing-24?
-- C) The disabled rolling24 render block (quoted).
-- D) State plainly: to make the PDF match the UI (24 months), should we render rolling24 as one section and drop/gate the fiscal-year-split sections? yes/no + why.
-- No fix yet. Findings only.
+VERIFY BEFORE SHOWING DIFF (report; don't force):
+a) Confirm normMonthKeyInt is defined/available in this file for the sort (it's used elsewhere here). If not, report — do not invent a sort.
+b) Confirm monthlyChunks now derives from rolling24 (full trailing-24) and renders as one chunk (monthlyChunks.length stays 1, so no continuation pages).
+c) Confirm the current-grid columns (colsYear) can render rolling24 rows (they're the same MetricPoint shape). If the PDF grid needs colsR24 instead of colsYear for rolling24, report which column set matches the UI's monthly table — do not guess.
+d) Confirm both FY-1 and FY-2 history sections are now gated (false &&), so only the single trailing-24 section renders.
+e) With ~24 rows in one wrap={false} table plus the panels, report the overflow risk (one page vs spill). Just report.
+
+Show the unified diff. Apply nothing until I confirm.

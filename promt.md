@@ -1,21 +1,23 @@
-READ-ONLY. No edits, no terminal. Read frontend/src/blackbook/pdf/BlackBookPdf.tsx ONCE. Quote current state, stop. No loop.
+READ-ONLY. No edits. Read frontend/src/blackbook/pdf/BlackBookPdf.tsx ONCE. Quote current state, stop.
 
-GOAL: Fix defect #26 — the rolling-summary PDF must show ALL available months (legacy shows up to 24 across two sections: current-year block on top, prior-year block below; this customer has 19 months). Currently only ~6 per section render.
+CONTEXT: Client requires ALL months (up to 24: current fiscal year + prior fiscal year) to fit on a SINGLE PDF page, like the legacy report — NOT split across multiple pages. Currently caps are 6 and there may be chunking that creates multiple page-blocks. I need to see the page/layout setup to make it fit on one page.
 
-Quote verbatim (current state):
+Quote verbatim:
 
-1) The block defining MONTHLY_FIRST_ROWS, MONTHLY_CONT_ROWS, monthlyRowsOnFirstPage, monthlyChunks, and seriesYearOnly (~20 lines context).
+1) The <Page> element(s) and their size/orientation props. Is it size="LETTER" portrait, or landscape? Quote the Page opening tag(s) and any 'orientation' prop.
 
-2) The historyYearOnly / historyYear2Only definitions and where they are sliced (I recall historyYearOnly.slice(0,6) style caps) — quote them and any .slice caps.
+2) The styles object (StyleSheet.create) — specifically: styles.page (padding, size), styles.table, styles.tr, styles.td, styles.th, styles.sectionHeader. Quote font sizes, padding, and any height on rows. I need to know how tall each row is, to judge if 24 rows fit on one page.
 
-3) The disabled rolling24 block: quote the `if (false && ...)` section and R24_FIRST_ROWS / r24Chunks / splitForPages usage.
+3) The monthlyChunks rendering: does monthlyChunks.map(...) create multiple <View> sections on the SAME page, or could it create multiple <Page> elements? Quote the .map and confirm whether all chunks render within one <Page> or spill to new pages.
 
-4) The JSX where monthlyChunks and history chunks are rendered into the PDF — quote how each chunk maps to a page/section, and confirm the existing splitForPages helper is available for pagination.
+4) Is there a LEGAL_LANDSCAPE or landscape constant defined/imported anywhere (even if unused / in the disabled r24 block)? Quote it.
 
-5) The section heading <Text> above the current-year grid and above the prior-year/history grid (so I know how legacy's "two 12-month sections" map to this file).
+5) Whether any <View> has wrap={false} or a fixed height that would force content onto one page or prevent fitting.
 
 OUTPUT:
-- Quoted blocks 1-5.
-- State plainly: to show all 19 (up to 24) months as legacy does, which exact cap(s) must change — the MONTHLY_FIRST_ROWS=6 single-chunk slice, the history slice(0,6) caps, and/or re-enabling the rolling24 block? List each cap with its current value.
-- Confirm whether splitForPages already handles multi-page pagination so removing the 6-cap won't overflow.
+- A) Page size/orientation, quoted.
+- B) Row height / font size from styles, quoted — and your estimate: can ~24 compact rows fit on one page at this size? 
+- C) Does the current render keep everything on one <Page>, or split? Quoted evidence.
+- D) Any landscape constant available, quoted.
+- State plainly what needs to change to fit all months on ONE page: (i) raise caps to 12, (ii) make monthlyChunks a single chunk (no multi-chunk), (iii) switch to landscape and/or reduce row font/padding. List which are needed based on the evidence.
 - No fix yet. Findings only.

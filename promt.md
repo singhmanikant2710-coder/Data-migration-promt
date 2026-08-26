@@ -1,26 +1,21 @@
-SELECT strMonthKey, curInterestExpenseTTM, curProfitBeforeTaxesTTM
-FROM dbo.tblMainTTMCalculations
-WHERE LTRIM(RTRIM(strCustomerName)) = 'AMERICAN CREDIT ACCEPTANCE'
-  AND strMonthKey = '202607';
+READ-ONLY. No edits. Find why UI shows Interest Expense TTM = $0 and PBT TTM = 167000, when tblMainTTMCalculations has curInterestExpenseTTM=387000 and curProfitBeforeTaxesTTM=350000. The merge from tblMainTTMCalculations to the UI is broken or using wrong keys. Quote, stop.
 
-  READ-ONLY. No edits. Find why Interest Coverage TTM shows 0 even though curInterestExpenseTTM=387000 is populated in tblMainTTMCalculations. Quote exactly, stop.
+Trace exactly:
 
-CONFIRMED: tblMainTTMCalculations now has curInterestExpenseTTM=387000 for the customer/month (our backend fix works). But the UI still shows Interest Coverage TTM = 0.00x. 
+1) SqlMainRepository.cs TryMergeTtmIntoSeries: quote the FULL method. I need to see:
+   - The exact dict[...] = Read(...) assignments — what KEY names does it store (e.g. dict["InterestExpenseTTM"] vs dict["curInterestExpenseTTM"])?
+   - The final loop that writes into p.Values — what key names end up on the row? Quote the loop.
+   - Is TryMergeTtmIntoSeries actually CALLED in the read path that feeds the edit page? Quote the call site (which method calls it, e.g. in GetCurrentYearSeries / GetRolling24Months).
 
-Legacy formula: perInterestCoverageTTM = curEBITTTM / curInterestExpenseTTM, where curEBITTTM = curProfitBeforeTaxesTTM + curInterestExpenseTTM.
+2) Whether TryMergeTtmIntoSeries is called for the arrays the UI uses. The UI Month/TTM panel reads from series/seriesWithEdits (current-year) and/or rolling24. Confirm which repository read method feeds those, and whether that method calls TryMergeTtmIntoSeries. If the current-year read does NOT call it, that explains why the merged TTM values never reach the panel.
 
-Trace how the NEW app produces Interest Coverage TTM for display. Quote:
+3) The frontend read for "Interest Expense TTM" and "PBT TTM" in the Month/TTM panel: in monthSummaryProfiles / the panel mapping (mapIndirectAuto or the top-strip/panel builder), quote the exact alias/field it reads for "Interest Expense TTM" and "PBT TTM". Which key does it expect — curInterestExpenseTTM, InterestExpenseTTM, or something else?
 
-1) Where is curEBITTTM computed? Search backend (SqlMainRepository, TblMainCalcs.cs) and frontend (blackbook/expr/tblMainCalcs.ts, mappings) for "curEBITTTM" or "EBITTTM". Quote every place it's SET/computed. Is it derived as curProfitBeforeTaxesTTM + curInterestExpenseTTM? Or is it read from a column that doesn't exist / is 0?
-
-2) Where is perInterestCoverageTTM (or the "Interest Coverage TTM" display value) computed? Search for "perInterestCoverageTTM", "InterestCoverageTTM", "interestCoverageTtm". Quote the exact formula/read. Does it read curEBITTTM and curInterestExpenseTTM? From tblMain columns, from the merged series values, or computed client-side?
-
-3) In SqlMainRepository TryMergeTtmIntoSeries: confirm it reads curInterestExpenseTTM from tblMainTTMCalculations and merges it onto the series rows. Does it ALSO compute/merge curEBITTTM (PBT TTM + Interest TTM)? Or is curEBITTTM never produced, leaving the numerator 0?
-
-4) The frontend render for "Interest Coverage TTM" (monthSummaryRegistry.ts): quote its render function. Does it read a precomputed field (curEBITTTM / perInterestCoverageTTM) that may be 0/missing, or compute from curProfitBeforeTaxesTTM + curInterestExpenseTTM?
+4) Cross-check: does the KEY that TryMergeTtmIntoSeries writes match the KEY the frontend panel reads? List both exact strings side by side. Also: does the existing RecomputePbtTtmAsync write curProfitBeforeTaxesTTM into tblMain (=167000) which the frontend reads INSTEAD of the tblMainTTMCalculations value (=350000)? That would explain PBT TTM showing 167000 not 350000.
 
 OUTPUT:
-- A) Where curEBITTTM is computed (or "never computed"), quoted.
-- B) Where Interest Coverage TTM ratio is computed, quoted, with its exact numerator/denominator source.
-- C) State plainly: the ratio is 0 because [curEBITTTM is not computed / the ratio reads a 0 column / frontend doesn't derive it from the populated TTM components]. Identify the exact missing link.
+- A) TryMergeTtmIntoSeries key assignments + write loop keys (quoted).
+- B) Is it called for the current-year series the UI panel uses? yes/no + quoted call site.
+- C) Frontend panel's expected keys for Interest Expense TTM / PBT TTM (quoted).
+- D) State plainly the broken link: (i) merge not called for the UI's array, (ii) key-name mismatch between merge output and frontend read, or (iii) frontend reads tblMain columns (0 / stale 167000) instead of merged values. Identify which.
 - No fix yet. Findings only.

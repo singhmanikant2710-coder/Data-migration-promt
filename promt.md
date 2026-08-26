@@ -1,23 +1,29 @@
-READ-ONLY. No edits. Read frontend/src/blackbook/pdf/BlackBookPdf.tsx ONCE. Quote current state, stop.
+SINGLE-FILE, MINIMAL, BOUNDED EDIT. Only edit frontend/src/blackbook/pdf/BlackBookPdf.tsx. Do not touch other files. Do not refactor. Show unified diff BEFORE applying. Do not run build.
 
-CONTEXT: Client requires ALL months (up to 24: current fiscal year + prior fiscal year) to fit on a SINGLE PDF page, like the legacy report — NOT split across multiple pages. Currently caps are 6 and there may be chunking that creates multiple page-blocks. I need to see the page/layout setup to make it fit on one page.
+GOAL: Defect #26 — show ALL current-year and prior-year months (up to 12 each) on the PDF, matching legacy. Client wants them on the page like legacy (two stacked sections). Currently only ~6 render, and there's a slicing bug dropping the first 6 current-year months.
 
-Quote verbatim:
+EXACT CHANGES:
 
-1) The <Page> element(s) and their size/orientation props. Is it size="LETTER" portrait, or landscape? Quote the Page opening tag(s) and any 'orientation' prop.
+1) FIX the monthlyChunks bug + make it a single full chunk. Current line:
+   const monthlyChunks = seriesYearOnly.length > 0 ? [seriesYearOnly.slice(monthlyRowsOnFirstPage)] : [];
+   Change to (render ALL current-year rows in one chunk, no truncation, no skip):
+   const monthlyChunks = seriesYearOnly.length > 0 ? [seriesYearOnly] : [];
+   (Note: the current code uses slice(monthlyRowsOnFirstPage) which SKIPS the first 6 rows — that's a bug. Using the full array fixes it and shows all months.)
 
-2) The styles object (StyleSheet.create) — specifically: styles.page (padding, size), styles.table, styles.tr, styles.td, styles.th, styles.sectionHeader. Quote font sizes, padding, and any height on rows. I need to know how tall each row is, to judge if 24 rows fit on one page.
+2) Raise the two history caps from 6 to 12:
+   - historyYearOnly.slice(0, 6)   ->  historyYearOnly.slice(0, 12)
+   - historyYear2Only.slice(0, 6)  ->  historyYear2Only.slice(0, 12)
+   (Find both .slice(0, 6) occurrences on the history grids and change to 12.)
 
-3) The monthlyChunks rendering: does monthlyChunks.map(...) create multiple <View> sections on the SAME page, or could it create multiple <Page> elements? Quote the .map and confirm whether all chunks render within one <Page> or spill to new pages.
+DO NOT:
+- Do NOT touch the disabled blocks (if (false && ...)).
+- Do NOT change MONTHLY_FIRST_ROWS / MONTHLY_CONT_ROWS constants (they're now unused by the single-chunk change, leave them).
+- Do NOT change page size, styles, panels, grid3, or JSX structure.
+- Do NOT remove wrap={false} (keeps sections on one page).
 
-4) Is there a LEGAL_LANDSCAPE or landscape constant defined/imported anywhere (even if unused / in the disabled r24 block)? Quote it.
+VERIFY BEFORE SHOWING DIFF (report; don't force):
+a) Confirm monthlyChunks is now [seriesYearOnly] and page 1 renders monthlyChunks[0] (all current-year rows). Confirm no continuation-page loop will fire (monthlyChunks.length stays 1).
+b) Confirm both history .slice(0,6) became .slice(0,12), and nothing else changed.
+c) Report: with wrap={false} on these tables, if the combined content (12 + 12 rows + panels) exceeds one page height, what happens in @react-pdf — does it clip, or push to a second page? Just report the risk; do not change layout yet.
 
-5) Whether any <View> has wrap={false} or a fixed height that would force content onto one page or prevent fitting.
-
-OUTPUT:
-- A) Page size/orientation, quoted.
-- B) Row height / font size from styles, quoted — and your estimate: can ~24 compact rows fit on one page at this size? 
-- C) Does the current render keep everything on one <Page>, or split? Quoted evidence.
-- D) Any landscape constant available, quoted.
-- State plainly what needs to change to fit all months on ONE page: (i) raise caps to 12, (ii) make monthlyChunks a single chunk (no multi-chunk), (iii) switch to landscape and/or reduce row font/padding. List which are needed based on the evidence.
-- No fix yet. Findings only.
+Show the unified diff. Apply nothing until I confirm.

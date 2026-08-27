@@ -34,3 +34,32 @@ OUTPUT:
 - The exact pattern/helper to add a string key to Values.
 - Confirm the three selection columns are available from tblMain (they're in the table).
 - No fix yet. Findings only.
+
+
+
+Edit ONLY backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs, only inside MapMetricPoint. Show unified diff before applying, then apply. Do not run build.
+
+BUG: MapMetricPoint only preserves string columns whose name starts with "strcustomfield"/"customfield"/"custom". So the Principal-vs-Gross selection strings are NOT added to mp.Values, and the frontend calcs (perCashCollections etc.) read them as undefined and fall to the wrong branch (returning 0).
+
+FIX: Extend the string-preservation condition to ALSO include the three selection fields (and any strPrincipalOrGross* selection).
+
+Find this exact block:
+
+                    var nlow = (name ?? string.Empty).ToLowerInvariant();
+                    if (nlow.StartsWith("strcustomfield") || nlow.StartsWith("customfield") || nlow.StartsWith("custom"))
+                    {
+                        mp.Values[name] = s.Trim();
+                    }
+
+Replace it with:
+
+                    var nlow = (name ?? string.Empty).ToLowerInvariant();
+                    if (nlow.StartsWith("strcustomfield") || nlow.StartsWith("customfield") || nlow.StartsWith("custom")
+                        || nlow.StartsWith("strprincipalorgross"))
+                    {
+                        mp.Values[name] = s.Trim();
+                    }
+
+The ONLY change: add `|| nlow.StartsWith("strprincipalorgross")` to the condition. This makes MapMetricPoint preserve strPrincipalOrGrossCalculationSelectionCashCollection, strPrincipalOrGrossCalculationSelectionNetChargeOff, and strPrincipalOrGrossCalculationSelectionper60DPD in mp.Values (all start with "strPrincipalOrGross", lowercased to "strprincipalorgross").
+
+Do NOT change anything else. After applying, confirm the condition now includes strprincipalorgross and that mp.Values[name] = s.Trim() is used unchanged.

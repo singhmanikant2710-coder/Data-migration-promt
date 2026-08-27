@@ -1,25 +1,74 @@
-READ-ONLY. No edits. Read the FULL dropdown flow in ONE pass. Quote everything below with file paths. This is the ONLY read I will ask — capture all of it.
+Two fixes in frontend/src/app/blackbook/edit/page.tsx. Show me the result after each. 
 
-GOAL: The ConsumerFinance % dropdown (Principal N/R / Gross N/R) next to Cash Collections %, 60+ DPD %, Net C/O % must be INTERACTIVE — switching it recomputes the %. Values are now correct on load but the dropdown no longer changes the value on switch. Find the complete chain and everything needed to fix it in one shot.
+=== FIX 1: computeConsumerFinancePercentOverride is BROKEN (missing const denom and const useGross lines — build error). Replace the ENTIRE function with this exact valid version: ===
 
-All in frontend/src/app/blackbook/edit/page.tsx unless noted. Quote verbatim:
+function computeConsumerFinancePercentOverride(
+  label: string,
+  values: Record<string, number | string | null | undefined>,
+  selMap: Record<string, string>,
+  options: string[]
+): number | null {
+  const lbl = String(label || "");
+  const base = lbl.replace(/\s*%$/, "");
 
-1) The dropdown JSX: the <Select> for Principal/Gross, its value/onChange, and how principalGrossByLabel and principalGrossOptions are declared (useState) and populated. Quote all of it.
+  let numeratorAliases: string[] | null = null;
+  let prinAliases: string[] = [];
+  let grossAliases: string[] = [];
 
-2) The tile render block where effectiveVal is computed and where computeConsumerFinancePercentOverride is called — quote the FULL surrounding block including the isConsumerFinance/kind==="percent" guard and exactly which values object is passed (latestTrimmed?.values vs latestPointComputed?.values vs row values).
+  if (/^cash collections/i.test(base)) {
+    numeratorAliases = CF_CASH_COLL_DOLLAR_ALIASES;
+    prinAliases = CF_PRIN_NR_PRIOR_ALIASES;
+    grossAliases = CF_GROSS_NR_PRIOR_ALIASES;
+  } else if (/^net\s*c\/o/i.test(base) || /charge[-\s]?off/i.test(base)) {
+    numeratorAliases = CF_NET_CO_DOLLAR_ALIASES;
+    prinAliases = CF_AVG_PRIN_TTM_ALIASES;
+    grossAliases = CF_AVG_GROSS_TTM_ALIASES;
+  } else if (/60\+?\s*dpd/i.test(base) || /dpd/i.test(base)) {
+    numeratorAliases = CF_DPD60_DOLLAR_ALIASES;
+    prinAliases = CF_PRIN_NR_ALIASES;
+    grossAliases = CF_GROSS_NR_MONTH_ALIASES;
+  } else {
+    return null;
+  }
 
-3) The COMPLETE definitions of latestPointComputed AND latestTrimmed (whichever is passed to the override). Show how each is built and whether the object contains these raw fields: curPrincipalNRPriorMonth, curGrossNRorARPriorMonth, curPrincipalNR, curGrossNRorAR, curAveragePrincipalNRTTM, curAverageGrossNRTTM, curCashCollections, cur60DPD, curNetChargeOff. For EACH of these 9 fields, state present or MISSING in that object.
+  const num = pickMonthly(values as any, numeratorAliases);
+  if (num === null) return null;
 
-4) computeConsumerFinancePercentOverride (current, full) + the helpers pick, pickMonthly, cfResolveBasisSelection, and the alias constants CF_PRIN_NR_PRIOR_ALIASES, CF_GROSS_NR_PRIOR_ALIASES, CF_PRIN_NR_ALIASES, CF_GROSS_NR_MONTH_ALIASES, CF_AVG_PRIN_TTM_ALIASES, CF_AVG_GROSS_TTM_ALIASES, CF_CASH_COLL_DOLLAR_ALIASES, CF_DPD60_DOLLAR_ALIASES, CF_NET_CO_DOLLAR_ALIASES. Quote all.
+  const sel = cfResolveBasisSelection(base, selMap, options);
+  const useGross = /gross/i.test(sel);
 
-5) How cfResolveBasisSelection maps a tile label to its selection: it reads selMap[`${base} %`] || selMap[`${base} $`]. Quote it. Then quote what KEYS principalGrossByLabel actually uses — when the user changes the dropdown for "Cash Collections %", under what key is the selection stored in principalGrossByLabel? Does that key match what cfResolveBasisSelection looks up (`Cash Collections %` or `Cash Collections $`)? This mismatch could be why switching does nothing.
+  const denom =
+    pick(values as any, useGross ? grossAliases : prinAliases) ??
+    pickMonthly(values as any, useGross ? grossAliases : prinAliases);
 
-6) Is effectiveVal (with the override) actually what gets rendered for the tile, or is there a later step that overwrites it? Quote the final value used in the tile's displayed output.
+  const nn = toNumberLike(num as any);
+  const dd = toNumberLike(denom as any);
+  if (nn === null || dd === null || dd === 0) return null;
+  return (nn / dd) * 100;
+}
 
-OUTPUT — answer all as a table/list:
-- A) dropdown state keys (what principalGrossByLabel uses as keys) vs what cfResolveBasisSelection looks up. Do they MATCH? (This is the prime suspect.)
-- B) For the object passed to the override: which of the 9 fields are PRESENT vs MISSING (especially curPrincipalNRPriorMonth / curGrossNRorARPriorMonth).
-- C) Does changing principalGrossByLabel actually flow into the override (is the override recomputed on dropdown change, i.e. is principalGrossByLabel a dependency / passed in)?
-- D) The single most likely reason the dropdown does nothing now: (i) selection key mismatch in cfResolveBasisSelection, (ii) PriorMonth fields missing from the values object so denom=null→return null, or (iii) effectiveVal overwritten later.
-- Quote the exact lines proving your conclusion.
-- No fix. Findings only. One pass, then stop.
+Confirm the function now has "const useGross" and "const denom" both present, exactly once each.
+
+=== FIX 2: latestPointComputed does NOT hydrate the prior-month fields, so Cash Collections % denominator is null and the dropdown does nothing. Hydrate them. ===
+
+In the latestPointComputed useMemo, inside the hydration block (where other cur* fields are assigned via coalesce), ADD these lines (near the curGrossNROrAR assignment):
+
+    (baseValues as any)["curPrincipalNRPriorMonth"] = (baseValues as any)["curPrincipalNRPriorMonth"] ?? coalesce(
+        (baseValues as any)["PrincipalNRPriorMonth"],
+        (baseValues as any)["curPrincipalNRPriorMonth"]
+    );
+    (baseValues as any)["curGrossNRorARPriorMonth"] = (baseValues as any)["curGrossNRorARPriorMonth"] ?? coalesce(
+        (baseValues as any)["GrossNRorARPriorMonth"],
+        (baseValues as any)["curGrossNRorARPriorMonth"]
+    );
+    (baseValues as any)["curPrincipalNR"] = (baseValues as any)["curPrincipalNR"] ?? coalesce(
+        (baseValues as any)["PrincipalNR"], (baseValues as any)["Principal N/R"]
+    );
+    (baseValues as any)["curAveragePrincipalNRTTM"] = (baseValues as any)["curAveragePrincipalNRTTM"] ?? (baseValues as any)["AveragePrincipalNRTTM"];
+    (baseValues as any)["curAverageGrossNRTTM"] = (baseValues as any)["curAverageGrossNRTTM"] ?? (baseValues as any)["AverageGrossNRTTM"];
+
+This ensures the raw fields the override needs (prior-month for Cash Collections, current-month principal for 60+DPD, Avg-TTM for Net C/O) are present in latestPointComputed.values.
+
+NOTE: The hydration uses `?? coalesce(...)` — if the field already exists in the row it is kept; these lines only fill it if the row already carries it under an alias. If curPrincipalNRPriorMonth is genuinely absent from the backend row entirely, that's a separate backend/read issue — report if you cannot find it anywhere in the row values.
+
+After both fixes, show me: (1) the complete corrected function, (2) the added hydration lines in context. Do not run build.

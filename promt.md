@@ -1,24 +1,15 @@
-SELECT TOP 30
-       strCustomerName, strMonthKey,
+SELECT strMonthKey,
+       curCashCollections,
+       curPrincipalNRPriorMonth,
+       curGrossNRorARPriorMonth,
        perCashCollections,
-       per60DPD,
-       perNetChargeOffTTM,
-       perInterestCoverageTTM,
-       perGrossProfitMargin,
-       perReserveCoverage
+       strPrincipalOrGrossCalculationSelectionCashCollection
 FROM tblMain
-WHERE (perCashCollections <> 0 OR per60DPD <> 0 OR perNetChargeOffTTM <> 0)
-ORDER BY strMonthKey DESC, strCustomerName;
+WHERE LTRIM(RTRIM(strCustomerName))='1ST FRANKLIN FINANCIAL CORPORATION'
+  AND strMonthKey='202605';
 
 
-SELECT TOP 30
-       strCustomerName, strMonthKey,
-       perCashCollections,
-       per60DPD,
-       perNetChargeOffTTM,
-       perInterestCoverageTTM,
-       perGrossProfitMargin,
-       perReserveCoverage
+  SELECT curCashCollections, curPrincipalNRPriorMonth, curGrossNRorARPriorMonth,
+       perCashCollections, strPrincipalOrGrossCalculationSelectionCashCollection
 FROM tblMain
-WHERE (perCashCollections <> 0 OR per60DPD <> 0 OR perNetChargeOffTTM <> 0)
-ORDER BY strMonthKey DESC, strCustomerName;
+WHERE Trim(strCustomerName)='1ST FRANKLIN FINANCIAL CORPORATION' AND strMonthKey='202605';

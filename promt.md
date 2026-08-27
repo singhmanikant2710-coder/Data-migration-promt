@@ -18,3 +18,19 @@ OUTPUT:
 - C) Does the panel use seriesWithEdits (calcs run)? yes/no + quoted.
 - D) State plainly: the top strip is wrong because latestPointComputed [doesn't run the calcs / uses a different row without merged values], while the panel uses seriesWithEdits which does. Name the exact fix location (make latestPointComputed use the same computed row as seriesWithEdits for the selected month).
 - No fix yet. Findings only.
+
+
+READ-ONLY. Read the MapMetricPoint method in backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs. Read once, quote, stop. No loop.
+
+Quote the part of MapMetricPoint where string fields are added to MetricPoint.Values — specifically where strCustomField* (or any str* selection fields) are placed into Values. I need to see the exact pattern used to add a string key to Values, so we can add the three selection fields the same way:
+- strPrincipalOrGrossCalculationSelectionCashCollection
+- strPrincipalOrGrossCalculationSelectionNetChargeOff
+- strPrincipalOrGrossCalculationSelectionper60DPD
+
+Also quote: how are these three selection columns read from the SQL reader (are they in the SELECT * / already available in the row), and what method adds a string to Values (e.g. AddStringValue, Values[...] = ...)? Quote the exact helper/pattern.
+
+OUTPUT:
+- The MapMetricPoint section adding string fields to Values (quoted).
+- The exact pattern/helper to add a string key to Values.
+- Confirm the three selection columns are available from tblMain (they're in the table).
+- No fix yet. Findings only.

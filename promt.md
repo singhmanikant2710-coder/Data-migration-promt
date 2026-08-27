@@ -1,16 +1,14 @@
-READ-ONLY. Read once, quote, stop. No loop. Find the Cash Collections % DROPDOWN recompute logic.
+READ-ONLY. Read once, quote, stop. No loop. 
 
-FACT: Stored perCashCollections = 0.0582 (5.82%, correct, = curCashCollections/curPrincipalNRPriorMonth = 63350/1088142). But the UI Cash Collections % dropdown, when "Principal N/R" is selected, shows 5.98% = 63350/1059729, which is curAveragePrincipalNRTTM (Avg Principal NR TTM), NOT curPrincipalNRPriorMonth. So the dropdown's live recompute uses the WRONG denominator.
+computeConsumerFinancePercentOverride overrides percent tiles in ConsumerFinance with Avg-TTM-based denominators, making Cash Collections % (0.27% vs legacy 0.34%) and 60+ DPD % (0.19% vs legacy 0.17%) WRONG. The backend-stored perCashCollections is already correct (prior-month, legacy-match).
 
-In frontend (monthSummaryRegistry.ts / the Cash & Charge-offs panel with the Principal/Gross dropdown, or wherever the dropdown onChange recomputes Cash Collections %):
-1) Find the dropdown for Cash Collections % (Principal N/R vs Gross N/R selector). Quote its onChange / recompute logic.
-2) When "Principal N/R" is selected, what denominator does it use? Quote the exact field. Is it curPrincipalNRPriorMonth (correct) or curAveragePrincipalNRTTM (wrong)?
-3) When "Gross N/R" is selected, what denominator? curGrossNRorARPriorMonth (correct) or curAverageGrossNRTTM?
-4) Compare with the correct perCashCollections calc in tblMainCalcs.ts (which uses curPrincipalNRPriorMonth / curGrossNRorARPriorMonth).
+Quote:
+1) The full computeConsumerFinancePercentOverride function. Does it branch by label? For which labels does it return a non-null override (Cash Collections %, 60+ DPD %, Net C/O %)?
+2) The call site: `if (isConsumerFinance && kind==="percent") { const ov = computeConsumerFinancePercentOverride(...); if (ov !== null) effectiveVal = ov; }`. Quote it.
+3) KEY QUESTION: if this override were removed/returned null for Cash Collections % and 60+ DPD %, would those tiles fall back to the correct backend-computed stored value (which is legacy-correct)? What is effectiveVal BEFORE the override is applied — is it the stored perCashCollections/per60DPD?
 
 OUTPUT:
-- A) The dropdown recompute logic, quoted.
-- B) The denominator it uses for Principal (and Gross), quoted — is it PriorMonth or AverageTTM?
-- C) State plainly: the dropdown uses [curAveragePrincipalNRTTM] instead of [curPrincipalNRPriorMonth], giving 5.98% instead of 5.82%.
-- D) Exact fix location.
-- No fix yet. Findings only.
+- A) The function + which labels it overrides, quoted.
+- B) What effectiveVal is before the override (the stored correct value?), quoted.
+- C) State: would returning null (skipping override) for Cash Collections % and 60+ DPD % restore the legacy-correct stored values?
+- No fix. Findings only.

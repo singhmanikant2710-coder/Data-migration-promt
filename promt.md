@@ -1,31 +1,35 @@
-SINGLE-FILE, BOUNDED EDIT. Only edit frontend/src/app/blackbook/edit/page.tsx, only computeConsumerFinancePercentOverride. Show unified diff BEFORE applying. Do not run build.
+Apply the change to computeConsumerFinancePercentOverride in frontend/src/app/blackbook/edit/page.tsx, but ensure valid syntax (the preview diff had a broken brace and a "..." placeholder — do NOT reproduce those). 
 
-CONTEXT: The dropdown MUST stay interactive (switching Principal/Gross changes the %, matching legacy). The previous change (returning null for Cash Collections % and 60+ DPD %) fixed the values but broke interactivity. Instead, keep the override for ALL THREE fields, but use the CORRECT denominator per field per legacy:
-- Cash Collections % → PRIOR month: curPrincipalNRPriorMonth (Principal) / curGrossNRorARPriorMonth (Gross)
-- 60+ DPD % → CURRENT month: curPrincipalNR (Principal) / curGrossNRorAR (Gross)
-- Net C/O % → AVG TTM: curAveragePrincipalNRTTM (Principal) / curAverageGrossNRTTM (Gross)  [unchanged]
+STEP 1: Add these two constants near the other CF_* alias declarations:
+    const CF_PRIN_NR_PRIOR_ALIASES = ["curPrincipalNRPriorMonth", "PrincipalNRPriorMonth"];
+    const CF_GROSS_NR_PRIOR_ALIASES = ["curGrossNRorARPriorMonth", "GrossNRorARPriorMonth"];
 
-REPLACE the current function body's branching + denominator logic. The function currently (after the previous edit) only handles Net C/O %. Restore all three fields AND pick the denominator by field.
+STEP 2: Also FIX the existing CF_GROSS_NR_MONTH_ALIASES to include the real column name curGrossNRorAR (the current one lacks it, so Gross 60+DPD would find no denominator). Change:
+    const CF_GROSS_NR_MONTH_ALIASES = ["curGrossNR", "GrossNR", "Gross N/R", "Gross"];
+to:
+    const CF_GROSS_NR_MONTH_ALIASES = ["curGrossNRorAR", "curGrossNR", "GrossNR", "Gross N/R", "Gross"];
 
-Set numeratorAliases AND a per-field denominator basis. Change the branching to:
+STEP 3: Replace the ENTIRE body of computeConsumerFinancePercentOverride (from the first line after the signature to the closing brace) with exactly this — as ONE valid function, no stray braces, no "..." :
+
+    const lbl = String(label || "");
+    const base = lbl.replace(/\s*%$/, "");
 
     let numeratorAliases: string[] | null = null;
-    // denominator alias sets chosen per field + per Principal/Gross selection
     let prinAliases: string[] = [];
     let grossAliases: string[] = [];
 
     if (/^cash collections/i.test(base)) {
         numeratorAliases = CF_CASH_COLL_DOLLAR_ALIASES;
-        prinAliases = CF_PRIN_NR_PRIOR_ALIASES;      // curPrincipalNRPriorMonth
-        grossAliases = CF_GROSS_NR_PRIOR_ALIASES;    // curGrossNRorARPriorMonth
+        prinAliases = CF_PRIN_NR_PRIOR_ALIASES;
+        grossAliases = CF_GROSS_NR_PRIOR_ALIASES;
     } else if (/^net\s*c\/o/i.test(base) || /charge[-\s]?off/i.test(base)) {
         numeratorAliases = CF_NET_CO_DOLLAR_ALIASES;
-        prinAliases = CF_AVG_PRIN_TTM_ALIASES;       // curAveragePrincipalNRTTM
-        grossAliases = CF_AVG_GROSS_TTM_ALIASES;     // curAverageGrossNRTTM
+        prinAliases = CF_AVG_PRIN_TTM_ALIASES;
+        grossAliases = CF_AVG_GROSS_TTM_ALIASES;
     } else if (/60\+?\s*dpd/i.test(base) || /dpd/i.test(base)) {
         numeratorAliases = CF_DPD60_DOLLAR_ALIASES;
-        prinAliases = CF_PRIN_NR_ALIASES;            // curPrincipalNR (current month)
-        grossAliases = CF_GROSS_NR_MONTH_ALIASES;    // curGrossNRorAR (current month)
+        prinAliases = CF_PRIN_NR_ALIASES;
+        grossAliases = CF_GROSS_NR_MONTH_ALIASES;
     } else {
         return null;
     }
@@ -35,24 +39,15 @@ Set numeratorAliases AND a per-field denominator basis. Change the branching to:
 
     const sel = cfResolveBasisSelection(base, selMap, options);
     const useGross = /gross/i.test(sel);
-    const denom = pick(values as any, useGross ? grossAliases : prinAliases)
-        ?? pickMonthly(values as any, useGross ? grossAliases : prinAliases);
+    const denom =
+        pick(values as any, useGross ? grossAliases : prinAliases) ??
+        pickMonthly(values as any, useGross ? grossAliases : prinAliases);
 
     const nn = toNumberLike(num as any);
     const dd = toNumberLike(denom as any);
     if (nn === null || dd === null || dd === 0) return null;
     return (nn / dd) * 100;
 
-IMPORTANT — alias constants:
-- Use existing constants where they exist: CF_CASH_COLL_DOLLAR_ALIASES, CF_NET_CO_DOLLAR_ALIASES, CF_DPD60_DOLLAR_ALIASES, CF_AVG_PRIN_TTM_ALIASES, CF_AVG_GROSS_TTM_ALIASES, CF_PRIN_NR_ALIASES, CF_GROSS_NR_MONTH_ALIASES.
-- For the PRIOR-month aliases, check if constants exist. If CF_PRIN_NR_PRIOR_ALIASES / CF_GROSS_NR_PRIOR_ALIASES do NOT already exist, ADD them near the other CF_* alias declarations:
-    const CF_PRIN_NR_PRIOR_ALIASES = ["curPrincipalNRPriorMonth", "PrincipalNRPriorMonth"];
-    const CF_GROSS_NR_PRIOR_ALIASES = ["curGrossNRorARPriorMonth", "GrossNRorARPriorMonth"];
+Make sure the function has exactly ONE opening brace (after the signature) and ONE closing brace at the end. No code outside the function. No "..." placeholders.
 
-VERIFY BEFORE SHOWING DIFF:
-a) All three fields (Cash Collections %, Net C/O %, 60+ DPD %) now return a computed override (interactive).
-b) Denominators are field-specific: Cash Collections→PriorMonth, 60+DPD→CurrentMonth, Net C/O→AvgTTM.
-c) Report whether CF_PRIN_NR_PRIOR_ALIASES / CF_GROSS_NR_PRIOR_ALIASES already existed or were added.
-d) Confirm CF_PRIN_NR_ALIASES maps to curPrincipalNR (current month) and CF_GROSS_NR_MONTH_ALIASES to curGrossNRorAR (current month) — quote their definitions so we're sure 60+DPD uses current month.
-
-Show the unified diff. Apply nothing until I confirm.
+After applying, show me the COMPLETE function from signature to closing brace, plus the 3 alias constant lines, so I can verify valid syntax and correct denominators.

@@ -1,29 +1,17 @@
-READ-ONLY DIAGNOSTIC. No edits. Read the specified files, quote with file paths, findings only. Do NOT loop — read each file once.
+READ-ONLY. Confirm the exact selection field name mismatch. Read once, quote, stop. No loop.
 
-GOAL: Find why "Cash Collections %" shows 0 (and DB perCashCollections=5) when it should be 50% (500000/1000000 prior month). Need to know whether the UI reads the BACKEND-computed tblMain.perCashCollections OR computes it in the FRONTEND, and where the wrong value comes from.
+The frontend perCashCollections reads: i.strPrincipalOrGrossNRCalculationSelectionCashCollection  (note: "GrossNR")
 
-DATA (tblMain, 202607, AMERICAN CREDIT ACCEPTANCE):
-- curCashCollections=500000, curPrincipalNR=100000 (current), curPrincipalNRPriorMonth=1000000 (prior)
-- selection strPrincipalOrGrossCalculationSelectionCashCollection="Principal N/R"
-- perCashCollections (stored in tblMain) = 5  (=500000/100000, using CURRENT month — wrong; should be 0.5 using prior)
-- Correct = 500000/1000000 = 0.5 = 50%
+But the DB column (confirmed via SQL) is: strPrincipalOrGrossCalculationSelectionCashCollection  (note: "Gross", no "NR")
 
-Read and quote from BOTH sides:
-
-=== BACKEND: backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs ===
-B1) Search "perCashCollections". Quote EVERY place m.[perCashCollections] is SET (sets.Add / UPDATE / MERGE). State how many distinct places. If more than one, quote each — one may use curPrincipalNR (current) and overwrite the fixed one.
-B2) Confirm the fixed block now uses curPrincipalNRPriorMonth with LIKE 'PRINCIPAL%'. Quote it as it currently is.
-B3) Does the read path (GetCurrentYearSeriesAsync) SELECT perCashCollections from tblMain into the row Values? Quote where perCashCollections is read into the series (the SELECT column list or mapping).
-
-=== FRONTEND: which source does the UI "Cash Collections %" use? ===
-F1) In frontend/src/blackbook/mappings/tblMainCalcs.ts: quote perCashCollections (the frontend calc). It uses curPrincipalNRPriorMonth (we saw this — it's correct).
-F2) In frontend/src/blackbook/components/monthSummaryRegistry.ts (or monthSummaryProfiles / mapIndirectAuto): find the "Cash Collections %" tile/column render. Does it call the frontend perCashCollections calc, OR does it read a precomputed value from row.values (e.g. row.values.perCashCollections coming from backend tblMain)? Quote the exact render/resolution.
-F3) In frontend/src/app/blackbook/edit/page.tsx: in seriesWithEdits, the tblMainCalcs loop runs client-side calcs and writes them onto merged (for(const [key,fn] of Object.entries(tblMainCalcs)) { merged[key]=fn(inputs) }). Does this overwrite perCashCollections with the frontend calc? If so, is curPrincipalNRPriorMonth present in the row inputs (merged), or missing (so frontend calc also fails)? Quote whether curPrincipalNRPriorMonth is hydrated/merged onto the row in seriesWithEdits.
+Verify:
+1) In frontend/src/blackbook/mappings/tblMainCalcs.ts (or the TblMainInputs type / mapping): search for "strPrincipalOrGross" and quote ALL variants used. Is the field the perCashCollections calc reads spelled with "GrossNR" or "Gross"? Quote the exact string.
+2) In the backend read path / series mapping: under what key is strPrincipalOrGrossCalculationSelectionCashCollection placed onto the row Values? Quote it. Does it match what the frontend calc reads?
+3) Also confirm the same for the NetChargeOff and 60DPD selection fields (strPrincipalOrGrossCalculationSelectionNetChargeOff, ...per60DPD) — do the frontend calcs read them with "Gross" or "GrossNR"? (60+ DPD % works = 50%, so maybe that one is spelled correctly — compare.)
 
 OUTPUT:
-- A) BACKEND: how many places set perCashCollections; does any use curPrincipalNR (current)? Quoted.
-- B) Does the series read path expose tblMain.perCashCollections to the UI? Quoted.
-- C) FRONTEND: does the "Cash Collections %" render use the frontend calc or the backend value? Quoted.
-- D) Is curPrincipalNRPriorMonth actually present on the row the frontend calc sees? yes/no + where it's set (or missing). Quoted.
-- E) State plainly the ONE reason it's wrong: [backend second path uses current month] OR [frontend reads backend's wrong value] OR [frontend calc runs but curPrincipalNRPriorMonth missing from row so it falls to 0/wrong] OR [selection not matching].
+- A) Exact field name the frontend perCashCollections reads (GrossNR vs Gross), quoted.
+- B) Exact key the backend puts the selection under, quoted.
+- C) Do they match? If not, that's the bug — frontend reads a field name that doesn't exist on the row, so selection is undefined, so it falls to the Gross(0) branch → 0.
+- D) How does the working 60+ DPD calc spell its selection field? (to confirm the pattern).
 - No fix yet. Findings only.

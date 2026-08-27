@@ -1,13 +1,6 @@
-SELECT strMonthKey,
-       curCashCollections,
-       curPrincipalNRPriorMonth,
-       curGrossNRorARPriorMonth,
-       '[' + ISNULL(strPrincipalOrGrossCalculationSelectionCashCollection,'NULL') + ']' AS sel_cash,
-       perCashCollections
+SELECT strMonthKey, curPrincipalNR, curPrincipalNRPriorMonth,
+       curCashCollections, perCashCollections
 FROM tblMain
-WHERE LTRIM(RTRIM(strCustomerName))='AMERICAN CREDIT ACCEPTANCE' 
-  AND strMonthKey='202607';
-SELECT curCashCollections, curPrincipalNRPriorMonth, curGrossNRorARPriorMonth,
-       perCashCollections
-FROM tblMain
-WHERE Trim(strCustomerName)='AMERICAN CREDIT ACCEPTANCE' AND strMonthKey='202607';
+WHERE LTRIM(RTRIM(strCustomerName))='AMERICAN CREDIT ACCEPTANCE'
+  AND strMonthKey IN ('202607','202606')
+ORDER BY strMonthKey DESC;

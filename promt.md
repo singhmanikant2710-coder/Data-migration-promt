@@ -1,31 +1,24 @@
-SELECT strMonthKey,
+SELECT TOP 30
+       strCustomerName, strMonthKey,
        perCashCollections,
        per60DPD,
        perNetChargeOffTTM,
-       perDebtDivTangibleNetWorth,
-       perDiscountDividedByReserve,
-       perReserveCoverage,
-       perGrossProfitMargin,
-       perGrossProfitMarginYTD,
        perInterestCoverageTTM,
-       perCollateralAvailability,
-       perAvailabilityPercent
+       perGrossProfitMargin,
+       perReserveCoverage
 FROM tblMain
-WHERE LTRIM(RTRIM(strCustomerName))='AMERICAN CREDIT ACCEPTANCE'
-  AND strMonthKey='202608';
+WHERE (perCashCollections <> 0 OR per60DPD <> 0 OR perNetChargeOffTTM <> 0)
+ORDER BY strMonthKey DESC, strCustomerName;
 
 
-  SELECT strMonthKey,
+SELECT TOP 30
+       strCustomerName, strMonthKey,
        perCashCollections,
        per60DPD,
        perNetChargeOffTTM,
-       perDebtDivTangibleNetWorth,
-       perDiscountDividedByReserve,
-       perReserveCoverage,
-       perGrossProfitMargin,
-       perGrossProfitMarginYTD,
        perInterestCoverageTTM,
-       perCollateralAvailability
+       perGrossProfitMargin,
+       perReserveCoverage
 FROM tblMain
-WHERE Trim(strCustomerName)='AMERICAN CREDIT ACCEPTANCE'
-  AND strMonthKey='202608';
+WHERE (perCashCollections <> 0 OR per60DPD <> 0 OR perNetChargeOffTTM <> 0)
+ORDER BY strMonthKey DESC, strCustomerName;

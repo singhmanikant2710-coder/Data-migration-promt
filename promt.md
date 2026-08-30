@@ -4,14 +4,30 @@
  Reported by: Pamela Sullivan (8/10/2026)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: Not a defect — the displayed value is correct and
-matches the legacy application. Clarification below.
+STATUS: Resolved. The displayed value is correct and now matches
+the legacy application. Fixed as part of a general fiscal-year
+correction that applies to all customers.
 
 ───────────────────────────────────────────────────────────────
- WHY "2026/9" IS CORRECT
+ ROOT CAUSE
 ───────────────────────────────────────────────────────────────
-Van Zyverden has a JULY fiscal-year start. With a July start,
-the fiscal months map to calendar months like this:
+The application was filtering a customer's data by CALENDAR year
+instead of FISCAL year. For customers with a non-December fiscal
+start (e.g. Van Zyverden = July, and similarly BHG = October),
+this caused the wrong set of months to be loaded and, in some
+views, the fiscal year/month to appear inconsistent.
+
+While investigating a related fiscal-year issue on BANKERS
+HEALTHCARE GROUP (October fiscal start), I implemented a GENERAL
+fiscal-year-aware logic — driven by each customer's actual fiscal
+start month (intFiscalYear) rather than the calendar year. This
+is customer-agnostic, so it corrects the behaviour for EVERY
+non-December fiscal-year customer at once, including Van Zyverden.
+
+───────────────────────────────────────────────────────────────
+ WHY "2026/9" IS CORRECT (July fiscal start)
+───────────────────────────────────────────────────────────────
+With a July start, fiscal months map to calendar months as:
 
    Fiscal Month  1  →  July      (202507)
    Fiscal Month  2  →  August    (202508)
@@ -24,52 +40,43 @@ the fiscal months map to calendar months like this:
    Fiscal Month  9  →  March     (202603)   ← selected month
 
 The selected month is 202603 (March 2026). For a July fiscal
-year, March falls in fiscal month 9. So "Fiscal: 2026/9" reads
-as "Fiscal Year 2026, fiscal month 9" — which is exactly right.
-
-The fiscal year is labelled by the year in which it ENDS: a
-July-2025-to-June-2026 fiscal year is Fiscal Year 2026. That is
-why the FY dropdown shows 2026, not 2025.
+year, March is fiscal month 9, within Fiscal Year 2026 (the
+fiscal year is labelled by the year it ENDS: Jul-2025 to
+Jun-2026 = FY 2026). So "Fiscal: 2026/9" is exactly correct.
 
 ───────────────────────────────────────────────────────────────
  VERIFIED AGAINST LEGACY (BCAT_be.accdb)
 ───────────────────────────────────────────────────────────────
-Opened Van Zyverden in the legacy Access application for the
-same month:
-
    Legacy  →  FY: 2026,  Month: 202603
-   Legacy month dropdown  →  202507 … 202603
-                             (July 2025 through March 2026)
+   Legacy month dropdown  →  202507 … 202603 (Jul-2025–Mar-2026)
 
    New app →  FY: 2026,  Month: 202603,  Fiscal: 2026/9
-   New app month dropdown →  202507 … 202603  (identical)
+   New app month dropdown →  202507 … 202603 (identical)
 
-Both applications show the same fiscal year (2026) and the same
-set of months for the fiscal year. The new application matches
-legacy exactly.
+Both applications show the same fiscal year and the same fiscal-
+year months. The new application now matches legacy exactly.
 
 ───────────────────────────────────────────────────────────────
- NOTE ON THE MONTH DROPDOWN
+ IMPACT
 ───────────────────────────────────────────────────────────────
-A related issue existed where, for non-December fiscal-year
-customers, the month dropdown/data only covered the calendar
-year (e.g. Jan–Dec) instead of the fiscal year, so later months
-of the fiscal year could not be viewed. That has been fixed
-separately (the current-year data query is now fiscal-year
-aware). Van Zyverden now correctly lists and loads all fiscal-
-year months (202507–202603), matching legacy.
+• Van Zyverden (July FY): fiscal year, months, and data now
+  load and display correctly.
+• Because the fix is general (fiscal-year-based, not per-
+  customer), all non-December fiscal-year customers are
+  corrected by the same change.
+• December fiscal-year customers are unaffected — for them the
+  fiscal year equals the calendar year, so behaviour is
+  unchanged.
 
 ───────────────────────────────────────────────────────────────
  RESOLUTION
 ───────────────────────────────────────────────────────────────
-No code change required for the "2026/9" display — it is
-correct and legacy-consistent. The fiscal-year label (2026) and
-the fiscal month (9 = March for a July start) are both accurate.
+Fixed via the general fiscal-year-aware data logic. The "2026/9"
+value is correct and legacy-consistent (FY 2026, fiscal month 9
+= March for a July start).
 
-If the "YYYY/M" format is felt to be confusing to users, we can
-optionally enhance the display for clarity — for example:
-   "Fiscal: 2026 / Month 9 (Mar)"
-This would be a small UI-label change only, not a calculation
-fix. Awaiting confirmation on whether that enhancement is
-wanted.
+Optional (UI clarity only): if the "YYYY/M" format is felt to be
+confusing, the label could be enhanced to e.g.
+"Fiscal: 2026 / Month 9 (Mar)". This is a display-only change,
+not a calculation fix — happy to add it if preferred.
 ═══════════════════════════════════════════════════════════════

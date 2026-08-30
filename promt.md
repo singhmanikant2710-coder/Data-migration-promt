@@ -1,18 +1,66 @@
-READ-ONLY. Read once, quote, stop. No loop. Find how the actual DATA (metrics/series) is fetched for a selected month/year, and whether it filters by calendar year.
+SINGLE-FILE, BOUNDED EDIT. Only edit backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs, only GetCurrentYearSeriesAsync. Show unified diff BEFORE applying. Do not run build.
 
-REFINED SYMPTOM: The Month dropdown correctly shows all months up to 202606 (fiscal-year options work). BUT selecting 202601+ shows NO DATA in the UI, while 202512 and earlier show data. Legacy shows data for 202606. So the month-OPTIONS endpoint is fine; the DATA-FETCH endpoint fails for 202601+.
+BUG: GetCurrentYearSeriesAsync filters by CALENDAR year (LEFT(strMonthKey,4) = @yrStr), but the month-options endpoint (GetMonthKeySeriesForYearAsync) and the Year dropdown use FISCAL year (intFiscalYear). For BHG (October fiscal year), fiscal year 2025 contains calendar months 202510-202606. The calendar filter returns only 202510-202512, so selecting 202601+ shows a blank UI (no row). The fix: make GetCurrentYearSeriesAsync fiscal-year aware, exactly like GetHistoricYearSeriesAsync already does (schema-probe intFiscalYear, use it if present, else fall back to calendar).
 
-HYPOTHESIS: The data-fetch (series/metrics for the selected year) filters by CALENDAR year (LEFT(strMonthKey,4)=@yr), so for year=2025 it only returns calendar-2025 rows (202510-202512), and 202601-202606 (calendar 2026, fiscal 2025) return no data.
+FIX: In GetCurrentYearSeriesAsync, replace the single calendar-year query with the same fiscal-aware pattern used in GetHistoricYearSeriesAsync:
 
-In backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs:
-1) Find the method that fetches the metric series / rows for the edit screen by customer+year (likely GetCurrentYearSeriesAsync or similar — the one whose results populate the blackbook edit page tiles). Quote its WHERE clause.
-2) Does it filter by LEFT(strMonthKey,4) = @yrStr (calendar) or by intFiscalYear = @yr (fiscal)? Quote exactly.
-3) The frontend passes the selected fiscal year. If this data query uses calendar-year filtering, then for BHG year=2025 it returns only 202510-202512, and selecting 202601+ yields no row → blank UI. Confirm.
-4) Also check GetRolling24MonthsAsync and any other data-fetch used by the edit page — do they filter by calendar or fiscal year? Quote.
+CURRENT (calendar-only):
+    using var cmd = con.CreateCommand();
+    // Enforce calendar-year filtering and ordering by monthKey for Blackbook parity
+    cmd.CommandText = @"
+SELECT *
+FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) = LTRIM(RTRIM(@cust))
+    AND LEFT(LTRIM(RTRIM(strMonthKey)),4) = @yrStr
+ORDER BY LTRIM(RTRIM(strMonthKey)) ASC";
+    AddParam(cmd, "@cust", SqlDbType.NVarChar, custResolved);
+    AddParam(cmd, "@yrStr", SqlDbType.NVarChar, fiscalYear.ToString("0000", CultureInfo.InvariantCulture));
 
-OUTPUT:
-- A) The data-fetch method's WHERE clause, quoted.
-- B) Calendar-year or fiscal-year filter?
-- C) Confirm: does year=2025 exclude 202601-202606 data for BHG (calendar filter)?
-- D) Exact fix: change data-fetch filter to intFiscalYear = @yr (matching month-options and context/years, which are fiscal). List every method needing the same change.
-- No fix. Findings only.
+REPLACE WITH (fiscal-aware, mirroring GetHistoricYearSeriesAsync):
+    // Prefer fiscal-year filtering when the intFiscalYear column exists (needed for non-December fiscal years
+    // like BHG where fiscal year 2025 includes calendar months 202601-202606). Fall back to calendar year otherwise.
+    bool hasFiscalYear = false;
+    try
+    {
+        using var colCmd = con.CreateCommand();
+        colCmd.CommandText = @"SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'tblMain' AND COLUMN_NAME = 'intFiscalYear'";
+        var probe = await colCmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
+        hasFiscalYear = probe != null;
+    }
+    catch
+    {
+        // best effort
+    }
+
+    using var cmd = con.CreateCommand();
+    if (hasFiscalYear)
+    {
+        cmd.CommandText = @"
+SELECT *
+FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) = LTRIM(RTRIM(@cust)) AND intFiscalYear = @yr
+ORDER BY LTRIM(RTRIM(strMonthKey)) ASC";
+        AddParam(cmd, "@cust", SqlDbType.NVarChar, custResolved);
+        AddParam(cmd, "@yr", SqlDbType.Int, fiscalYear);
+    }
+    else
+    {
+        cmd.CommandText = @"
+SELECT *
+FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) = LTRIM(RTRIM(@cust))
+    AND LEFT(LTRIM(RTRIM(strMonthKey)),4) = @yrStr
+ORDER BY LTRIM(RTRIM(strMonthKey)) ASC";
+        AddParam(cmd, "@cust", SqlDbType.NVarChar, custResolved);
+        AddParam(cmd, "@yrStr", SqlDbType.NVarChar, fiscalYear.ToString("0000", CultureInfo.InvariantCulture));
+    }
+
+Keep everything AFTER this (the reader loop, mapping, telemetry, return) exactly the same. Only the query-building portion changes.
+
+VERIFY BEFORE SHOWING DIFF:
+a) GetCurrentYearSeriesAsync now probes intFiscalYear and uses intFiscalYear = @yr when present, else calendar fallback.
+b) The pattern matches GetHistoricYearSeriesAsync exactly (same probe, same @yr int binding).
+c) The reader loop / mapping / return after the query are unchanged.
+d) No other method changed.
+
+Show the unified diff. Apply nothing until I confirm.

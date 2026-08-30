@@ -1,17 +1,19 @@
-READ-ONLY. Read once, quote, stop. No loop. Find how the monthkey-series endpoint filters by year.
+READ-ONLY. Read once, quote, stop. No loop. Find what determines hasFiscalYear in GetMonthKeySeriesForYearAsync.
 
-CONFIRMED via SQL: For BHG (October fiscal year), months 202601-202605 have intFiscalYear=2025 (same fiscal year as 202512). So fiscal year 2025 contains calendar months 202510-202609. But the Month dropdown for year=2025 only shows up to 202512 (calendar 2025), excluding 202601+ (calendar 2026 but fiscal 2025).
+CONTEXT: GetMonthKeySeriesForYearAsync has two paths:
+- hasFiscalYear=TRUE: WHERE intFiscalYear = @yr  (correct for BHG — 202601-202605 have intFiscalYear=2025)
+- hasFiscalYear=FALSE: WHERE LEFT(strMonthKey,4) = @yrStr  (calendar year — WRONG for BHG, drops 202601+)
 
-HYPOTHESIS: The backend monthkey-series filters by CALENDAR year (LEFT(strMonthKey,4)=year) instead of intFiscalYear, so 202601+ (calendar 2026) are dropped even though they belong to fiscal year 2025.
+For BHG the dropdown only shows up to 202512, suggesting the FALSE (calendar) path runs. Need to confirm.
 
-Find the backend endpoint for /api/v1/metrics/monthkey-series:
-1) Locate the handler/repository method that returns month keys for a customer+year. Search "monthkey-series" or "MonthKeySeries" or "GetMonthKeys". Quote the SQL/filter it uses.
-2) Does it filter by LEFT(strMonthKey,4) = @year (calendar year) OR by intFiscalYear = @year (fiscal year)? Quote the exact WHERE clause.
-3) Compare: the frontend passes year (from the Year dropdown, which lists intFiscalYear values per /api/v1/context/years). So the frontend's "year" is a FISCAL year, but if the backend filters by CALENDAR year (strMonthKey prefix), there's a mismatch for non-December fiscal years.
+In the backend repository (GetMonthKeySeriesForYearAsync):
+1) Quote the full method including how `hasFiscalYear` is computed/set. What makes it true vs false? Is it a column existence check, a config flag, a null check on intFiscalYear, or a parameter?
+2) Quote how @yr and @yrStr are bound. Is @yr the fiscal year or calendar year?
+3) Is there any condition where hasFiscalYear ends up FALSE even though intFiscalYear data exists (e.g. it defaults to false, or a try/catch, or a schema probe that fails)?
 
 OUTPUT:
-- A) The monthkey-series filter WHERE clause, quoted.
-- B) Does it filter by calendar year (strMonthKey prefix) or intFiscalYear? 
-- C) Confirm the mismatch: frontend year = fiscal year, backend filter = calendar year → 202601+ excluded for BHG.
-- D) Exact fix location: change the filter to use intFiscalYear = @year (matching how /api/v1/context/years defines the year).
+- A) The full method + how hasFiscalYear is determined, quoted.
+- B) For BHG (which HAS intFiscalYear populated), would hasFiscalYear be TRUE or FALSE? Why?
+- C) If it's FALSE despite intFiscalYear existing → that's the bug (calendar filter used, drops 202601+). If TRUE → the fiscal filter should already work, so the bug is elsewhere (quote @yr binding).
+- D) Exact fix location.
 - No fix. Findings only.

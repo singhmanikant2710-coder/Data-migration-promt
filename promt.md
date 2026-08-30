@@ -1,17 +1,17 @@
-READ-ONLY. Read once, quote, stop. No loop. Confirm the selectedYear derivation bug.
+READ-ONLY. Read once, quote, stop. No loop. Find how getMaxMonthKey / max-month-key is computed in the backend.
 
-ROOT CAUSE FOUND: In frontend/src/app/blackbook/edit/page.tsx, when a monthKey is used to derive the year:
-    if (/^\d{6}$/.test(mkp)) return mkp.slice(0, 4);
-This takes the CALENDAR year (first 4 digits of YYYYMM). For BHG (Oct fiscal year), 202601 → "2026", but 202601 belongs to FISCAL year 2025. So selectedYear becomes 2026, the current-year API returns no rows for fiscalYear=2026, and the UI falls back to stale 202512 data.
+CONFIRMED FROM UI: Month dropdown shows 202510-202605 (correct). But "Month Key: 202512" is displayed and tiles show 202512's data, even though dropdown appears on 202605. "New Month: 202606" is shown. So maxMonthKey appears to be 202512 (calendar-year max), and the default-month effect (def = arr.includes(maxMonthKey) ? maxMonthKey : last) resets selectedMonthKey to 202512.
 
-1) Quote the FULL context around `return mkp.slice(0, 4);` — is this only for initial load (from URL param), or does it also run when the user changes the Month dropdown? Quote the surrounding function/effect.
-2) When the user selects a month in the dropdown (onChange sets selectedMonthKey), does selectedYear get recomputed from the new monthKey? Trace: does changing selectedMonthKey trigger a selectedYear change via slice(0,4)? Quote the effect/handler.
-3) Is the fiscal year available per row? Each MetricPoint has fiscalYear (we saw "fiscalYear": 2025 in the rolling24 response). So for a selected monthKey, we can get its fiscalYear from the series row (series.find(monthKey===sel).fiscalYear). Quote where series rows expose fiscalYear.
-4) How does selectedYear drive the current-year fetch? Confirm the fetch uses selectedYear as the `year` query param.
+1) Find the backend endpoint/method for max month key (getMaxMonthKey → likely /api/v1/metrics/max-monthkey or similar → a repo method). Quote its SQL. Does it compute MAX(strMonthKey) overall, or MAX filtered by calendar year (LEFT(strMonthKey,4)), or something that returns 202512 for BHG?
+2) BHG has months up to 202605 (all intFiscalYear 2025). Why would max return 202512? Is it: MAX over calendar year 2025 (LEFT=2025 → 202512), or MAX where some data column is non-null (202512 has PBT, 202601-202605 partially empty), or MAX of a "completed" month?
+3) Quote how "New Month" (202606) is computed — this suggests the system knows the latest is 202605 (New Month = 202605+1). Compare with maxMonthKey logic.
+
+Also FRONTEND:
+4) Quote the default-month effect that sets selectedMonthKey from maxMonthKey. Does it run on every series/monthkey load and OVERWRITE a user's selection? Quote its dependency array and any guard.
 
 OUTPUT:
-- A) The slice(0,4) context — initial-only or also on month change? Quoted.
-- B) Whether selecting 202601 sets selectedYear=2026 (calendar) instead of 2025 (fiscal). Confirmed?
-- C) Is fiscalYear available on the series row for the selected month? Quoted.
-- D) Exact fix: when deriving selectedYear from a monthKey, use the row's fiscalYear (from the series/rolling24 data) instead of slice(0,4). Name the exact location(s).
+- A) getMaxMonthKey backend SQL, quoted. Calendar-max or overall-max?
+- B) Why it returns 202512 for BHG (calendar filter, or non-null data filter).
+- C) The default-month effect that resets selectedMonthKey to maxMonthKey, quoted — does it overwrite user selection?
+- D) Exact fix: (i) make maxMonthKey overall MAX(strMonthKey) or fiscal-aware, and/or (ii) stop the default effect from overwriting an explicit user month selection.
 - No fix. Findings only.

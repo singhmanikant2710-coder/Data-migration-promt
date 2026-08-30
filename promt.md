@@ -1,15 +1,41 @@
-Before applying, ONE more critical check on the "Create mode bootstrap" effect (Section B-2), because it calls setSelectedMonthKey(mkParam) and depends on monthKeys/enrichedSeries/rolling24 — which change when the user selects a month. This could reset the selection back to mkParam (the URL month, e.g. 202512) AFTER the user picks 202605, undoing Fix 1.
+The diff preview is broken — it contains DUPLICATE `const arr` and `let def` declarations and mismatched braces from mixing old and new versions. That would cause "cannot redeclare arr/def" build errors. Do NOT apply that.
 
-Quote the FULL "Create mode bootstrap" effect (entire body + the guard conditions at the top). I need to know:
-1) Does it early-return when NOT in createMode? Quote the guard (e.g. `if (!createMode) return;` or `createRanRef.current`). If it early-returns for normal (non-create) viewing, it won't affect BHG normal selection — confirm.
-2) The setSelectedMonthKey(mkParam) call — under what condition does it run? Only during create flow, or also on every enrichedSeries/rolling24 change in normal view?
-3) createRanRef.current guard — does it prevent re-running after the first time? Quote it.
-4) When the user is just VIEWING BHG (not creating a month) and selects 202605, will this effect fire (because enrichedSeries/rolling24 changed) and reset selectedMonthKey to mkParam? Yes/no, with quoted evidence.
+Instead, do a clean targeted replacement. In frontend/src/app/blackbook/edit/page.tsx, in the "Load month key series for selected year" effect, find this EXACT existing block:
 
-OUTPUT:
-- Full create-mode effect body + guards, quoted.
-- Does it run in normal (non-create) view? yes/no.
-- Will it reset the user's month selection on enrichedSeries/rolling24 change? yes/no + evidence.
-- If YES it interferes: we need a guard so it does not overwrite an explicit user selection.
+        let def = selectedMonthKey;
+        const mk = (maxMonthKey || "").trim();
+        if (!def) {
+            const mkp = monthKeyParam.trim();
+            if (/^\d{6}$/.test(mkp) && arr.includes(mkp)) {
+                def = mkp;
+            } else {
+                def = arr.includes(mk) ? mk : arr[arr.length - 1] || "";
+            }
+        }
 
-Just this. Then decide apply.
+Replace ONLY that block (do NOT touch the `const arr = ...` line above it, do NOT touch the `if (!cancelled) { setMonthKeys... }` below it) with:
+
+        let def = selectedMonthKey;
+        // If the user's current selection is valid within the loaded months, keep it (don't overwrite).
+        if (def && arr.includes(def)) {
+            // keep def as-is
+        } else if (!def) {
+            const mkp = monthKeyParam.trim();
+            if (/^\d{6}$/.test(mkp) && arr.includes(mkp)) {
+                def = mkp;
+            } else {
+                // default to the fiscal-latest month (arr is ASC), not maxMonthKey
+                def = arr[arr.length - 1] || "";
+            }
+        } else {
+            // def set but not in the loaded arr (year changed) -> fall back to last of arr
+            def = arr[arr.length - 1] || "";
+        }
+
+CRITICAL:
+- Do NOT add a second `const arr` — the existing `const arr = (Array.isArray(keys)...)` line stays exactly once, untouched.
+- Do NOT add a second `let def` — only ONE `let def = selectedMonthKey;`.
+- The `const mk = (maxMonthKey...)` line is REMOVED (no longer used) — confirm maxMonthKey isn't referenced elsewhere in this block after removal; if it causes an unused-var lint, that's fine, but do not leave a duplicate.
+- Keep the `if (!cancelled) { setMonthKeys(arr); setSelectedMonthKey(def); setMkAttempted(true); setLastRefreshAt(new Date()); }` block exactly as-is below.
+
+After applying, show me the COMPLETE effect from its `async function loadMonthKeys()` (or the `const arr =` line) through `setSelectedMonthKey(def);` — so I can verify exactly ONE `const arr`, exactly ONE `let def`, no duplicate declarations, valid braces.

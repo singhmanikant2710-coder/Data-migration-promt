@@ -1,22 +1,9 @@
-SINGLE-FILE, BOUNDED EDIT. Only edit backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs, only GetCurrentYearSeriesAsync. Show unified diff BEFORE applying. Do not run build.
+The previous diff was broken: it left the OLD "using var cmd = con.CreateCommand();" and the OLD AddParam lines in place, AND added new ones — causing duplicate 'cmd' declaration and duplicate AddParam (build errors). 
 
-BUG: GetCurrentYearSeriesAsync filters by CALENDAR year (LEFT(strMonthKey,4) = @yrStr), but the month-options endpoint (GetMonthKeySeriesForYearAsync) and the Year dropdown use FISCAL year (intFiscalYear). For BHG (October fiscal year), fiscal year 2025 contains calendar months 202510-202606. The calendar filter returns only 202510-202512, so selecting 202601+ shows a blank UI (no row). The fix: make GetCurrentYearSeriesAsync fiscal-year aware, exactly like GetHistoricYearSeriesAsync already does (schema-probe intFiscalYear, use it if present, else fall back to calendar).
+Fix GetCurrentYearSeriesAsync cleanly. REPLACE the entire block starting from the OLD "using var cmd = con.CreateCommand();" line through its AddParam lines (the calendar-year query setup) with this single clean version. There must be exactly ONE "using var cmd", no leftover old query or old AddParam lines.
 
-FIX: In GetCurrentYearSeriesAsync, replace the single calendar-year query with the same fiscal-aware pattern used in GetHistoricYearSeriesAsync:
+The correct block (replace the old cmd/query/params setup entirely with this):
 
-CURRENT (calendar-only):
-    using var cmd = con.CreateCommand();
-    // Enforce calendar-year filtering and ordering by monthKey for Blackbook parity
-    cmd.CommandText = @"
-SELECT *
-FROM tblMain
-WHERE LTRIM(RTRIM(strCustomerName)) = LTRIM(RTRIM(@cust))
-    AND LEFT(LTRIM(RTRIM(strMonthKey)),4) = @yrStr
-ORDER BY LTRIM(RTRIM(strMonthKey)) ASC";
-    AddParam(cmd, "@cust", SqlDbType.NVarChar, custResolved);
-    AddParam(cmd, "@yrStr", SqlDbType.NVarChar, fiscalYear.ToString("0000", CultureInfo.InvariantCulture));
-
-REPLACE WITH (fiscal-aware, mirroring GetHistoricYearSeriesAsync):
     // Prefer fiscal-year filtering when the intFiscalYear column exists (needed for non-December fiscal years
     // like BHG where fiscal year 2025 includes calendar months 202601-202606). Fall back to calendar year otherwise.
     bool hasFiscalYear = false;
@@ -55,12 +42,10 @@ ORDER BY LTRIM(RTRIM(strMonthKey)) ASC";
         AddParam(cmd, "@yrStr", SqlDbType.NVarChar, fiscalYear.ToString("0000", CultureInfo.InvariantCulture));
     }
 
-Keep everything AFTER this (the reader loop, mapping, telemetry, return) exactly the same. Only the query-building portion changes.
+CRITICAL:
+- Delete the OLD "using var cmd = con.CreateCommand();" line (the original one before the query) — do NOT keep two.
+- Delete the OLD calendar-year cmd.CommandText and its two AddParam lines — they must NOT remain above this block.
+- Result: exactly ONE "using var cmd", exactly one set of AddParam inside each branch, no duplicates.
+- Keep everything AFTER (reader loop, mapping, telemetry, return) unchanged.
 
-VERIFY BEFORE SHOWING DIFF:
-a) GetCurrentYearSeriesAsync now probes intFiscalYear and uses intFiscalYear = @yr when present, else calendar fallback.
-b) The pattern matches GetHistoricYearSeriesAsync exactly (same probe, same @yr int binding).
-c) The reader loop / mapping / return after the query are unchanged.
-d) No other method changed.
-
-Show the unified diff. Apply nothing until I confirm.
+After applying, show me the COMPLETE GetCurrentYearSeriesAsync method from signature to the first "using (var rdr..." (or reader loop), so I can confirm there is exactly ONE "using var cmd" and no leftover duplicate query/params.

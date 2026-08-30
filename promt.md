@@ -1,24 +1,17 @@
-READ-ONLY. No edits. ONE pass. Find EVERY place that filters tblMain by CALENDAR year (LEFT(strMonthKey,4)) instead of fiscal year (intFiscalYear). Quote each with file path.
+READ-ONLY. Read once, quote, stop. No loop. Confirm the selectedYear derivation bug.
 
-ROOT CAUSE (confirmed): For BHG (October fiscal year), fiscal year 2025 = calendar months 202510-202609. But multiple parts of the app filter by CALENDAR year (LEFT(strMonthKey,4)='2025' = 202501-202512), which:
-- Excludes 202601-202605 (fiscal 2025 but calendar 2026)
-- Wrongly includes 202501-202509 (calendar 2025 but fiscal 2024)
-Symptoms: (a) selecting 202601+ shows 202512's data; (b) Monthly Summary / Fiscal YTD shows 202501-202512 instead of the fiscal-year months.
+ROOT CAUSE FOUND: In frontend/src/app/blackbook/edit/page.tsx, when a monthKey is used to derive the year:
+    if (/^\d{6}$/.test(mkp)) return mkp.slice(0, 4);
+This takes the CALENDAR year (first 4 digits of YYYYMM). For BHG (Oct fiscal year), 202601 → "2026", but 202601 belongs to FISCAL year 2025. So selectedYear becomes 2026, the current-year API returns no rows for fiscalYear=2026, and the UI falls back to stale 202512 data.
 
-Search BACKEND (backend/src/Bcat.Infrastructure/SqlServer/SqlMainRepository.cs and any other repo/controller):
-1) grep for LEFT(LTRIM(RTRIM(strMonthKey)),4) and LEFT(strMonthKey,4) — list EVERY method using it. For each, quote the method name + WHERE clause. Methods likely include: GetCurrentYearSeriesAsync (already changed?), GetPriorYearsSeriesAsync, GetMonthKeySeriesForYearAsync (fallback branch), and any YTD / summary / monthly-summary method.
-2) For each, note whether it has an intFiscalYear alternative path or is calendar-only.
-3) Find the method(s) behind the "Monthly Summary" / "Fiscal YTD" view specifically — what filters those rows? Quote its WHERE.
-4) Find how maxMonthKey / latest month is computed (getMaxMonthKey or similar) — does it use MAX over calendar year or fiscal year, or overall max? Quote it.
+1) Quote the FULL context around `return mkp.slice(0, 4);` — is this only for initial load (from URL param), or does it also run when the user changes the Month dropdown? Quote the surrounding function/effect.
+2) When the user selects a month in the dropdown (onChange sets selectedMonthKey), does selectedYear get recomputed from the new monthKey? Trace: does changing selectedMonthKey trigger a selectedYear change via slice(0,4)? Quote the effect/handler.
+3) Is the fiscal year available per row? Each MetricPoint has fiscalYear (we saw "fiscalYear": 2025 in the rolling24 response). So for a selected monthKey, we can get its fiscalYear from the series row (series.find(monthKey===sel).fiscalYear). Quote where series rows expose fiscalYear.
+4) How does selectedYear drive the current-year fetch? Confirm the fetch uses selectedYear as the `year` query param.
 
-Search FRONTEND (frontend/src/app/blackbook/edit/page.tsx):
-5) How is the displayed row for the selected month chosen? Does it .find(monthKey===selectedMonthKey) in a series, or use maxMonthKey/last-of-list? Quote.
-6) The Monthly Summary component — where does its month list come from? Quote the source (series/API) and any year filter.
-
-OUTPUT — a checklist:
-- A) EVERY backend method filtering by calendar year (LEFT(strMonthKey,4)), quoted, with whether each needs to become fiscal-aware.
-- B) The Monthly Summary / Fiscal YTD data source + its filter, quoted.
-- C) maxMonthKey computation — calendar or fiscal or overall-max, quoted.
-- D) Frontend row-selection for selected month, quoted.
-- E) A prioritized list of the exact changes needed to make everything fiscal-year consistent for non-December customers.
-- One pass. Findings only. No fix.
+OUTPUT:
+- A) The slice(0,4) context — initial-only or also on month change? Quoted.
+- B) Whether selecting 202601 sets selectedYear=2026 (calendar) instead of 2025 (fiscal). Confirmed?
+- C) Is fiscalYear available on the series row for the selected month? Quoted.
+- D) Exact fix: when deriving selectedYear from a monthKey, use the row's fiscalYear (from the series/rolling24 data) instead of slice(0,4). Name the exact location(s).
+- No fix. Findings only.

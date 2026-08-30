@@ -1,14 +1,5 @@
-Before applying Fix 1, confirm these safety points and quote the exact final code you will write:
+Before applying, one clarification — quote the dependency array of THIS exact effect (the one containing this default-month block and setSelectedMonthKey). Confirm verbatim it is [name, selectedYear, maxMonthKey] and does NOT include selectedMonthKey. 
 
-1) Show the COMPLETE default-month logic block you're about to apply (from "let def = selectedMonthKey;" through "setSelectedMonthKey(def);") so I can verify.
+Also confirm: is there any OTHER useEffect anywhere in the file that calls setSelectedMonthKey (e.g. a reset effect, or one depending on series/current-year load)? If yes, quote it — because even with this fix, another effect could still overwrite the user's selection. List every setSelectedMonthKey call site in the file and its effect's dependency array.
 
-2) SAFETY CHECK — confirm for a DECEMBER fiscal-year customer (e.g. 1ST FRANKLIN / ACA), where arr = the calendar year's months:
-   - Does arr[arr.length-1] equal what maxMonthKey used to give? (For December-year, calendar-max = fiscal-latest = same month, so behaviour is unchanged.) Confirm the default month for December-year customers does NOT change.
-
-3) SAFETY CHECK — the "keep user selection if in arr" branch: confirm that on INITIAL load (when selectedMonthKey is empty/from URL), it still defaults correctly (doesn't leave it blank). Walk through: initial load, selectedMonthKey empty → which branch runs → what def becomes.
-
-4) Confirm this effect's dependency array is unchanged and we're NOT introducing a new render loop (setSelectedMonthKey inside an effect that depends on selectedMonthKey could loop). Quote the dependency array. If selectedMonthKey is NOT in the deps, confirm the keep-selection logic still works; if it IS in deps, confirm no infinite loop.
-
-5) Confirm NO other code path or customer is touched — only this default-month computation changes.
-
-Show the final code block + answers to 1-5. Do NOT apply until I confirm after seeing this.
+Just answer this (quote the deps + list all setSelectedMonthKey call sites). Then I'll confirm apply.

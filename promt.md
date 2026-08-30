@@ -1,159 +1,75 @@
 ═══════════════════════════════════════════════════════════════
-  BCAT UAT — DEFECT RESOLUTION SUMMARY
-  Verified against legacy MS Access (BCAT_be.accdb)
+ Bug #33 — Van Zyverden: Fiscal Year Start July, blackbook
+ shows "Fiscal 2026/9"
+ Reported by: Pamela Sullivan (8/10/2026)
 ═══════════════════════════════════════════════════════════════
 
-CONTEXT: BCAT was rebuilt from legacy Access → .NET 8 + Next.js +
-SQL Server. Most defects trace to differences from that migration.
-Every fix verified side-by-side with legacy output.
-
+STATUS: Not a defect — the displayed value is correct and
+matches the legacy application. Clarification below.
 
 ───────────────────────────────────────────────────────────────
- #26 — Rolling-24 PDF printed only ~12 months
+ WHY "2026/9" IS CORRECT
 ───────────────────────────────────────────────────────────────
-ISSUE      : PDF showed ~12 months, spilled to 2 pages.
-ROOT CAUSE : Renderer capped fiscal-year sections at 6 rows each.
-FIX        : Render 24 months as two stacked 12-month sections
-             (latest 12 top, older 12 bottom) on ONE Legal-
-             landscape page.
-LEGACY     : Matches legacy BlackBookRolling24Months (12+12,
-             single page) for AMERICAN CREDIT ACCEPTANCE.
+Van Zyverden has a JULY fiscal-year start. With a July start,
+the fiscal months map to calendar months like this:
 
+   Fiscal Month  1  →  July      (202507)
+   Fiscal Month  2  →  August    (202508)
+   Fiscal Month  3  →  September (202509)
+   Fiscal Month  4  →  October   (202510)
+   Fiscal Month  5  →  November  (202511)
+   Fiscal Month  6  →  December  (202512)
+   Fiscal Month  7  →  January   (202601)
+   Fiscal Month  8  →  February  (202602)
+   Fiscal Month  9  →  March     (202603)   ← selected month
 
-───────────────────────────────────────────────────────────────
- #35 / #31 — Interest Coverage TTM (and TTM metrics) showed 0
-───────────────────────────────────────────────────────────────
-ISSUE      : Interest Coverage TTM = 0.00x; TTM values blank for
-             new months.
-ROOT CAUSE : (1) TTM never recomputed on save.
-             (2) Backend wrote non-canonical keys
-                 (InterestExpenseTTM) but frontend read cur*
-                 (curInterestExpenseTTM) — key mismatch.
-             (3) Merge only wrote TTM when existing was 0, so
-                 stale values were never overwritten.
-FIX        : (1) Year-agnostic trailing-12 recompute on save
-                 (ROWS BETWEEN 11 PRECEDING AND CURRENT ROW).
-             (2) Aligned all TTM keys to canonical cur* names.
-             (3) Merge always writes authoritative TTM value.
-FORMULA    : EBIT TTM = PBT TTM + Interest Expense TTM
-             Interest Coverage TTM = EBIT TTM / Interest Exp TTM
-             (TTM = trailing 12 calendar months, year-agnostic)
-LEGACY     : ACA (202607): PBT TTM $350,000, Int Exp TTM $387,000,
-             EBIT TTM $737,000, Interest Coverage TTM = 1.90x.
+The selected month is 202603 (March 2026). For a July fiscal
+year, March falls in fiscal month 9. So "Fiscal: 2026/9" reads
+as "Fiscal Year 2026, fiscal month 9" — which is exactly right.
 
+The fiscal year is labelled by the year in which it ENDS: a
+July-2025-to-June-2026 fiscal year is Fiscal Year 2026. That is
+why the FY dropdown shows 2026, not 2025.
 
 ───────────────────────────────────────────────────────────────
- #29 — September (non-December) fiscal year broke TTM/YTD
+ VERIFIED AGAINST LEGACY (BCAT_be.accdb)
 ───────────────────────────────────────────────────────────────
-ISSUE      : Sept fiscal-year customers (BHG) computed TTM/YTD
-             incorrectly.
-ROOT CAUSE : Original TTM recompute was locked to the fiscal
-             year, didn't span the boundary.
-FIX        : Year-agnostic trailing-12 TTM (from #35) crosses
-             fiscal-year boundaries correctly.
-LEGACY     : BANKERS HEALTHCARE GROUP (FY 2025/3, 202512):
-             Interest Coverage TTM = 2.60x, PBT TTM $240,081,
-             Int Exp TTM $149,665, EBIT TTM $389,746.
+Opened Van Zyverden in the legacy Access application for the
+same month:
 
+   Legacy  →  FY: 2026,  Month: 202603
+   Legacy month dropdown  →  202507 … 202603
+                             (July 2025 through March 2026)
 
-───────────────────────────────────────────────────────────────
- #30 — Cash Collections % / 60+ DPD % wrong; dropdown not live
-───────────────────────────────────────────────────────────────
-ISSUE      : Percentages wrong; Principal/Gross dropdown didn't
-             recompute correctly.
-ROOT CAUSE : (1) Selection field dropped in MapMetricPoint (only
-                 strcustomfield* strings were preserved).
-             (2) Backend used current-month instead of prior-
-                 month denominator.
-             (3) LIKE 'PRINCIPAL' (no %) didn't match
-                 "Principal N/R".
-             (4) Dropdown used Avg-TTM denominator for ALL fields
-                 (only correct for Net C/O).
-             (5) Zero-basis returned null (froze value) instead
-                 of 0%.
-FIX        : (1) Emit strPrincipalOrGross* selection to UI.
-             (2) Per-field denominator:
-                   Cash Collections % → prior month
-                   60+ DPD %          → current month
-                   Net C/O %          → Avg TTM
-             (3) LIKE 'PRINCIPAL%'.
-             (4) Dropdown interactive with correct per-field
-                 denominator.
-             (5) Zero-basis returns 0% (legacy parity).
-FORMULA    : Cash Coll % = cash / PriorMonth basis
-             60+ DPD %   = dpd  / CurrentMonth basis
-             Net C/O %   = netCO / Avg-TTM basis
-LEGACY     : 1ST FRANKLIN: Cash Collections % = 5.82% (Principal).
-             BHG: 0.34% Principal / 0.00% Gross, 60+ DPD 0.17% —
-             dropdown now switches live.
-NOTE       : Earlier ">100%" on ACA was unrealistic TEST DATA
-             (500000/100000); real customers match legacy.
+   New app →  FY: 2026,  Month: 202603,  Fiscal: 2026/9
+   New app month dropdown →  202507 … 202603  (identical)
 
+Both applications show the same fiscal year (2026) and the same
+set of months for the fiscal year. The new application matches
+legacy exactly.
 
 ───────────────────────────────────────────────────────────────
- #31 — YTD Net C/O and TTM Net C/O %
+ NOTE ON THE MONTH DROPDOWN
 ───────────────────────────────────────────────────────────────
-ISSUE      : YTD Net C/O $ = 0; TTM Net C/O % inconsistent.
-ROOT CAUSE : Same family as #35 (derived aggregates not
-             populated/merged; top strip vs panel used different
-             rows).
-FIX        : Covered by #35 (TTM recompute + key alignment +
-             merge overwrite) and #30 (per-field denominators).
-LEGACY     : 1ST FRANKLIN: YTD Net C/O $45,473, TTM Net C/O %
-             9.65%, Reserve Coverage 0.77x. (ACA showed 0 only
-             because that was test data.)
-
-
-╔═══════════════════════════════════════════════════════════════╗
-║ ★★★ BHG MONTH DROPDOWN — Non-December FY: 2026 months showed ║
-║     202512's data (HIGHLIGHTED)                              ★★★║
-╠═══════════════════════════════════════════════════════════════╣
-║ ISSUE                                                          ║
-║   For BANKERS HEALTHCARE GROUP (October fiscal year), the      ║
-║   Month dropdown listed months up to 202605, but selecting     ║
-║   ANY 2026 month (202601–202605) showed 202512's data instead  ║
-║   of the selected month's data.                                ║
-║                                                                ║
-║ ROOT CAUSE                                                      ║
-║   GetCurrentYearSeriesAsync (the series feeding the edit-      ║
-║   screen tiles) filtered by CALENDAR year:                     ║
-║       WHERE LEFT(strMonthKey,4) = @yr                          ║
-║   For BHG, fiscal year 2025 spans calendar months              ║
-║   202510–202609, so a calendar filter for "2025" returned      ║
-║   only 202501–202512. The selected 2026 month was NOT in the   ║
-║   series, so the row lookup fell back to the last row (202512).║
-║                                                                ║
-║   Confirmed at runtime (console):                              ║
-║     selectedMonthKey = 202605  (correct)                       ║
-║     src months       = [202501 … 202512]  (WRONG — calendar)   ║
-║     match            = undefined → fell back to 202512         ║
-║                                                                ║
-║ FIX                                                            ║
-║   Made GetCurrentYearSeriesAsync FISCAL-year aware, mirroring  ║
-║   GetHistoricYearSeriesAsync: probe for the intFiscalYear      ║
-║   column and filter by:                                        ║
-║       WHERE intFiscalYear = @yr   (calendar fallback if col    ║
-║                                    absent)                      ║
-║   Now the series returns the correct fiscal-year months        ║
-║   (202510–202605 for BHG); the selected month is found and     ║
-║   its data maps to the tiles.                                  ║
-║                                                                ║
-║ LEGACY / IMPACT                                                ║
-║   BHG now shows each selected month's data (202601, 202603,    ║
-║   202605). December fiscal-year customers are UNAFFECTED —     ║
-║   for them fiscal year = calendar year, so the filter returns  ║
-║   the same rows as before.                                     ║
-╚═══════════════════════════════════════════════════════════════╝
-
+A related issue existed where, for non-December fiscal-year
+customers, the month dropdown/data only covered the calendar
+year (e.g. Jan–Dec) instead of the fiscal year, so later months
+of the fiscal year could not be viewed. That has been fixed
+separately (the current-year data query is now fiscal-year
+aware). Van Zyverden now correctly lists and loads all fiscal-
+year months (202507–202603), matching legacy.
 
 ───────────────────────────────────────────────────────────────
- ROOT-CAUSE PATTERNS (reusable)
+ RESOLUTION
 ───────────────────────────────────────────────────────────────
- 1. Derived values (TTM, prior-month) not recomputed on save.
- 2. Backend/frontend key-name mismatch — need one canonical cur*.
- 3. Formula inputs (selection, prior-month) dropped in
-    MapMetricPoint.
- 4. Wrong denominators — current vs prior vs Avg-TTM per field.
- 5. Calendar-year vs fiscal-year filtering — only bites non-
-    December fiscal-year customers (BHG).
+No code change required for the "2026/9" display — it is
+correct and legacy-consistent. The fiscal-year label (2026) and
+the fiscal month (9 = March for a July start) are both accurate.
+
+If the "YYYY/M" format is felt to be confusing to users, we can
+optionally enhance the display for clarity — for example:
+   "Fiscal: 2026 / Month 9 (Mar)"
+This would be a small UI-label change only, not a calculation
+fix. Awaiting confirmation on whether that enhancement is
+wanted.
 ═══════════════════════════════════════════════════════════════

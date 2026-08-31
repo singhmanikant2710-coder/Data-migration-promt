@@ -1,18 +1,18 @@
-READ-ONLY. Find why covenant FIELD values (threshold, reported, description) save as NULL/0 while only order saves. Quote with paths.
+READ-ONLY. Find how the covenant save payload (effectivePayload / CovenantUpdateReq) is built, and why it only contains "order" — not threshold, reported, description. Quote with paths.
 
-DB CONFIRMED: In tblMainCovenants for MDR CONSTRUCTION INC (202601): intCovenantOrder is saved correctly (4,2,5,6,1,3,0), but strCovenantThreshold=0, strCovenantReported=NULL, strCovenantDescription=NULL — all field values are NULL/0 even though the user entered them. So the ORDER save works (/covenants/order) but the FIELD-VALUE save (/covenants/by-name via updateCovenantByComposite) is not persisting threshold/reported/description.
+CONFIRMED VIA NETWORK: The PUT /covenants/by-name call succeeds (204) but its payload is ONLY { order: 3 } — threshold, reported, description are NOT in the payload. So the field values are never sent, and DB keeps them NULL/0. The /covenants/order call also only sends ordering.
 
-In frontend/src/app/customer/edit/page.tsx (and the covenants component/lib):
-1) Quote the Save button onClick handler FULLY. List every API call it makes. Does it call updateCovenantByComposite (or updateCovenantById) for EACH row's field values, OR only the /covenants/order bulk save?
-2) If it calls updateCovenantByComposite, quote the CovenantUpdateReq payload it builds — does it include threshold, reported, description with the entered values? Quote the exact object.
-3) When does the field-value save happen — on Save click, or on input blur/change? If on blur, is it actually firing? Is there a guard (if !cust || !mk || !cov return) that might skip it (e.g. covenantName empty)?
-4) Trace one covenant (e.g. "Min Fixed Charge Coverage") with threshold=1.00: does a PUT /covenants/by-name fire with threshold=1.00 in the body? Or does that call never fire / fire with empty values?
-5) Quote the CovenantUpdateReq type — field names (threshold? Threshold? strCovenantThreshold?). Do the payload keys match what the backend by-name handler reads?
-6) Does the backend by-name handler actually UPDATE threshold/reported/description columns? (If we have the handler.) Or does it only update some fields?
+In frontend/src/app/customer/edit/page.tsx:
+1) Find where effectivePayload (the CovenantUpdateReq passed to updateCovenantByComposite / updateCovenantById) is BUILT. Quote the full construction. What fields does it include? Why only "order"?
+2) Where are the covenant row's threshold, reported, description values held in state (as the user types)? Quote the state and the input onChange handlers for threshold/reported/description.
+3) Trace: when the user edits threshold and clicks Save, are threshold/reported/description read from state and added to effectivePayload? Or is effectivePayload built only from the order/dirty-order tracking, omitting field values?
+4) Is there separate dirty-tracking for order vs field values? Maybe only order changes are collected into the payload, and field-value changes are tracked elsewhere (or not at all). Quote the dirty/diff logic that decides what goes into effectivePayload.
+5) Quote the CovenantUpdateReq type — what fields CAN it carry (order, threshold, reported, description, etc.)? So we know the payload could include them if we add them.
 
 OUTPUT:
-- A) Save handler + all calls it makes, quoted. Does it save field values or only order?
-- B) The CovenantUpdateReq payload for field values, quoted — are threshold/reported/description included with real values?
-- C) Why fields are NULL/0: (i) by-name call never fires, (ii) payload missing/empty fields, (iii) key-name mismatch, (iv) backend doesn't update those columns, (v) guard skips it.
-- D) Exact fix location.
+- A) effectivePayload construction, quoted. Which fields it includes and why only order.
+- B) Where threshold/reported/description are held in state + their onChange, quoted.
+- C) Why they're not in the payload: (i) not read from state into payload, (ii) only order is dirty-tracked, (iii) built from wrong object.
+- D) CovenantUpdateReq type fields, quoted (to confirm it can carry threshold/reported/description).
+- E) Exact fix location — where to add threshold/reported/description into effectivePayload.
 - No fix. Findings only.

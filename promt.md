@@ -1,20 +1,3 @@
-Bug #27 — Internal Notes: special symbols show as HTML codes (&quot;)
-Reported by: John Halsrud
+Hi Team, Venkatesh is currently doing regression testing on the Dev side. From my end, I have resolved 10 out of the 11 bugs, and we have completed regression testing for the changes locally and on Dev before pushing them.
 
-STATUS: Resolved.
-
-ROOT CAUSE: Legacy/migrated notes in tblCustomer.strInternalNotes
-(and strExternalNotes) were stored with HTML entities (&quot;,
-&amp;, &lt;, &gt;) instead of raw characters. New saves store raw
-characters correctly, but existing/migrated records displayed the
-encoded form literally.
-
-FIX: Added an HTML-entity decode step applied when displaying
-Internal/External Notes, so entities render as the intended
-characters (&quot; → ", &amp; → &, etc.). Applied consistently
-across the notes view, edit, and PDF.
-
-VERIFIED: First Financial Credit INC — notes with &quot; now
-display correctly as " in the view, edit box, and blackbook PDF.
-New saves continue to store raw characters. DB is untouched
-(display-side decode), so no data migration was required.
+Once Venkatesh completes his regression testing, we will merge the Dev changes into QA. After the QA merge, the users can proceed with testing.

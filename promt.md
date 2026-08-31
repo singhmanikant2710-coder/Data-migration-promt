@@ -1,33 +1,16 @@
-Hi John,
+READ-ONLY. Read once, quote, stop. No loop. Find how "New Month" (value next to "Add New Month") is computed.
 
-Regarding Bug #28 — the "Reported (Monthly/Quarterly/Annually)" 
-field in the covenants section not pulling over for both 
-relationships — I'd like to confirm a couple of details so I can 
-verify the fix against the exact scenario you saw:
+BUG CONFIRMED (legacy verified): In legacy, New Month is ALWAYS latest-existing-month + 1, constant regardless of the selected month (legacy shows Month 202603 selected but New Month 202606). In our app, New Month = selectedMonthKey + 1 (wrong): selecting 202603 shows New Month 202604 instead of staying at latest+1.
 
-1. Which customer did you observe this on? (customer name / number)
+In frontend/src/app/blackbook/edit/page.tsx:
+1) Find the "New Month" value near "Add New Month". Search "New Month" / newMonth / nextMonth. Quote how it's computed.
+2) Is it based on selectedMonthKey + 1, or maxMonthKey + 1? Quote the expression and its dependency (does it recompute when selectedMonthKey changes?).
+3) Quote how maxMonthKey (overall latest existing month for the customer) is available here — we need to base New Month on maxMonthKey, not selectedMonthKey.
+4) Quote the YYYYMM increment logic — does adding 1 handle December→January rollover (202612 → 202701)?
 
-2. When you mention "both relationships" — do you mean:
-   a) Two loan facilities/relationships under the same customer, or
-   b) Two related customer records (e.g. parent/subsidiary), or
-   c) Something else?
-
-Context on what we've fixed today:
-We identified and resolved an issue where covenant saves were 
-failing because a required parameter wasn't reaching the server 
-(the customer identifier). As a result, the Reported field (and 
-threshold/description) were not being saved at all — so they 
-would not appear/pull over anywhere.
-
-After the fix, the Reported field now saves and persists correctly. 
-I've verified this on MDR Construction Inc — the Reported value 
-(e.g. "Quarterly") now saves and shows up as expected.
-
-If your #28 was caused by the same save issue, it should now be 
-resolved. But if "both relationships" refers to a specific 
-copy/carry-over behavior between two relationships that's separate 
-from saving, please let me know the customer and scenario so I can 
-test that exact case.
-
-Thanks!
-Manikant
+OUTPUT:
+- A) The New Month computation, quoted.
+- B) selectedMonthKey+1 (bug) or maxMonthKey+1 (correct)? 
+- C) The month-increment helper (YYYYMM +1) + does it handle Dec→Jan rollover, quoted.
+- D) Exact fix: compute New Month from maxMonthKey + 1 (latest existing), independent of selectedMonthKey. Name the location.
+- No fix. Findings only.

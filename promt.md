@@ -1,12 +1,31 @@
-TEMPORARY DEBUG. Add console.logs in frontend/src/app/customer/edit/page.tsx to trace the covenant threshold flow. Remove later.
+SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'tblMain'
+  AND (COLUMN_NAME LIKE '%Note%' OR COLUMN_NAME LIKE '%Internal%');
 
-1) In onCovenantRowEdit, right after computing 'next' (before the cleanup check), add:
-   console.log("[COV-EDIT] index=", index, "patch=", patch, "resolved row=", covenants[index]?.name, "key=", key, "next=", next);
+  SELECT TOP 20
+    strCustomerName,
+    strMonthKey,
+    strInternalNotes
+FROM tblMain
+WHERE strInternalNotes LIKE '%&quot;%'
+   OR strInternalNotes LIKE '%&amp;%'
+   OR strInternalNotes LIKE '%&lt;%'
+   OR strInternalNotes LIKE '%&gt;%'
+   OR strInternalNotes LIKE '%&#%'
+ORDER BY LEN(strInternalNotes) DESC;
 
-2) In onSaveCovenantFields, right after `const entries = Object.entries(covEdits);`, add:
-   console.log("[COV-SAVE] covEdits entries=", JSON.stringify(entries));
+SELECT TOP 20
+    strCustomerName,
+    strMonthKey,
+    LEN(strInternalNotes) AS notes_length,
+    strInternalNotes
+FROM tblMain
+WHERE strInternalNotes IS NOT NULL
+  AND LEN(LTRIM(RTRIM(strInternalNotes))) > 20
+ORDER BY LEN(strInternalNotes) DESC;
 
-3) In onSaveCovenantFields, right before the by-name/id call (after effectivePayload is finalized), add:
-   console.log("[COV-PAYLOAD] key=", key, "effectivePayload=", JSON.stringify(effectivePayload));
-
-Apply these three logs only.
+SELECT strMonthKey, strInternalNotes
+FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) = '1ST FRANKLIN FINANCIAL CORPORATION'
+ORDER BY strMonthKey DESC;

@@ -1,17 +1,28 @@
-READ-ONLY. One pass. Find the Covenants save flow and why the 'customer' query parameter is empty. Quote with file paths.
+SINGLE-FILE, BOUNDED EDIT. Only edit frontend/src/app/customer/edit/page.tsx, only the onSaveCovenantOrder function's API call. Show unified diff BEFORE applying.
 
-ERROR (from UI): Save failed - {"title":"Invalid customer name","status":400,"detail":"Provide a non-empty 'customer' query parameter."} on the Customer View/Edit → Covenants section. Also "Partial save: Some covenant changes could not be saved."
+BUG: The bulk covenant order save fails with 400 "Provide a non-empty 'customer' query parameter." because the POST to /api/v1/covenants/order does NOT include the 'customer' query parameter. It only puts CustomerName in the JSON body, but the server requires ?customer= in the query. This causes the "Partial save" warning (per-row saves succeed, the order save fails).
 
-1) Find the Covenants component/section on the Customer View/Edit screen. Locate the SAVE handler that calls the covenants save API. Quote the API call (URL + method + query/body), especially how it passes 'customer'.
-2) Where does the customer name come from in this component? Quote it — is it from useSearchParams (?name=), a prop, route param, or local state? Is it the same source the blackbook edit page uses (which works)?
-3) At save time, is that customer value populated or empty/undefined? Trace whether it's read correctly. Quote the exact object passed as the query, e.g. { customer: <something> }.
-4) If covenants are saved per-row (loop), does EACH row's save call include the customer param, or does one path omit it? (The "partial save" suggests some succeed, some fail.)
-5) Compare with a working save on the same screen (if any other section saves successfully) — how does IT pass customer? Quote the difference.
+FIX: Add the 'customer' query parameter (= qpName, already validated earlier in this function) to the POST call.
 
-OUTPUT:
-- A) Covenants save API call + how 'customer' is passed, quoted.
-- B) Source of customer name in the component, quoted (and whether it matches the working blackbook page's source).
-- C) Why 'customer' is empty at save time.
-- D) If per-row: which path omits customer (explaining "partial save").
-- E) Exact fix location + what the customer value should be.
-- One pass. Findings only. No fix.
+Current call:
+    await apiClient.post<CovenantOrderBulkUpdate, Covenant[]>("/api/v1/covenants/order", payload);
+
+Change to include the customer query param. Match the exact query-passing pattern apiClient uses elsewhere in this file. Two options depending on apiClient's signature:
+
+Option A — if apiClient.post supports an options/query arg (like put does with { query: {...} }):
+    await apiClient.post<CovenantOrderBulkUpdate, Covenant[]>("/api/v1/covenants/order", payload, { query: { customer: qpName } });
+
+Option B — if it doesn't, append to the URL:
+    await apiClient.post<CovenantOrderBulkUpdate, Covenant[]>(`/api/v1/covenants/order?customer=${encodeURIComponent(qpName)}`, payload);
+
+First CHECK the apiClient.post signature (look at how other post/put calls in this file pass query params — e.g. the read uses ?customer=... in the URL, and updateCovenantByComposite uses { query: {...} } with put). Use whichever pattern apiClient actually supports. Quote the apiClient.post signature so we pick the right option.
+
+Also keep CustomerName in the body (don't remove it) — the server may use both; we're only ADDING the query param.
+
+VERIFY BEFORE SHOWING DIFF:
+a) The POST to /api/v1/covenants/order now includes customer=qpName in the query.
+b) qpName is the validated customer name already used earlier in onSaveCovenantOrder.
+c) The body payload is unchanged (CustomerName stays).
+d) Used the correct apiClient pattern (quote its signature).
+
+Show the unified diff. Apply nothing until I confirm.

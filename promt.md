@@ -1,1 +1,2 @@
-Apply the diff exactly as shown. In frontend/src/lib/covenants.ts, change updateCovenantByComposite to append customer/monthKey/covenantName to the URL query string (encoded) instead of using { query }. Keep guard, trims, and body unchanged. Apply now and confirm.
+const qs = `customer=${encodeURIComponent(cust)}&monthKey=${encodeURIComponent(mk)}&covenantName=${encodeURIComponent(cov)}`;
+await put<CovenantUpdateReq, void>(`/api/v1/covenants/by-name?${qs}`, update);

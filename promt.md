@@ -1,3 +1,10 @@
-Hi Team, Venkatesh is currently doing regression testing on the Dev side. From my end, I have resolved 10 out of the 11 bugs, and we have completed regression testing for the changes locally and on Dev before pushing them.
+SELECT strCustomerName, strMonthKey, strCovenantName, strCovenantReported
+FROM tblMainCovenants
+WHERE LTRIM(RTRIM(strCustomerName)) = 'MDR CONSTRUCTION INC'
+ORDER BY strMonthKey DESC, intCovenantOrder;
 
-Once Venkatesh completes his regression testing, we will merge the Dev changes into QA. After the QA merge, the users can proceed with testing.
+-- Customer ke covenants kitne unique "sets" mein hain (relationship column ho to)
+SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'tblMainCovenants'
+  AND (COLUMN_NAME LIKE '%elationship%' OR COLUMN_NAME LIKE '%acility%' OR COLUMN_NAME LIKE '%ntity%');

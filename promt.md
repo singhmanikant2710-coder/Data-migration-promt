@@ -1,12 +1,28 @@
-READ-ONLY. Confirm what getMaxMonthKey returns — is it the overall latest strMonthKey for the customer, or calendar-year-scoped?
+SINGLE-FILE, BOUNDED EDIT. Only edit frontend/src/app/blackbook/edit/page.tsx, only the useEffect that computes newMonthKey. Show unified diff BEFORE applying.
 
-CONTEXT: We're changing New Month to be based on maxMonthKey + 1 (latest existing month). For this to be correct for ALL customers (including non-December fiscal years like BHG/Van Zyverden), maxMonthKey must be the OVERALL latest month (e.g. 202605), not a calendar-year-scoped max (which would wrongly give 202512 for BHG).
+BUG: "New Month" is computed from selectedMonthKey (falling back to maxMonthKey), so it changes when the user selects a different month. It should ALWAYS be the latest existing month + 1 (like legacy), independent of the selected month.
 
-1) Find the backend for getMaxMonthKey (search "max-monthkey" or getMaxMonthKey endpoint → repo method). Quote its SQL. Is it MAX(strMonthKey) overall for the customer, or filtered by calendar year / something?
-2) For BHG (months up to 202605), would maxMonthKey return 202605 (overall max, correct) or 202512 (calendar max, wrong)?
+VERIFIED: For BHG, "Account Details Loaded Through: 202605" (so maxMonthKey = 202605, the overall latest — correct). New Month currently shows 202605 (because 202604 is selected → selected+1), but should show 202606 (maxMonthKey 202605 + 1). Legacy shows New Month as latest+1, constant.
 
-OUTPUT:
-- A) getMaxMonthKey backend SQL, quoted.
-- B) Does it return the overall latest month, or a scoped max? For BHG would it be 202605 or 202512?
-- C) If it's overall MAX(strMonthKey), the New Month fix is safe for all customers. If it's scoped, we need to note that.
-- No fix. Findings only.
+FIX: Base newMonthKey on maxMonthKey only, and remove selectedMonthKey from the dependency.
+
+Current:
+    useEffect(() => {
+      const mk = (selectedMonthKey || maxMonthKey || "");
+      setNewMonthKey(nextMonthKey(mk));
+    }, [selectedMonthKey, maxMonthKey]);
+
+Change to:
+    useEffect(() => {
+      const mk = (maxMonthKey || "");
+      setNewMonthKey(nextMonthKey(mk));
+    }, [maxMonthKey]);
+
+Only this change. Do NOT touch nextMonthKey (it correctly handles Dec→Jan rollover), the <Select> for newMonthKey, the Add New Month flow, or anything else.
+
+VERIFY BEFORE SHOWING DIFF:
+a) newMonthKey now derives from maxMonthKey only (not selectedMonthKey).
+b) Dependency array is [maxMonthKey] only.
+c) nextMonthKey and everything else unchanged.
+
+Show the unified diff. Apply nothing until I confirm.

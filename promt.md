@@ -1,11 +1,20 @@
-Apply the diff exactly as shown. Add the decodeHtmlEntities helper and wrap only the two VIEW <div> values (internalNotes, externalNotes) with it. Leave edit textareas, save logic, and all other code unchanged. Apply now and confirm.
-function decodeHtmlEntities(s: string | null | undefined): string {
-  if (!s) return "";
-  return s
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
-}
+Bug #27 — Internal Notes: special symbols show as HTML codes (&quot;)
+Reported by: John Halsrud
+
+STATUS: Resolved.
+
+ROOT CAUSE: Legacy/migrated notes in tblCustomer.strInternalNotes
+(and strExternalNotes) were stored with HTML entities (&quot;,
+&amp;, &lt;, &gt;) instead of raw characters. New saves store raw
+characters correctly, but existing/migrated records displayed the
+encoded form literally.
+
+FIX: Added an HTML-entity decode step applied when displaying
+Internal/External Notes, so entities render as the intended
+characters (&quot; → ", &amp; → &, etc.). Applied consistently
+across the notes view, edit, and PDF.
+
+VERIFIED: First Financial Credit INC — notes with &quot; now
+display correctly as " in the view, edit box, and blackbook PDF.
+New saves continue to store raw characters. DB is untouched
+(display-side decode), so no data migration was required.

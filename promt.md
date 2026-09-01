@@ -1,9 +1,3 @@
-BEGIN TRANSACTION;
-
-UPDATE tblMain
-SET intFiscalYear = 2026
-WHERE intFiscalYear = 2025
-  AND datFiscalYearStart >= '2026-01-01'
-  AND datFiscalYearStart < '2027-01-01';
-
-SELECT @@ROWCOUNT AS UpdatedRecords;
+DELETE FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
+  AND strMonthKey = '202606';

@@ -1,24 +1,16 @@
-Apply the change: REPLACE the existing onOrderChange prop on CovenantsSection in frontend/src/app/customer/edit/page.tsx:
+Hi [President’s Name],
 
-REMOVE:
-    onOrderChange={(nameKey, v) => setCovOrderMap(prev => ({ ...prev, [nameKey]: v }))}
+I would like to seek your guidance regarding the CASSR work and the priorities I should be focusing on.
 
-REPLACE WITH:
-    onOrderChange={(nameKey, v) => {
-      if (v !== 0) {
-        const conflict = Object.entries(covOrderMap).some(
-          ([n, ord]) => n !== nameKey && Number(ord) === v
-        );
-        if (conflict) {
-          try {
-            toast.showWarning(
-              `Please only select one Order value for BlackBook display. '${v}' has been selected more than once. To update, first change the existing value to '0'.`
-            );
-          } catch {}
-          return;
-        }
-      }
-      setCovOrderMap(prev => ({ ...prev, [nameKey]: v }));
-    }}
+As per the discussion with Geoff, there are currently 13 bugs and 14 new enhancements/functionality items identified for CASSR. At present, I am primarily focusing on the bugs and working towards addressing them as a priority.
 
-Ensure the OLD single-line onOrderChange is REMOVED (only ONE onOrderChange prop remains). Apply now, then confirm there's exactly one onOrderChange on CovenantsSection.
+However, I would appreciate your guidance and instructions on how you would like me to proceed with the CASSR activities. Specifically, I would like to understand whether I should continue focusing on resolving the existing bugs first, or if there are any specific enhancements/functionality items that you would like me to prioritize alongside the bug fixes.
+
+Your guidance will help me ensure that I am aligned with the expected priorities and working in the right direction.
+
+Please let me know how you would like me to proceed.
+
+Thank you for your guidance and support.
+
+Best regards,
+Manikant

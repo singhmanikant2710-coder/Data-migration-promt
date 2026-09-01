@@ -1,17 +1,11 @@
--- Pehle dekho (SELECT):
-SELECT strMonthKey, intFiscalYear, intFiscalMonth
-FROM tblMain
-WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
-  AND strMonthKey = '202606';
+SELECT DISTINCT intFiscalYearMonthStart, COUNT(*) AS customer_count
+FROM tblCustomer
+WHERE intFiscalYearMonthStart IS NOT NULL
+GROUP BY intFiscalYearMonthStart
+ORDER BY intFiscalYearMonthStart;
 
--- Phir theek karo (UPDATE) — October start ke hisaab se 2025/9:
-UPDATE tblMain
-SET intFiscalYear = 2025,
-    intFiscalMonth = 9
-WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
-  AND strMonthKey = '202606';
 
-  SELECT strMonthKey, intFiscalYear, intFiscalMonth
-FROM tblMain
-WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
-ORDER BY strMonthKey DESC;
+SELECT strCustomerName, intFiscalYearMonthStart
+FROM tblCustomer
+WHERE intFiscalYearMonthStart IS NOT NULL
+ORDER BY intFiscalYearMonthStart, strCustomerName;

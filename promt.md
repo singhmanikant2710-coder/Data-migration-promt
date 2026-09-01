@@ -1,19 +1,37 @@
-READ-ONLY. Find how covenant Order is validated for uniqueness, and any caching in the covenants flow. Quote with paths.
+SINGLE-FILE, BOUNDED EDIT. Only edit frontend/src/app/customer/edit/page.tsx, only the onOrderChange prop passed to CovenantsSection. Show unified diff BEFORE applying.
 
-CONTEXT: 
-1) In legacy, covenant Order must be UNIQUE. If a user sets Order=1 when 1 already exists, legacy shows a popup: "Please only select one Order value for BlackBook display. '1' has been selected more than once. To update, first change existing value to '0'." The new app lacks this validation/popup.
-2) Order = the covenant's display sequence in the BlackBook (0 = hidden, 1=first, 2=second...). Changing order on Customer View updates the BlackBook order (this works).
-3) Possible caching issue: covenant order changes may not reflect immediately (like the maxMonthKey getOnce cache issue we fixed).
+GOAL: Add legacy-style validation — when a user sets a covenant Order to a value that is already used (non-zero) by ANOTHER covenant, show a warning and block the change, matching legacy: "Please only select one Order value for BlackBook display. 'X' has been selected more than once. To update, first change existing value to '0'."
 
-In the Covenants component (frontend/src/app/customer/edit/page.tsx and components/CustomerEditParts.tsx / lib/covenants.ts):
-1) Find the Order dropdown/select for covenants. Quote its onChange. When a user picks an Order value, is there any check that the value is unique among the other covenants? Quote any validation, or confirm there's NONE (so duplicates are silently allowed).
-2) How is order stored/tracked (covOrderMap?)? When a duplicate order is chosen, what currently happens — silently overwrite, set to 0, or nothing? Quote.
-3) Is there a place to add a validation: on order change, if the new order value already exists in another covenant (and is non-zero), show a warning toast/popup and prevent/reset the change — matching legacy?
-4) CACHE CHECK: Does the covenants read/order flow use any getOnce/window cache (like getMaxMonthKey did)? Search for getOnce, __bcat_cache, or cached lookups in the covenants path. Quote any caching that could make order changes not reflect immediately.
+Current:
+    onOrderChange={(nameKey, v) => setCovOrderMap(prev => ({ ...prev, [nameKey]: v }))}
 
-OUTPUT:
-- A) The Order onChange + any uniqueness validation (or confirm none), quoted.
-- B) What happens on duplicate order currently, quoted.
-- C) Where to add the legacy-style uniqueness validation + warning.
-- D) Any caching in covenants flow (getOnce/window cache) that needs busting, quoted.
-- No fix. Findings only.
+Change to (validate uniqueness for non-zero values; block + warn on duplicate):
+    onOrderChange={(nameKey, v) => {
+      // Order 0 = hidden/unranked; allow duplicates of 0 freely.
+      if (v !== 0) {
+        // Check if another covenant already uses this non-zero order.
+        const conflict = Object.entries(covOrderMap).some(
+          ([n, ord]) => n !== nameKey && Number(ord) === v
+        );
+        if (conflict) {
+          try {
+            toast.showWarning(
+              `Please only select one Order value for BlackBook display. '${v}' has been selected more than once. To update, first change the existing value to '0'.`
+            );
+          } catch {}
+          return; // block the update
+        }
+      }
+      setCovOrderMap(prev => ({ ...prev, [nameKey]: v }));
+    }}
+
+Confirm toast is available in this scope (const toast = useToast() or similar). If it's toast.showWarning that doesn't exist, use toast.showError or the available warning method — quote which toast methods exist.
+
+STRICT: only change this one onOrderChange handler. Nothing else.
+
+VERIFY BEFORE SHOWING DIFF:
+a) v===0 allows duplicates (multiple covenants can be 0/hidden).
+b) v!==0 checks covOrderMap for another covenant with same order; if found, warn + return (block).
+c) toast method used actually exists (quote available toast methods).
+
+Show the unified diff. Apply nothing until I confirm.

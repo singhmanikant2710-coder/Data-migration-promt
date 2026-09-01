@@ -1,1 +1,4 @@
-Apply the diff exactly as shown. Replace the getMaxMonthKey post-add block with direct setMaxMonthKey(mk) in handleAddNewMonth. Nothing else changes. Apply now and confirm.
+-- 202609 galat hai (2026/9), delete karo
+DELETE FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
+  AND strMonthKey = '202609';

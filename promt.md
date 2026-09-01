@@ -1,4 +1,7 @@
-SELECT COUNT(*) AS WronglyUpdatedRecords
+SELECT 
+    datFiscalYearStart,
+    COUNT(*) AS RecordCount
 FROM tblMain
 WHERE intFiscalYear = 2025
-  AND datFiscalYearStart = '2026-01-01';
+GROUP BY datFiscalYearStart
+ORDER BY datFiscalYearStart;

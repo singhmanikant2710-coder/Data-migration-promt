@@ -1,14 +1,44 @@
-Hi John,
+READ-ONLY DIAGNOSTIC — Bug 196 (CASRR UAT)
 
-I wanted to let you know that I have completed the fixes for the BCAT bugs, and the changes have now been deployed to the QA environment for testing.
+STRICT RULES:
+- READ-ONLY. Do NOT edit, create, or delete any file.
+- Do NOT run the app or apply any change.
+- Auto-approve is OFF. Only read/open files and report back.
+- Goal is diagnosis only. No fixes yet.
 
-All the items that are marked as “Fixed” in the tracker have been addressed and are ready for your validation.
+BUG CONTEXT:
+Screen/Tab: Libraries > Selections
+Section: CAS Findings library > CRM Component category
+Symptom: User cannot edit the "Reporting name" selection.
+On save, a PRIMARY KEY error is returned.
 
-There are still 5 bugs that remain open, and we will start working on those from next week. For Bug #28 and Bug #36, I had requested some additional explanation/details from you to better understand the expected behavior, but I have not received those details yet. Once we have the required clarification, we can proceed accordingly.
+TRACE THIS FLOW END-TO-END (read only, report findings):
 
-In the meantime, you can start testing the bugs marked as Fixed in the tracker. If you face any issues during testing or need any assistance or clarification from my side, please feel free to let me know. I’ll be happy to help.
+1. FRONTEND
+   - Find the Selections maintenance component for the CAS Findings / CRM Component library.
+   - Locate the "Reporting name" edit + save handler.
+   - Identify the exact apiClient call: HTTP method (POST vs PUT), URL, and payload keys sent on save.
+   - Confirm whether edit uses an UPDATE path or accidentally hits a CREATE/INSERT path.
 
-Thank you for your support and cooperation.
+2. BACKEND — CONTROLLER
+   - Find the controller endpoint that receives this save.
+   - Note route, HTTP verb, and the request DTO it binds to.
 
-Best regards,
-Manikant
+3. BACKEND — APPLICATION LAYER
+   - Find the Command/Handler (or service method) invoked.
+   - Determine if it performs INSERT (Add) or UPDATE.
+   - Check how it resolves the existing record: by which key(s)?
+
+4. BACKEND — INFRASTRUCTURE / EF
+   - Find the Entity + EF configuration for the CRM Component / CAS Findings Selection table.
+   - Report the PRIMARY KEY definition (single or composite? e.g. LibraryId + ComponentId + ReportingName?).
+   - Check if the PK includes a column that is being CHANGED during edit (e.g. ReportingName itself is part of the key) — this would cause a PK violation on edit.
+   - Check whether SaveChanges tracks the entity as Added vs Modified.
+
+REPORT BACK (do not fix):
+- Exact file paths + line numbers for each layer.
+- The exact PRIMARY KEY definition of the affected table.
+- Root cause hypothesis: is it (a) INSERT firing instead of UPDATE, (b) a mutable column being part of the PK, or (c) a detached/re-added entity being tracked as Added?
+- Confirm which one, with evidence from the code.
+
+Do NOT propose or write any fix yet. Just report the diagnosis.

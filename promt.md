@@ -1,9 +1,15 @@
-Bug 196 — READ-ONLY, no edits. One pass, STOP.
+Bug 196 fix. TWO small changes only. Do NOT touch UpdateAsync, DeleteAsync, or the Edit save path.
 
-1. SelectionRepository.cs CreateAsync — paste the FULL method. Specifically: after existsSql runs, if a row EXISTS, does it throw / return early, or does it still proceed to INSERT? Paste that branching logic exactly.
+FILE 1: backend/src/Casrr.Infrastructure/Repositories/SelectionRepository.cs — CreateAsync only.
+The client-supplied Selection_id causes duplicate composite-key (Section, Selection_id) collisions. Change CreateAsync so the Selection_id is ALWAYS generated server-side as the next per-section value, ignoring item.SelectionId:
 
-2. Frontend maintenance/selections/page.tsx handleCreateInline (the Add path): how is idNum (selectionId) computed for a NEW selection? Search for how the new Selection_id is derived — MAX+1? user-typed? Paste those lines.
+Before the INSERT, in the same connection, run:
+  SELECT ISNULL(MAX([Selection_id]), 0) + 1
+  FROM dbo.[03_LIBRARY_09_Selections] WITH (UPDLOCK, HOLDLOCK)
+  WHERE LTRIM(RTRIM([Section])) = LTRIM(RTRIM(@section));
+Use the returned value as @id in the INSERT (do a single connection/transaction so the MAX+INSERT is atomic). Keep the existing existsSql duplicate guard as a safety net. Keep method signature and INSERT columns unchanged.
 
-3. Confirm: for Bug 196 the user is on the Reporting tab editing an existing selection's Reporting name. Does clicking Edit → changing text → Save ever route through handleCreateInline or createSelection? Trace handleSave's actual branch with idOrSectionChanged hardcoded false. Yes/No + the deciding lines.
+FILE 2: frontend/src/app/maintenance/selections/page.tsx — handleCreateInline only.
+Remove the requirement for the user to type a Selection Id. Stop sending selectionId from addId (it is now server-generated). In the createSelection call, drop selectionId (or send 0). Remove the "Selection Id must be a positive integer" validation gate for the Add flow, and hide/remove the Selection Id input in the inline Add UI. Do NOT change the Edit UI.
 
-Then STOP.
+Show me both diffs. Commit: "Fix Bug 196: server-side per-section Selection_id generation for Add; remove client-supplied id".

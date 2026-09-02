@@ -1,44 +1,30 @@
-READ-ONLY DIAGNOSTIC — Bug 196 (CASRR UAT)
+Bug 196 — READ-ONLY diagnosis. NO edits, NO planning loops. Open the specific files below, answer 4 questions, STOP.
 
-STRICT RULES:
-- READ-ONLY. Do NOT edit, create, or delete any file.
-- Do NOT run the app or apply any change.
-- Auto-approve is OFF. Only read/open files and report back.
-- Goal is diagnosis only. No fixes yet.
+Do NOT grep the whole repo. Do NOT explore. Just open these files directly:
 
-BUG CONTEXT:
-Screen/Tab: Libraries > Selections
-Section: CAS Findings library > CRM Component category
-Symptom: User cannot edit the "Reporting name" selection.
-On save, a PRIMARY KEY error is returned.
+FILE 1 — Backend controller:
+C:\Users\CC438\source\repos\fhn-casrr\backend\src\Casrr.Api\Controllers\SelectionsController.cs
+→ Find the UPDATE/edit endpoint for a selection (the one that saves Reporting name / CRM Component).
+→ Report: HTTP verb + route + which repository method it calls.
 
-TRACE THIS FLOW END-TO-END (read only, report findings):
+FILE 2 — Repository:
+C:\Users\CC438\source\repos\fhn-casrr\backend\src\Casrr.Infrastructure\Repositories\SelectionRepository.cs
+→ Find the method the controller calls on save/edit.
+→ Report the exact SQL (or EF calls). Is it INSERT, UPDATE, or MERGE/UPSERT?
+→ Report the WHERE clause / key columns used to match the existing row.
 
-1. FRONTEND
-   - Find the Selections maintenance component for the CAS Findings / CRM Component library.
-   - Locate the "Reporting name" edit + save handler.
-   - Identify the exact apiClient call: HTTP method (POST vs PUT), URL, and payload keys sent on save.
-   - Confirm whether edit uses an UPDATE path or accidentally hits a CREATE/INSERT path.
+FILE 3 — Interface (for signature only):
+C:\Users\CC438\source\repos\fhn-casrr\backend\src\Casrr.Application\ISelectionRepository.cs
+→ Report the method signature used for the edit.
 
-2. BACKEND — CONTROLLER
-   - Find the controller endpoint that receives this save.
-   - Note route, HTTP verb, and the request DTO it binds to.
+FILE 4 — Frontend Selections maintenance component (under app\maintenance — open the Selections one):
+→ Find the save handler for editing Reporting name.
+→ Report: apiClient call — POST or PUT, the URL, and the exact payload keys sent.
 
-3. BACKEND — APPLICATION LAYER
-   - Find the Command/Handler (or service method) invoked.
-   - Determine if it performs INSERT (Add) or UPDATE.
-   - Check how it resolves the existing record: by which key(s)?
+ANSWER ONLY THESE 4, with file paths + line numbers:
+Q1. Frontend: POST or PUT? URL? payload keys?
+Q2. Controller: verb + route + repo method called?
+Q3. Repository: INSERT vs UPDATE vs UPSERT? What key columns are in the WHERE / match clause?
+Q4. Does the match/key include "Reporting name" (the field being edited) itself?
 
-4. BACKEND — INFRASTRUCTURE / EF
-   - Find the Entity + EF configuration for the CRM Component / CAS Findings Selection table.
-   - Report the PRIMARY KEY definition (single or composite? e.g. LibraryId + ComponentId + ReportingName?).
-   - Check if the PK includes a column that is being CHANGED during edit (e.g. ReportingName itself is part of the key) — this would cause a PK violation on edit.
-   - Check whether SaveChanges tracks the entity as Added vs Modified.
-
-REPORT BACK (do not fix):
-- Exact file paths + line numbers for each layer.
-- The exact PRIMARY KEY definition of the affected table.
-- Root cause hypothesis: is it (a) INSERT firing instead of UPDATE, (b) a mutable column being part of the PK, or (c) a detached/re-added entity being tracked as Added?
-- Confirm which one, with evidence from the code.
-
-Do NOT propose or write any fix yet. Just report the diagnosis.
+Then STOP. Do NOT propose fixes. Do NOT open other files.

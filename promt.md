@@ -1,13 +1,9 @@
-Bug 196 — READ-ONLY, no edits. One pass, answer all, STOP.
+Bug 196 — READ-ONLY, no edits. One pass, STOP.
 
-The reported error is a PRIMARY KEY / UNIQUE constraint violation shown to the user when editing a Reporting-tab selection. UPDATE only sets Tab+Selection, so trace where an INSERT could fire:
+1. SelectionRepository.cs CreateAsync — paste the FULL method. Specifically: after existsSql runs, if a row EXISTS, does it throw / return early, or does it still proceed to INSERT? Paste that branching logic exactly.
 
-1. In maintenance/selections/page.tsx: does handleSave ever call anything OTHER than updateSelection? Search the whole file for: createSelection, addSelection, POST, insert, api.post. Paste any create/POST call and the condition under which it runs.
+2. Frontend maintenance/selections/page.tsx handleCreateInline (the Add path): how is idNum (selectionId) computed for a NEW selection? Search for how the new Selection_id is derived — MAX+1? user-typed? Paste those lines.
 
-2. In SelectionsController.cs: is there a POST endpoint for library selections (create)? Paste its route + the repo method it calls (AddAsync/InsertAsync).
-
-3. In SelectionRepository.cs AddAsync/InsertAsync (create method): paste its full SQL. How does it generate Selection_id for a new row? (MAX+1 per section? a global identity? hardcoded?) 
-
-4. Does the "Add Selection" / "__ADD_NEW__" section flow share the same save path as Edit? When the section dropdown value is "" (empty, from __ADD_NEW__), what does handleSave send?
+3. Confirm: for Bug 196 the user is on the Reporting tab editing an existing selection's Reporting name. Does clicking Edit → changing text → Save ever route through handleCreateInline or createSelection? Trace handleSave's actual branch with idOrSectionChanged hardcoded false. Yes/No + the deciding lines.
 
 Then STOP.

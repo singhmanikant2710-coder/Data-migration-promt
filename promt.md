@@ -1,8 +1,11 @@
-SELECT c.name AS PK_Column, i.name AS PK_Name
-FROM sys.indexes i
-JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-WHERE i.is_primary_key = 1
-  AND i.object_id = OBJECT_ID('dbo.[03_LIBRARY_09_Selections]');
+Bug 196 — READ-ONLY, no edits. One pass. Open, answer, STOP.
 
-  
+Open backend/src/Casrr.Api/Controllers/SelectionsController.cs — the full PUT library/{id} method (~162-195).
+Open backend/src/Casrr.Infrastructure/Repositories/SelectionRepository.cs — the full UpdateAsync method.
+
+Answer:
+1. Does UpdateAsync return affected-row count, and does the controller (or repo) do anything when 0 rows are affected — e.g. call AddAsync/InsertAsync as a fallback? Paste those exact lines.
+2. Paste the exact @section value binding — is it coming from the query string 'section' param, and is it trimmed/normalized before binding?
+3. In the frontend save handler (maintenance/selections/page.tsx ~line 433), what exact 'section' string is sent — row.original.section as-is, or a label? Paste that line.
+
+Then STOP.

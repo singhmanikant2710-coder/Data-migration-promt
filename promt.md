@@ -1,9 +1,8 @@
-Bug 191 fix prep — READ-ONLY, no edits. One pass, answer, STOP. We will register+embed a Unicode TTF (DejaVu Sans) so ≥/≤ render correctly. Confirm the setup before we add it.
+Bug 191 — professional fix prep. READ-ONLY, no edits. Answer, STOP. Goal: render ≥/≤ as actual symbols WITHOUT changing the document's overall font/spacing (a previous attempt that set DejaVu on the base Page style broke spacing/layout).
 
-1. Is there any existing Font.register() call anywhere in the frontend PDF code? If yes, paste it (file/line) — the family name and src pattern (local path vs URL). If none, confirm there is zero font registration currently.
-2. Where do the PDF components define their Page/base styles (the top-level <Page> or <Document> style with fontSize etc.)? List each PDF component file and the base style object where a fontFamily should be added. (InitialMemoPDF, FinalMemoPDF, ReviewPDF, CrmSummaryPDF, CrmFindingsObservationsPDF, ScorecardResultsPDF, and any shared pageSetup.ts.)
-3. Is there a shared setup module (pageSetup.ts) imported by all PDF components where a single Font.register() + a shared fontFamily token could live, so we register once and apply consistently? 
-4. Where are static assets served from in this Next.js app (public/ folder path)? Confirm the correct location + URL path to place a local DejaVuSans.ttf so @react-pdf can load it via src.
-5. Does @react-pdf here load fonts from a URL, a local import (import font from '...ttf'), or a public path? Which pattern does this project's build support?
+1. Confirm the @react-pdf/renderer version (package.json).
+2. Does this @react-pdf version support Font.register with a `fonts` fallback array, or Font.registerHyphenationCallback-style fallback? Specifically: can we register a Unicode font as a FALLBACK that is used ONLY for glyphs missing in the primary Helvetica, so normal text stays Helvetica and only ≥/≤ use the fallback? Check @react-pdf docs/types in node_modules for a fallback/font-fallback feature.
+3. In HtmlRichText.tsx (the rich-text parser that outputs <Text> runs), at what point are text runs emitted? Could we, at the parser level, detect ≥ (U+2265) / ≤ (U+2264) in a text run and wrap ONLY those characters in an inline <Text style={{fontFamily:'DejaVuSans'}}> while leaving surrounding text in the default font? Report where text runs are split/emitted so this is feasible.
+4. Where are the base Page styles that currently rely on default Helvetica (so we can confirm we will NOT touch them)?
 
-Report file paths + the base style objects + the correct asset location. Do NOT register or add anything yet.
+Report the version, whether native font-fallback exists, and the feasibility of character-level font wrapping in HtmlRichText. Do NOT change anything.

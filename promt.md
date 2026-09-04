@@ -1,11 +1,44 @@
-Bug 198 (part 2) — Delete modal consistency on Samples/Load Samples screen. READ-ONLY, no edits. One pass, answer, STOP.
+Bug 198 part 2 fix — replace native window.confirm on Load Samples delete with the existing ConfirmDialog modal. SINGLE FILE. Mirror the CRM Findings pattern exactly. Show diff before applying.
 
-The Samples (Load Samples) screen deletes a customer using the browser's native window.confirm() (shows "webapp says... Delete customer? OK/Cancel"). Other screens (e.g. CRM Findings, Review Form) use a styled in-app "Confirm Delete" modal ("Are you sure you want to delete this? Cancel/Delete"). Goal: make the Samples delete use the SAME styled modal, removing the native confirm().
+FILE: frontend/src/app/load-samples/page.tsx
 
-Report:
-1. In the Load Samples page (frontend/src/app/load-samples/page.tsx or its delete handler), find the customer-delete logic. Does it call window.confirm() / confirm()? Paste that exact handler + the line that triggers the native popup.
-2. Find the reusable styled confirm-delete modal component used by other screens (search for "Confirm Delete", "cannot be undone", ConfirmDialog, DeleteModal, ConfirmModal, Dialog). Report the component name + file path + its props (e.g. open, title, message, onConfirm, onCancel).
-3. Show one example of how another screen (e.g. CRM Findings) uses that modal — the state (useState open) + JSX usage, so I can mirror the pattern.
-4. Confirm whether the Load Samples page already imports/uses that modal anywhere (so we reuse, not recreate).
+Changes:
+1. Line 14 import: add ConfirmDialog to the existing import:
+   import { InfoDialog, Modal, ConfirmDialog } from "@/components/ui/Dialog";
 
-Report file paths + the reusable modal's API. Do NOT change anything.
+2. Add two state hooks near the page's other useState declarations:
+   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
+   const [pendingDeleteRow, setPendingDeleteRow] = useState<SampleLoad | null>(null);
+
+3. In deleteChildRow (lines 1132-1190): KEEP the guards and the staged/unsaved early-return path (lines 1134-1153) EXACTLY as-is. REMOVE the native window.confirm block (lines 1154-1158). Instead, for persisted rows, open the modal:
+   setPendingDeleteRow(r);
+   setConfirmDeleteOpen(true);
+   return;
+   Move the API portion (the deleteSampleLoad call + state update + toasts + catch/finally, lines 1160-1189) into a new async handler handleDeleteConfirm that reads the pending row into a local variable FIRST:
+   async function handleDeleteConfirm() {
+     const r = pendingDeleteRow;
+     setConfirmDeleteOpen(false);
+     if (!r) return;
+     const sid = Number(selectedParentId);
+     setChildSaving(true);
+     try { ... existing API + state + success toast ... }
+     catch { ... existing not-found/staged + error handling ... }
+     finally { setChildSaving(false); setPendingDeleteRow(null); }
+   }
+   Preserve all existing toast messages, the not-found→staged fallback, and setChildSaving behavior exactly.
+
+4. Render one <ConfirmDialog> near the page's other Modal/InfoDialog instances (around line 2441):
+   <ConfirmDialog
+     open={confirmDeleteOpen}
+     onClose={() => { setConfirmDeleteOpen(false); setPendingDeleteRow(null); }}
+     onConfirm={handleDeleteConfirm}
+     danger
+     title="Confirm Delete"
+     message={`Are you sure you want to delete customer ${pendingDeleteRow?.customer_number ?? ""}? This action cannot be undone.`}
+     confirmText="Delete"
+     cancelText="Cancel"
+   />
+
+Do NOT change the row Delete button onClick (it still calls deleteChildRow(r)). Do NOT touch the staged/unsaved local-delete path. Do NOT change any other modal on the page. This is the only window.confirm in the frontend — after this, there should be zero.
+
+List every line changed. Commit: "Fix Bug 198 part 2: replace native confirm with ConfirmDialog on Load Samples delete".

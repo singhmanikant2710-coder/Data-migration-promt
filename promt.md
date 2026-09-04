@@ -1,20 +1,20 @@
-SELECT
-    r.Customer_number, r.Sample_id, r.Sample_name,
-    r.Sample_date, r.Sample_finalized_date, r.Review_approval_date, r.Cancelled,
-    s.Sample_id AS joined_sample_id,
-    CASE WHEN r.Sample_date >= DATEADD(month,-6,GETDATE()) THEN 'HELD_at_6' ELSE 'pass_at_6' END AS at6,
-    CASE WHEN r.Sample_date >= DATEADD(month,-9,GETDATE()) THEN 'HELD_at_9' ELSE 'pass_at_9' END AS at9
-FROM dbo.[02_CORE_02_Reviews] r
-LEFT JOIN dbo.[02_CORE_01_Samples] s ON s.Sample_id = r.Sample_id
-WHERE LTRIM(RTRIM(r.Customer_number)) IN ('84538953','84551519','84554592')
-ORDER BY r.Customer_number, r.Review_finalized_date DESC;
+Bug 198 fix. SINGLE FILE, ONE change. Do NOT touch anything else. Show diff before applying.
 
+FILE: backend/src/Casrr.Infrastructure/SqlServer/SqlSampleLoadRepository.cs
+The recent-review Hold window regressed. Legacy Access query "01_SAMPLE LOAD_Validation_02_Sample Holds" uses:
+  WHERE r.Sample_date >= DateAdd('m', -9, Date())   (9-month window, date-only)
+Current code at line ~421 uses:
+  r.[Sample_date] >= DATEADD(month, -6, GETDATE())  (wrong: 6-month window, datetime)
 
-SELECT 
-  GETDATE() AS now_dt,
-  CONVERT(date, GETDATE()) AS today_date,
-  DATEADD(month,-9, CONVERT(date, GETDATE())) AS cutoff_9_dateonly,
-  DATEADD(month,-6, GETDATE()) AS cutoff_6_current,
-  CAST('2025-12-08' AS date) AS ambancard_sampledate,
-  CASE WHEN CAST('2025-12-08' AS date) >= DATEADD(month,-9, CONVERT(date, GETDATE())) THEN 'HOLD' ELSE 'pass' END AS at9_dateonly,
-  CASE WHEN CAST('2025-12-08' AS date) >= DATEADD(month,-6, GETDATE()) THEN 'HOLD' ELSE 'pass' END AS at6_current;
+Change ONLY that predicate to match legacy exactly:
+  r.[Sample_date] >= DATEADD(month, -9, CONVERT(date, GETDATE()))
+
+That is: -6 → -9, and GETDATE() → CONVERT(date, GETDATE()) for date-only comparison (matches legacy Date()).
+
+Do NOT change:
+- the JOIN, the ORDER BY, the Cancelled filter, the customer-number match, or any other predicate
+- the ValidateAsync method (the older unused one)
+- any other date window elsewhere in the file
+Only this one WHERE date comparison in Step 6 (the recent-reviews hold query, ~lines 404-422).
+
+List the exact line changed. Commit: "Fix Bug 198: restore 9-month date-only recent-review hold window (regressed from legacy -9 to -6)".

@@ -1,18 +1,28 @@
-Bug 197 fix — force Scorecard ID to wrap at hyphens in PDF table cells. Use the EXISTING proven approach already in this repo (softBreakId in ScorecardResultsPDF.tsx, which does s.split("-").join("-\n") and does NOT have this bug). Do NOT rely on wordBreak (unsupported in @react-pdf v4). Do NOT truncate the ID. Do NOT change the hyphenation callback or any shared pageSetup.ts. Show all diffs before applying.
+Bug 197 — change wrap strategy from every-hyphen to a SINGLE break near 24 chars. Modify the SAME helpers we just added/wired, in the SAME 4 files. Full ID preserved (no truncation). Show all diffs before applying.
 
-Scope: FOUR files, only the Scorecard ID render sites listed. Do not touch other cells, columns, account-number wrapping, or unrelated styles.
+NEW WRAP RULE (replace the current split("-").join("-\n") behavior):
+Insert exactly ONE "\n" into the Scorecard ID, at the LAST hyphen that falls at or before character index 24. Specifically:
+- Find all hyphen positions in the string.
+- Choose the hyphen with the greatest index i such that i <= 24 (i.e. the last hyphen within the first 24 chars).
+- Insert "\n" AFTER that hyphen (keep the hyphen visible at end of line 1).
+- If no hyphen exists at/before index 24 (rare), fall back to inserting "\n" at the last hyphen anywhere in the string; if there are no hyphens at all, break after 24 characters.
+- Preserve the existing length>12 guard and dash-normalization already in place. Do NOT remove any characters.
+Result: the ID renders on at most 2 lines, e.g.
+  df6debd1-a53d-4d79-9857-
+  2ec57e2d7754
 
-For each file, make the Scorecard ID value pass through a hyphen-breaking formatter that inserts "\n" after each hyphen (mirror ScorecardResultsPDF.tsx softBreakId exactly). Apply it ONLY to the scorecard ID values at these lines:
-
-1. InitialMemoPDF.tsx — line 1038 (scorecardIdBank), line 1185 (scorecardIdBank in Account Info). The existing hyphenWrap() here does nothing useful for IDs; either fix hyphenWrap to insert "-\n" after hyphens OR wrap the ID value with a local softBreakId helper. Keep dash-normalization behavior. Do NOT change accountWrap.
-2. FinalMemoPDF.tsx — line 919, line 1053, line 1065. Same treatment.
-3. ReviewPDF.tsx (CAS Linesheet) — lines 1026, 1035, 1297, 1326. Note formatScorecardId already exists here (lines 73-84) and does the hyphen→newline transform but is NEVER called. Simply call the existing formatScorecardId on the scorecard ID values at these render sites. Do not add a new helper if this one works.
-4. CrmSummaryPDF.tsx — line 558. The value is bare out(). Wrap it with a softBreakId-style hyphen-break helper.
+APPLY to the same helpers/sites only:
+1. InitialMemoPDF.tsx — softBreakId() helper (lines ~461-468). Update its hyphen-break logic to the new single-break rule. Sites 1043, 1178, 1190 stay calling it.
+2. FinalMemoPDF.tsx — softBreakId() helper (lines ~345-352). Same update. Sites 924, 1058, 1070 unchanged.
+3. ReviewPDF.tsx — formatScorecardId() (lines 73-84). Update its hyphen→newline logic to the new single-break rule. Sites 1026, 1035, 1297, 1326 stay calling it.
+4. CrmSummaryPDF.tsx — softBreakId() helper (lines ~378-384). Same update. Site 565 unchanged.
 
 Rules:
-- Preserve the full ID (no characters removed). Only newlines inserted after hyphens.
-- Keep existing styles; you may leave the (no-op) wordBreak declarations as-is or remove them, but do not add unsupported styles.
-- Do NOT modify pageSetup.ts, the hyphenation callback, account-number formatting, column widths, or any non-Scorecard-ID cell.
-- List every file and line changed.
+- Full ID preserved, only ONE newline inserted.
+- Do NOT touch pageSetup.ts, hyphenation callback, accountWrap/formatAccountNumber, column widths, or any non-Scorecard-ID cell.
+- Do NOT change which sites call the helper — only the helper internals.
+- List every file + line changed.
 
-Commit: "Fix Bug 197: wrap Scorecard IDs at hyphens in Initial/Final Memo, CAS Linesheet, CRM Summary PDFs".
+After applying, run a quick node check: for '3ecb14bf-c8d7-4594-8a1a-9ec57e2d7754' and 'df6debd1-a53d-4d79-9857-2ec57e2d7754', print the wrapped output and confirm removing "\n" reproduces the original exactly.
+
+Commit: "Fix Bug 197: wrap Scorecard IDs to 2 lines at last hyphen within 24 chars (Initial/Final Memo, CAS Linesheet, CRM Summary)".

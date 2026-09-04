@@ -1,12 +1,11 @@
-Bug 195 fix. SINGLE FILE, minimal change. Show diff before applying.
+Bug 191 — PDF renders "≥" as "e" and "≤" as "d". READ-ONLY, no edits. One pass, answer, STOP.
 
-FILE: frontend/src/app/reports/page.tsx
-The backend already returns samples ordered by Sample_id DESC, but the frontend re-sorts by sample_start_date (lines ~280-290), overriding it. Geoff wants the Sample Name Selection dropdown ordered by Sample_id DESCENDING.
+When users paste ≥ (U+2265) or ≤ (U+2264) into rich-text fields, the generated PDF reports show them as "e" and "d" respectively. A DejaVu Sans Unicode font was previously registered to fix glyph rendering for ≥, ≤, and en-dash. This suggests some PDF component/field is NOT using that font, or the registration/mapping is missing for these fields.
 
-Change the .sort() comparator (lines ~283-288) so it sorts ONLY by id descending:
-   .sort((a, b) => b.id - a.id)
-Drop the getStartEpoch primary comparison. If getStartEpoch (lines ~259-271) becomes unused after this, remove it too (or leave it if referenced elsewhere — check first; only remove if truly unused).
+Trace:
+1. Find where the DejaVu Sans (or any Unicode font) is registered for @react-pdf/renderer. Search: Font.register, DejaVu, fontFamily. Which font family name is registered, and in which file(s)/setup?
+2. Identify which PDF components render rich-text comment/description fields (the ones showing ≥/≤). Likely: HtmlRichText.tsx parser + ReviewPDF, FinalMemoPDF, InitialMemoPDF, CrmFindingsObservationsPDF. For the Comments/Description columns that show ≥/≤, what fontFamily is applied to those <Text> elements? Is it the registered DejaVu font, or a default (Helvetica) that lacks ≥/≤ glyphs?
+3. Specifically: does the HtmlRichText parser / the rich-text render path set fontFamily to the Unicode font? Or does ≥/≤ fall through to Helvetica (which renders them as e/d because those glyphs are missing)?
+4. Also check: is ≥/≤ possibly being character-substituted anywhere (a replace map, a hyphenation/normalization step) before render? Confirm whether it's a font-glyph issue or a character-substitution issue.
 
-Do NOT change the backend, the options builder (sampleOptions useMemo), the SearchableSelect component, or the data-loading/dedup logic. Only the sort comparator.
-List every line changed.
-Commit: "Fix Bug 195: order Reports sample dropdown by Sample_id DESC (remove start-date re-sort)".
+Report file paths + line numbers + the registered font family + which components/fields use vs don't use it. Do NOT fix yet.

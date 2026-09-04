@@ -1,4 +1,1 @@
-SELECT ORDINAL_POSITION, COLUMN_NAME, DATA_TYPE
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='02_CORE_02_Reviews'
-ORDER BY ORDINAL_POSITION;
+Hi Geoff, fixing the CORE export formatting now — the "jargon" in columns BO–CM was raw HTML from the rich-text fields (I'm stripping it to plain text), and some garbled characters were an encoding issue (adding a UTF-8 BOM so Excel reads it correctly). One question: should cancelled reviews be included in this export, or excluded? The app filters them out elsewhere, so let me know your preference and I'll adjust.

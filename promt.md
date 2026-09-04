@@ -1,44 +1,19 @@
-Bug 198 part 2 fix — replace native window.confirm on Load Samples delete with the existing ConfirmDialog modal. SINGLE FILE. Mirror the CRM Findings pattern exactly. Show diff before applying.
+Bug 223 — CAS Findings library edit fails with PRIMARY KEY violation. READ-ONLY, no edits. One pass, open all below, answer, STOP.
 
-FILE: frontend/src/app/load-samples/page.tsx
+ERROR (from UAT): "Violation of PRIMARY KEY constraint '03_LIBRARY_01_CAS Findings$PrimaryKey'. Cannot insert duplicate key in object 'dbo.03_LIBRARY_01_CAS Findings'. The duplicate key value is (CRM-00)." Occurs when editing an existing CAS Finding (Component "02-Scorecard Management", Finding Code CRM-00) and clicking Save.
 
-Changes:
-1. Line 14 import: add ConfirmDialog to the existing import:
-   import { InfoDialog, Modal, ConfirmDialog } from "@/components/ui/Dialog";
+This is the same family as the Selections PK bug we fixed. Trace the CAS Findings maintenance edit path:
 
-2. Add two state hooks near the page's other useState declarations:
-   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
-   const [pendingDeleteRow, setPendingDeleteRow] = useState<SampleLoad | null>(null);
+1. Frontend CAS Findings maintenance page (search app/maintenance for "findings" / "CAS Findings" / the page with Component, Finding Code, Category, Description, Guidance, Finding Group, Active columns). Find the Edit Save handler. Report: does it call an update service or a create service on save? Paste the exact call + payload keys. Does it send a query param (like the section fix), and is any required field missing on edit?
 
-3. In deleteChildRow (lines 1132-1190): KEEP the guards and the staged/unsaved early-return path (lines 1134-1153) EXACTLY as-is. REMOVE the native window.confirm block (lines 1154-1158). Instead, for persisted rows, open the modal:
-   setPendingDeleteRow(r);
-   setConfirmDeleteOpen(true);
-   return;
-   Move the API portion (the deleteSampleLoad call + state update + toasts + catch/finally, lines 1160-1189) into a new async handler handleDeleteConfirm that reads the pending row into a local variable FIRST:
-   async function handleDeleteConfirm() {
-     const r = pendingDeleteRow;
-     setConfirmDeleteOpen(false);
-     if (!r) return;
-     const sid = Number(selectedParentId);
-     setChildSaving(true);
-     try { ... existing API + state + success toast ... }
-     catch { ... existing not-found/staged + error handling ... }
-     finally { setChildSaving(false); setPendingDeleteRow(null); }
-   }
-   Preserve all existing toast messages, the not-found→staged fallback, and setChildSaving behavior exactly.
+2. Backend FindingsController.cs — find the PUT/update endpoint for a CAS Finding. Report: verb, route, [FromQuery] params, the DTO bound, and which repo method it calls (Update vs Create/Add).
 
-4. Render one <ConfirmDialog> near the page's other Modal/InfoDialog instances (around line 2441):
-   <ConfirmDialog
-     open={confirmDeleteOpen}
-     onClose={() => { setConfirmDeleteOpen(false); setPendingDeleteRow(null); }}
-     onConfirm={handleDeleteConfirm}
-     danger
-     title="Confirm Delete"
-     message={`Are you sure you want to delete customer ${pendingDeleteRow?.customer_number ?? ""}? This action cannot be undone.`}
-     confirmText="Delete"
-     cancelText="Cancel"
-   />
+3. SqlFindingsRepository.cs — open the Update method AND the Create method. Report:
+   - The exact PRIMARY KEY of table dbo.[03_LIBRARY_01_CAS Findings] (search for CREATE TABLE / PK / the key columns; is it Finding_Code alone, or composite like (Component, Finding_Code)?).
+   - Does Update do a real UPDATE (matching on the PK), or does it delete+insert / call Create? 
+   - In the WHERE/match clause of Update, which columns are used? Does the match include a field being edited?
+   - Is there any INSERT that reuses a client-supplied Finding Code that could collide?
 
-Do NOT change the row Delete button onClick (it still calls deleteChildRow(r)). Do NOT touch the staged/unsaved local-delete path. Do NOT change any other modal on the page. This is the only window.confirm in the frontend — after this, there should be zero.
+4. State the root cause: is edit firing an INSERT instead of UPDATE, or is Update matching on the wrong key so it inserts a duplicate (CRM-00)? Confirm with evidence.
 
-List every line changed. Commit: "Fix Bug 198 part 2: replace native confirm with ConfirmDialog on Load Samples delete".
+Report file paths + line numbers + the exact PK definition. Do NOT propose or write a fix yet.

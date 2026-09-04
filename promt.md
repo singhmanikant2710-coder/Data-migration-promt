@@ -1,8 +1,14 @@
-Bug 191 — professional fix prep. READ-ONLY, no edits. Answer, STOP. Goal: render ≥/≤ as actual symbols WITHOUT changing the document's overall font/spacing (a previous attempt that set DejaVu on the base Page style broke spacing/layout).
+Bug 191 fix — register DejaVu Sans as a GLYPH-LEVEL FALLBACK so ≥/≤ render correctly WITHOUT changing document spacing. Approach: fontFamily: ["Helvetica", "DejaVuSans"] on base Page styles (metric-neutral — Helvetica stays primary, DejaVu only used for glyphs Helvetica lacks). Font loaded as base64 data-URL (NO network dependency). Show all diffs before applying.
 
-1. Confirm the @react-pdf/renderer version (package.json).
-2. Does this @react-pdf version support Font.register with a `fonts` fallback array, or Font.registerHyphenationCallback-style fallback? Specifically: can we register a Unicode font as a FALLBACK that is used ONLY for glyphs missing in the primary Helvetica, so normal text stays Helvetica and only ≥/≤ use the fallback? Check @react-pdf docs/types in node_modules for a fallback/font-fallback feature.
-3. In HtmlRichText.tsx (the rich-text parser that outputs <Text> runs), at what point are text runs emitted? Could we, at the parser level, detect ≥ (U+2265) / ≤ (U+2264) in a text run and wrap ONLY those characters in an inline <Text style={{fontFamily:'DejaVuSans'}}> while leaving surrounding text in the default font? Report where text runs are split/emitted so this is feasible.
-4. Where are the base Page styles that currently rely on default Helvetica (so we can confirm we will NOT touch them)?
+PHASE 1 — add + register the font (do this first, show me, then stop):
+1. Obtain DejaVu Sans (SIL OFL licensed, free commercial use). Subset it to a compact set (Latin + ≥ U+2265, ≤ U+2264, and common punctuation/currency/dashes used in these reports) to keep the bundle small. Convert the subsetted TTF to a base64 string.
+2. Create a shared font registration in the existing shared PDF setup module (pageSetup.ts, which all PDF components import). Add:
+   Font.register({ family: "DejaVuSans", src: "data:font/ttf;base64,<BASE64>" });
+   Ensure this runs at module load, BEFORE any pdf() render (getFont throws if unregistered). Place it so every PDF component that imports pageSetup triggers registration.
+3. Do NOT change any Page style yet. Just add the font asset + registration. Confirm the base64 is embedded (no external URL/network fetch).
+Report: the file changed, approximate base64 size, and confirm registration runs at import time. STOP for my review.
 
-Report the version, whether native font-fallback exists, and the feasibility of character-level font wrapping in HtmlRichText. Do NOT change anything.
+PHASE 2 (after I approve Phase 1) — apply the fallback:
+Change fontFamily from "Helvetica" to ["Helvetica", "DejaVuSans"] at the 18 base Page style sites (ReviewPDF, FinalMemoPDF x2, InitialMemoPDF, CrmSummaryPDF, CrmFindingsObservationsPDF, CrmSummaryTablePDF, CrmSamplesSummaryPDF, CrmPdfGradeMigrationPDF, ScorecardResultsPDF, CroProductionSummaryPDF x3, PolicyExceptionsPDF, CovenantsSummaryPDF, CovenantViolationsPDF, NonComplianceCovenantsPDF, ManagementSummaryPDF, ChecklistQuestionnairePDF). Only the base Page/Document style fontFamily. Do NOT touch any other style, spacing, or HtmlRichText.
+
+Do NOT add any npm package. Do NOT use a network URL for the font.

@@ -1,11 +1,9 @@
-Bug 191 — PDF renders "≥" as "e" and "≤" as "d". READ-ONLY, no edits. One pass, answer, STOP.
+Bug 191 fix prep — READ-ONLY, no edits. One pass, answer, STOP. We will register+embed a Unicode TTF (DejaVu Sans) so ≥/≤ render correctly. Confirm the setup before we add it.
 
-When users paste ≥ (U+2265) or ≤ (U+2264) into rich-text fields, the generated PDF reports show them as "e" and "d" respectively. A DejaVu Sans Unicode font was previously registered to fix glyph rendering for ≥, ≤, and en-dash. This suggests some PDF component/field is NOT using that font, or the registration/mapping is missing for these fields.
+1. Is there any existing Font.register() call anywhere in the frontend PDF code? If yes, paste it (file/line) — the family name and src pattern (local path vs URL). If none, confirm there is zero font registration currently.
+2. Where do the PDF components define their Page/base styles (the top-level <Page> or <Document> style with fontSize etc.)? List each PDF component file and the base style object where a fontFamily should be added. (InitialMemoPDF, FinalMemoPDF, ReviewPDF, CrmSummaryPDF, CrmFindingsObservationsPDF, ScorecardResultsPDF, and any shared pageSetup.ts.)
+3. Is there a shared setup module (pageSetup.ts) imported by all PDF components where a single Font.register() + a shared fontFamily token could live, so we register once and apply consistently? 
+4. Where are static assets served from in this Next.js app (public/ folder path)? Confirm the correct location + URL path to place a local DejaVuSans.ttf so @react-pdf can load it via src.
+5. Does @react-pdf here load fonts from a URL, a local import (import font from '...ttf'), or a public path? Which pattern does this project's build support?
 
-Trace:
-1. Find where the DejaVu Sans (or any Unicode font) is registered for @react-pdf/renderer. Search: Font.register, DejaVu, fontFamily. Which font family name is registered, and in which file(s)/setup?
-2. Identify which PDF components render rich-text comment/description fields (the ones showing ≥/≤). Likely: HtmlRichText.tsx parser + ReviewPDF, FinalMemoPDF, InitialMemoPDF, CrmFindingsObservationsPDF. For the Comments/Description columns that show ≥/≤, what fontFamily is applied to those <Text> elements? Is it the registered DejaVu font, or a default (Helvetica) that lacks ≥/≤ glyphs?
-3. Specifically: does the HtmlRichText parser / the rich-text render path set fontFamily to the Unicode font? Or does ≥/≤ fall through to Helvetica (which renders them as e/d because those glyphs are missing)?
-4. Also check: is ≥/≤ possibly being character-substituted anywhere (a replace map, a hyphenation/normalization step) before render? Confirm whether it's a font-glyph issue or a character-substitution issue.
-
-Report file paths + line numbers + the registered font family + which components/fields use vs don't use it. Do NOT fix yet.
+Report file paths + the base style objects + the correct asset location. Do NOT register or add anything yet.

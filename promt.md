@@ -1,17 +1,12 @@
-Bug 204 fix — Review Progress "Unopened/Cancelled" bucket should show header "Cancelled" and the Cancelled date from CORE Reviews. Follow the EXISTING pattern the other 5 buckets use (reuse the Completed field; per-bucket label switch). Show all diffs before applying. Do NOT add a new DTO/type field. Do NOT touch other buckets.
+Bug 207 — CAS Linesheet PDF: when user selects "No Monitoring Covenants" / "No Performance Covenants", those rows do NOT appear in the PDF covenant tables (tables render empty). Geoff wants the "no covenant" rows to be shown. READ-ONLY, no edits. One pass, answer, STOP.
 
-FILE 1 — Backend: backend/src/Casrr.Infrastructure/SqlServer/SqlReviewStatusRepository.cs
-In GetUnopenedOrCancelledAsync only:
-1. Add r.[Cancelled_date] to the SELECT list (append it so existing column ordinals stay stable — StatusLabel currently read at index 12; append Cancelled_date as index 13).
-2. Replace the hardcoded `Completed = ""` (line ~664) with the formatted Cancelled_date, using the SAME pattern the other buckets use:
-   Completed = cancelledDate.HasValue ? cancelledDate.Value.ToString("M/d/yyyy", us) : ""
-   Read cancelledDate from the new ordinal (index 13), mirroring how the other queries read their date column. Rows that are Unopened (not cancelled) will have null Cancelled_date → blank cell (correct, matches this mixed bucket).
-Do NOT change the DTO (ReviewStatus.cs) — keep reusing the existing Completed field, exactly like the other 5 buckets.
+The CAS Linesheet PDF has two covenant tables: "Reporting / Monitoring Covenants" and "Financial Performance Covenants". When the review has no actual covenants (user explicitly selected "No Monitoring Covenants" / "No Performance Covenants"), the table body is empty instead of showing that no-covenant selection as a row.
 
-FILE 2 — Frontend: frontend/src/app/review-status/page.tsx
-In the completedColLabel logic (lines ~78-84), add an arm:
-   selectedBucket === "Unopened/Cancelled" ? "Cancelled" : ...
-so the header reads "Cancelled" for that bucket (keeping the existing labels for all other buckets). Do NOT change the cell rendering (it already renders r.completed).
+Investigate:
+1. Find the CAS Linesheet PDF component (likely ReviewPDF.tsx) and the two covenant tables (Reporting/Monitoring and Financial Performance). How are their rows rendered? File + line.
+2. Where does the covenant data come from? Is there a distinction in the data between (a) no covenants entered at all vs (b) user explicitly selected "No Monitoring Covenants"/"No Performance Covenants"? How is that "No ... Covenants" selection represented in the data (a flag, a special covenant row, a covenant name/type)?
+3. Why does the table render empty in the "No ... Covenants" case? Is the row being filtered out, or does the data simply not include a row for the "No Covenants" selection? Paste the render/filter logic.
+4. How is the same "No Covenants" selection shown elsewhere (e.g. in the UI Covenants section, or another report) — is there existing precedent for displaying a "No Monitoring Covenants" row that we can mirror?
+5. Identify exactly what needs to change so that when "No Monitoring/Performance Covenants" is selected, the PDF shows a row indicating that (rather than an empty table). Is the fix: include the No-Covenants selection as a row in the data, OR render a placeholder row in the PDF when the covenant list is empty-but-selected?
 
-Do NOT change other bucket queries, the DTO/types, sorting, or backend contract shape.
-List every file + line changed. Commit: "Fix Bug 204: Review Progress Unopened/Cancelled bucket shows 'Cancelled' header and Cancelled_date".
+Report file paths + line numbers + how the "No Covenants" selection is represented in the data + why it renders empty. Do NOT fix yet.

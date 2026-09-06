@@ -1,12 +1,16 @@
-Bug 207 — CAS Linesheet PDF: when user selects "No Monitoring Covenants" / "No Performance Covenants", those rows do NOT appear in the PDF covenant tables (tables render empty). Geoff wants the "no covenant" rows to be shown. READ-ONLY, no edits. One pass, answer, STOP.
+Bug 207 fix — CAS Linesheet PDF drops "No Monitoring/Performance Covenants" rows because its category filters don't admit the "No Covenants" category. Extend the two filters to include it, gated on covenantType, mirroring useCovenants.ts exactly. Frontend-only, ONE file. Show diff before applying.
 
-The CAS Linesheet PDF has two covenant tables: "Reporting / Monitoring Covenants" and "Financial Performance Covenants". When the review has no actual covenants (user explicitly selected "No Monitoring Covenants" / "No Performance Covenants"), the table body is empty instead of showing that no-covenant selection as a row.
+FILE: frontend/src/components/pdf/ReviewPDF.tsx (lines ~705-717)
 
-Investigate:
-1. Find the CAS Linesheet PDF component (likely ReviewPDF.tsx) and the two covenant tables (Reporting/Monitoring and Financial Performance). How are their rows rendered? File + line.
-2. Where does the covenant data come from? Is there a distinction in the data between (a) no covenants entered at all vs (b) user explicitly selected "No Monitoring Covenants"/"No Performance Covenants"? How is that "No ... Covenants" selection represented in the data (a flag, a special covenant row, a covenant name/type)?
-3. Why does the table render empty in the "No ... Covenants" case? Is the row being filtered out, or does the data simply not include a row for the "No Covenants" selection? Paste the render/filter logic.
-4. How is the same "No Covenants" selection shown elsewhere (e.g. in the UI Covenants section, or another report) — is there existing precedent for displaying a "No Monitoring Covenants" row that we can mirror?
-5. Identify exactly what needs to change so that when "No Monitoring/Performance Covenants" is selected, the PDF shows a row indicating that (rather than an empty table). Is the fix: include the No-Covenants selection as a row in the data, OR render a placeholder row in the PDF when the covenant list is empty-but-selected?
+The "No Covenants" row has category "No Covenants" and a covenantType of either "No Monitoring Covenants" or "No Performance Covenants". Currently monitoringRows and financialRows filters admit neither, so the row is discarded.
 
-Report file paths + line numbers + how the "No Covenants" selection is represented in the data + why it renders empty. Do NOT fix yet.
+Extend the filters to mirror useCovenants.ts (lines ~116-121):
+- monitoringRows: keep existing categories, AND also include a row when normalized category === "no covenants" AND its covenantType is NOT "no performance covenants".
+- financialRows: keep existing categories, AND also include a row when normalized category === "no covenants" AND its covenantType is NOT "no monitoring covenants".
+
+Use the same covenantType field resolution the row already uses (mirror the ?? fallback chain used for category, applied to covenantType). Normalize with trim().toLowerCase() consistently.
+
+The existing render maps (lines ~1120-1127 and ~1143-1152) work unchanged — the row will print covenantType ("No Monitoring Covenants" / "No Performance Covenants") in the first column with remaining cells blank (those DB fields are null for these rows). Do NOT add a new render branch. Do NOT use a placeholder-when-empty approach.
+
+This is purely additive (widens two filters); no currently-rendered row can be dropped or moved. Do NOT touch backend, DTO, the Covenant Comments section, covAccTrack/covAccValid/covBreaches, or anything else.
+List every line changed. Commit: "Fix Bug 207: CAS Linesheet PDF shows No Monitoring/Performance Covenants rows (extend covenant category filters)".

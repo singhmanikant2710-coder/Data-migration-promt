@@ -1,11 +1,9 @@
-Bug 192 — completeness cross-check. READ-ONLY, no edits. Answer, STOP.
+Two follow-ups on Bug 192, same session. Do A (read-only) first, report, then apply B and C.
 
-We identified 5 PDF components leaking raw HTML in Comments cells: FinalMemoPDF, InitialMemoPDF, CrmFindingsObservationsPDF, ChecklistQuestionnairePDF, ReviewPDF.
+A) COMPLETENESS SCAN — read-only, no edits. Scan EVERY PDF component in frontend/src/components/pdf/ yourself. Find every site that renders a DB rich-text field (any field a user fills via RichTextEditor and saved as innerHTML — comments, information, description, justification, key_risks, mitigation, rationale, guidance, notes, etc.). For each such site, classify it as: routes via HtmlRichText, OR applies stripHtml/stripHtmlToText, OR passes RAW via out()/plain <Text> (a LEAK). Report every LEAK site you find (file + line + field), or confirm there are none beyond what we already fixed.
 
-Verify NO other component is missed:
-1. List ALL PDF components in frontend/src/components/pdf/ that render any rich-text / HTML-bearing field from the DB (comments, information, description, justification, guidance, rationale, key_risks, mitigation, etc. — the fields written by RichTextEditor as innerHTML).
-2. For EACH such field render site across ALL PDF components, report whether it: (a) routes through HtmlRichText, (b) applies stripHtml/stripHtmlToText, or (c) passes raw through out()/plain Text (LEAKS).
-3. Specifically check these components too (not just the 5): CrmSummaryPDF, CrmSummaryTablePDF, CrmSamplesSummaryPDF, ScorecardResultsPDF, CovenantsSummaryPDF, CovenantViolationsPDF, NonComplianceCovenantsPDF, ManagementSummaryPDF, PolicyExceptionsPDF, CroProductionSummaryPDF, CrmPdGradeMigrationPDF. Do any of these render an HTML-bearing field raw?
-4. Confirm the final complete list of files that need the fix — is it exactly 5, or more?
+B) In ReviewPDF.tsx the findings DESCRIPTION field is still rendered raw while comments are now cleaned — apply the same stripHtml to it for consistency.
 
-Report each leaking site (file + line + field). Do NOT fix yet.
+C) For any additional leak found in A, fix it using the SAME pattern already applied in this session (route through HtmlRichText with an outHtml/stripHtmlToText fallback, or apply stripHtml for plain cells). Keep the /[<>&]/ gate so non-HTML values render byte-identical to before. Do NOT touch HtmlRichText's parser logic.
+
+Report the full scan results, then every file + line changed in B and C, with diffs. Do NOT commit — leave staged for my review.

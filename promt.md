@@ -1,10 +1,13 @@
-Bug 213 — Maintenance > Policy Exceptions library sorts by Category then Code, but should sort by Code alone. READ-ONLY, no edits. One pass, answer, STOP.
+Bug 213 fix — Policy Exceptions library should sort by Code ALONE (currently sorts Category → Level → Code). SINGLE FILE, frontend. Show diff before applying.
 
-Screen: Maintenance > Policy Exceptions library (the maintenance/library list of policy exceptions).
+FILE: frontend/src/app/maintenance/policy-exceptions/page.tsx
 
-Find where this list is sorted:
-1. Frontend Policy Exceptions maintenance/library page — how does it load and order its rows? Is there a client-side sort? What keys does it sort by (Category then Code)? Paste that code + file/line.
-2. Backend — find the endpoint/query that returns the Policy Exceptions library list. Paste the exact ORDER BY. Is it ordering by Category then Code (e.g. ORDER BY Category, Code), or something else?
-3. Identify the SINGLE place where the sort order is decided (frontend sort OR backend ORDER BY) that needs to change to sort by Code ALONE.
+1. The sort comparator (lines ~180-184) currently sorts by category, then level, then code. Change it to sort by CODE ALONE:
+   .sort((a, b) => (a.code ?? "").localeCompare(b.code ?? "", undefined, { numeric: true }))
+   Use { numeric: true } so alphanumeric codes sort naturally (e.g. E2 before E10, not E10 before E2). Remove the category and level comparisons.
 
-Report file paths + line numbers + the current sort logic. Do NOT fix yet.
+2. After a successful create (lines ~471-473), the new row is appended to the end without re-sorting, so it appears out of order until reload. Re-sort the rows array by code (same comparator as above) after inserting the new row, so a newly added code lands in its correct sorted position.
+
+Do NOT change filtering, paging, the category filter, or the backend. Optionally the backend ORDER BY could be aligned to Exception_code for consistency, but it's not required since the frontend re-sorts — leave backend unchanged unless trivial.
+
+List every line changed. Commit: "Fix Bug 213: Policy Exceptions library sorts by Code alone (numeric-aware), including after create".

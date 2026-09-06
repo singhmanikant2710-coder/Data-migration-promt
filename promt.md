@@ -1,18 +1,12 @@
-Bug 202 fix — Option A, minimal & safe. Make all three screens (Review Queue, Review History, Review Progress) open the CAS Linesheet PDF with the SAME icon and the SAME tooltip "Open CAS Linesheet PDF". Only touch what's actually inconsistent. Show all diffs before applying.
+Bug 204 — Review Progress screen: in the "Unopened/Cancelled" bucket, a column shows header "Completed" but should show "Cancelled" with the Cancelled date from CORE Reviews. Other buckets already have bucket-specific column logic. READ-ONLY, no edits. One pass, answer, STOP.
 
-Review Queue and Review History ALREADY open the PDF correctly with the shared file-text SVG — do NOT change their PDF-open behavior, modal, data, or download logic. Only update their tooltip strings.
+Screen: Review Progress (/review-status).
 
-Changes:
+Investigate:
+1. Find the Review Progress grid and the column that renders "Completed" (the one Geoff wants to become "Cancelled" for the Unopened/Cancelled bucket). What drives its header text and its cell value? File + line.
+2. How is the current "bucket" (Unopened/Cancelled, In Progress, Draft Completed, Approved, Distributed, Finalized) determined in the component? Where is the selected bucket state?
+3. Do OTHER buckets already switch this column's header/value based on the bucket (the "similar logic is in place for the other filtered views" Geoff mentions)? If yes, paste that existing bucket→column mapping (header label + which date field it shows per bucket). This is the pattern to extend.
+4. Is the "Cancelled date" (Cancelled_date from 02_CORE_02_Reviews) available in the data returned for these rows? Check the backend query/DTO for the Review Progress grid — does it include Cancelled_date, or does it need to be added? File + line.
+5. Identify exactly: (a) where the header label is set per bucket, (b) where the cell value/date field is chosen per bucket, and (c) whether Cancelled_date is already in the row data. So we can make the Unopened/Cancelled bucket show header "Cancelled" + Cancelled_date.
 
-1. Review Queue (app/review-queue/page.tsx, ~lines 441-442): change title and aria-label from "Open Review Summary PDF" → "Open CAS Linesheet PDF". Nothing else.
-
-2. Review History (app/review-history/page.tsx, ~lines 150-151): same — title/aria-label → "Open CAS Linesheet PDF". Nothing else.
-
-3. Review Progress (app/review-status/page.tsx) — this is the real change. Currently its DocIcon (~lines 21-28) is a <Link> that navigates to Review Info and does NOT open a PDF. Change it to open the CAS Linesheet PDF exactly like Review Queue does:
-   a. Replace the DocIcon glyph with the SAME 5-sub-path 16x16 file-text inline SVG used by Review Queue (~lines 444-450) / Review History (~lines 153-159), so all three icons match.
-   b. Add the PDF-open behavior by mirroring Review Queue's exact pattern: import ReviewPDFModal, add the pdfRow state, turn the icon into a <button> (size xs, ghost) with onClick that sets pdfRow for that row, and render <ReviewPDFModal> the same way Queue does (~lines 931-936), passing the same borrower/review data shape Queue passes. Do NOT invent a new data flow — copy Queue's wiring.
-   c. Tooltip: title/aria-label = "Open CAS Linesheet PDF".
-   d. IMPORTANT: the row's OTHER links that legitimately navigate to Review Info (the Review Id link ~line 621 and borrower name link ~line 642, tooltip "Open Review Info") must STAY as navigation — do NOT change those. Only the document/PDF icon changes.
-
-Do NOT refactor Queue/History to a shared component. Keep changes minimal. Do NOT change ReviewPDFModal, download filenames, or backend.
-List every file + line changed. Commit: "Fix Bug 202: all three review screens open CAS Linesheet PDF with consistent icon and 'Open CAS Linesheet PDF' tooltip".
+Report file paths + line numbers + the existing bucket→column logic + whether Cancelled_date is in the data. Do NOT fix yet.

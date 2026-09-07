@@ -1,5 +1,9 @@
-The API response for non-compliant-covenants still returns the OLD shape { items: [{ client, covenants: [] }] } instead of the NEW shape { details, totalBorrowers, totalExposure, monitoringTotals, performanceTotals, reportingCaption }. Confirm:
-1. Is the backend running the NEW binary? (I restarted; if response still has `items`, the new code isn't running OR the service isn't populating the new fields.)
-2. In SqlNonCompliantCovenantsReportRepository + NonCompliantCovenantsReportService: does the service actually POPULATE the new response fields (details, totalBorrowers, monitoringTotals, etc.), or does it still only fill the old `items[]`? Paste where the response object is built and returned.
-3. The covenants[] arrays are all empty — are covenants being loaded at all for these reviews? Is the predicate matching? Run the actual repo covenant query for review 21761 (COTTI FOODS) and show what statuses its covenants have.
-Report whether it's a stale binary, an unpopulated new DTO, or a still-empty covenant query.
+SELECT c.[Review_id],
+       c.[Covenant_type],
+       c.[Covenant_category],
+       '[' + ISNULL(c.[Covenant_last_eval_status], '<NULL>') + ']' AS RawStatus,
+       '[' + ISNULL(c.[Covenant_financial_result], '<NULL>') + ']' AS RawResult,
+       REPLACE(REPLACE(UPPER(LTRIM(RTRIM(ISNULL(c.[Covenant_last_eval_status], '')))), '-', ''), ' ', '') AS NormStatus,
+       REPLACE(REPLACE(UPPER(LTRIM(RTRIM(ISNULL(c.[Covenant_financial_result], '')))), '-', ''), ' ', '') AS NormResult
+FROM dbo.[02_CORE_05_Covenants] c WITH (NOLOCK)
+WHERE c.[Review_id] IN (21760, 21761, 21762);

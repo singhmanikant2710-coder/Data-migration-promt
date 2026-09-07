@@ -1,8 +1,7 @@
-SELECT r.[Sample_id], c.[Review_id], r.[Customer_name], r.[Completed_date], r.[Cancelled],
-       c.[Covenant_type], c.[Covenant_category],
-       '[' + ISNULL(c.[Covenant_last_eval_status],'<NULL>') + ']' AS Status,
-       '[' + ISNULL(c.[Covenant_financial_result],'<NULL>') + ']' AS Result
-FROM dbo.[02_CORE_05_Covenants] c WITH (NOLOCK)
-INNER JOIN dbo.[02_CORE_02_Reviews] r WITH (NOLOCK) ON r.[Review_id] = c.[Review_id]
-WHERE r.[Sample_id] = 357
-ORDER BY c.[Review_id];
+Bug 220 — fix category bucketing. DB has 6 covenant categories (confirmed via SQL): Financial Performance, Monitoring, Financial Statement Requirements, Financial Indicators, Default Covenants, No Covenants. IsPerformanceCategory currently only matches "Financial Performance", so Financial Indicators + Default Covenants wrongly go to Monitoring.
+
+Mirror the mapping from frontend useCovenants.ts:
+- PERFORMANCE: "Financial Performance", "Financial Indicators", "Default Covenants"
+- MONITORING: "Monitoring", "Financial Statement Requirements"
+
+FILE: backend/src/Casrr.Infrastructure/SqlServer/SqlNonCompliantCovenantsReportRepository.cs, IsPerformanceCategory (~line 215): return true (case-insensitive, trimmed) for "Financial Performance", "Financial Indicators", "Default Covenants". Show diff. Rebuild. Do NOT commit.

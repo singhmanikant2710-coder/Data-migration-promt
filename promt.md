@@ -1,10 +1,12 @@
-Before I accept, show me the EXACT diff of ExportsController.cs — every changed line with - (removed) and + (added) prefixes. Specifically I need to see:
+Your analysis is likely correct — the slowness is probably the ORDER BY [Review_id] I added, not StripHtml. Investigate and fix the REAL cause. READ-ONLY first, then fix.
 
-1. The full StripHtml method as it is NOW (after your change) — paste it completely.
-2. Does StripHtml have a fast-path guard at the very top that returns the string unchanged when it contains no '<' and no '&'? i.e. is this line present:
-   if (s.IndexOf('<') < 0 && s.IndexOf('&') < 0) return s;
-   If NOT present, that is the main performance fix and it must be added.
-3. Where exactly is StripHtml called in the row loop — paste those lines. Confirm it's applied only to string cells.
-4. List every other line changed in this diff (the BOM change, the NOLOCK removal, the ORDER BY, and anything else), each with - / + prefix.
+READ-ONLY:
+1. Is Review_id the clustered index / primary key of 02_CORE_02_Reviews? Check. If it IS the clustered key, ORDER BY Review_id is nearly free (data already in that order) — then ORDER BY isn't the cause. If it's NOT clustered, sorting 150k rows that include nvarchar(max) rich-text columns (base64 images) forces a massive sort spilling to tempdb — that's the 283s.
+2. Confirm with the actual query cost: was the export fast on local BEFORE the ORDER BY was added? The original was SELECT * WITH (NOLOCK) with NO order by — that's what deployed still runs (fast). We added ORDER BY.
 
-Just show me the diff and the current StripHtml body. Do NOT make new changes yet — I want to review what's already there first.
+FIX:
+- The original had WITH (NOLOCK) and no ORDER BY. Geoff's bug #222 was about (a) HTML jargon and (b) encoding — NOT about row order. Row order was my over-engineering.
+- Option 1 (simplest, safest): REMOVE the ORDER BY entirely. Keep the original ordering behavior (no explicit order). This eliminates the sort cost. Also decide on NOLOCK: the original had it; removing NOLOCK was also my addition. If NOLOCK removal isn't required for the bug, restore the original (SELECT * FROM ... WITH (NOLOCK)) with NO order by — matching the fast deployed version — and keep ONLY the StripHtml + BOM changes which are the actual bug fix.
+- So the SQL should go back to the original fast form; only StripHtml (HTML strip) + BOM (encoding) are the real #222 fixes.
+
+Confirm: is Review_id clustered? And show the SQL reverted to no-ORDER-BY (original fast form) while keeping StripHtml + BOM. Do NOT commit.

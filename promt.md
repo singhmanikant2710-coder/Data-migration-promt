@@ -1,13 +1,15 @@
-Bug 222 fix — CORE Export (02_CORE_02_Reviews CSV): strip raw HTML from rich-text columns, add UTF-8 BOM, remove NOLOCK + add ORDER BY. Cancelled reviews MUST stay included (Geoff confirmed). SINGLE FILE. No new packages — use built-in Regex + System.Net.WebUtility only. Show diff before applying.
+Bug 222 — the CORE Reviews export now works and produces clean output, but it's VERY slow (StripHtml regex over ~150k rows × 11 rich-text columns, with large base64 <img> data URIs). Optimize StripHtml for linear performance WITHOUT changing its output. Show diff, do NOT commit.
 
-FILE: backend/src/Casrr.Api/Controllers/ExportsController.cs
+FILE: ExportsController.cs — StripHtml only.
 
-1. HTML strip: columns Borrower_information, Transaction_information, Covenant_information, Policy_exception_information, Regulatory_flag_information, Collateral_information, PSOR_information, SSOR_information, Key_risks, Scorecard_information, Risk_rating_justification contain raw HTML (RichTextEditor innerHTML) incl. base64 <img> data URIs. Add a private StripHtml(string) helper that: removes <img ...> tags first (replace with empty), removes all remaining tags via Regex (<[^>]+>), decodes entities via System.Net.WebUtility.HtmlDecode, collapses whitespace/newlines into a single space, trims. Apply StripHtml to every string cell value before EscapeCsv. Do NOT apply to non-string types.
+1. Paste the current StripHtml. Identify the slow part — likely a greedy/backtracking regex (e.g. <img.*> or repeated Regex.Replace passes) that goes pathological on long base64 strings.
+2. Rewrite for linear time:
+   - Use static compiled regexes (Regex with RegexOptions.Compiled, declared once as static readonly fields — NOT recompiled per cell/row).
+   - img removal: use <img\b[^>]*> (linear — base64 data URIs contain no '>' so [^>]* won't backtrack). NOT <img.*>.
+   - tag removal: single pass <[^>]+> (linear).
+   - Add a fast pre-check: if a cell has no '<' and no '&', return it unchanged immediately (skip all regex) — most cells aren't HTML, so this alone cuts most of the cost.
+   - Do entity decode (WebUtility.HtmlDecode) and whitespace-collapse only when needed.
+   - Ensure a bounded number of passes (no nested/loop replaces).
+3. Keep the exact same cleaned output (img removed, tags removed, entities decoded, whitespace collapsed, trimmed).
 
-2. Add UTF-8 BOM: change writer encoding to new UTF8Encoding(encoderShouldEmitUTF8Identifier: true) so Excel reads UTF-8 correctly (fixes â€" smart quotes/dashes).
-
-3. Remove WITH (NOLOCK) from the SELECT and add ORDER BY Review_id for deterministic order (eliminates dirty-read duplicate/skip artifacts). Keep SELECT *.
-
-4. Do NOT add any Cancelled filter — cancelled reviews must remain in the export (Geoff confirmed). Do NOT change the route, auth, or download flow. No new package.
-
-List every line changed. Commit: "Fix Bug 222: strip HTML from rich-text columns, add UTF-8 BOM, remove NOLOCK + ORDER BY in CORE Reviews export (cancelled reviews retained)".
+Show current vs optimized StripHtml. I'll rebuild and re-test timing + output.

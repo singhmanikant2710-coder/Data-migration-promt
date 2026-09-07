@@ -1,14 +1,12 @@
-Index check done. Now apply the fix: the ORDER BY I added is the cause of the 283s slowdown (deployed has no ORDER BY and is fast). 
+Bug 222 — export still ~281s even with the NEW binary (restarted multiple times, ORDER BY already removed). So ORDER BY was NOT the cause. Isolate the real bottleneck now.
 
-FILE: ExportsController.cs, ExportReviews SQL:
-Revert to the original fast query — remove ORDER BY, keep WITH (NOLOCK) as it originally was:
-   const string sql = "SELECT * FROM dbo.[02_CORE_02_Reviews] WITH (NOLOCK);";
+1. Temporarily change ExportReviews to pass stripHtml: false. Rebuild, restart the API, and time one download.
+   - If FAST (seconds) → StripHtml is the bottleneck. The fast-path isn't helping, likely because the large rich-text cells DO contain '<' (base64 <img>), forcing the full regex + HtmlDecode path on huge strings. We'll then optimize (e.g. cap/skip cells over a size threshold, or strip images by index-scan not regex).
+   - If STILL ~281s → StripHtml is NOT the cause. Move to step 2.
 
-KEEP the real Bug 222 fixes only:
-- StripHtml on string cells (with its fast-path + whitespace normalization) — strips HTML and collapses embedded newlines (this is what fixes CSV row-splitting; ORDER BY was never needed for that).
-- The UTF-8 BOM.
-- stripHtml: true from ExportReviews.
+2. If not StripHtml, check these (report findings, don't fix yet):
+   a. Is the local backend connecting to a REMOTE database? Print the Server/Data Source from the connection (redact credentials). Pulling ~150k rows with nvarchar(max) base64 columns over a network is a prime suspect for slow-local / fast-deployed.
+   b. ms.ToArray() — is the whole CSV buffered into a MemoryStream then .ToArray()'d (duplicating hundreds of MB on the LOH) before sending? 
+   c. ~18M await writer.WriteAsync calls (150k rows × ~120 cols × 2) — each an async state machine.
 
-Also DELETE the temp file c:/Users/CC438/AppData/Local/Temp/strip222/equiv.ps1 — it must NOT be part of the changes/commit. Only ExportsController.cs should change.
-
-Rebuild (dotnet build). Do NOT commit. I'll time the download — it should be fast again like deployed.
+Report: (1) timing with stripHtml:false, (2) if still slow, the DB server location + whether ms.ToArray buffers everything. This will pinpoint the real cause. Do NOT commit.

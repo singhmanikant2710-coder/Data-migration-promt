@@ -1,11 +1,11 @@
-Hi Geoff,
-Thanks for the confirmations earlier — I've rebuilt the Non-Compliant Covenants report to match. A few things to flag and one quick question before I finalize:
-1. Excel export — do you need it too?
-Your ticket was about the report (PDF), which I've rebuilt. There's also an "Export to Excel" option on the Reports screen. Right now, exporting Non-Compliant Covenants to Excel produces the wrong workbook (it falls back to the Covenants Summary export — a pre-existing issue, not something my changes caused).
-Do you need the Excel export for Non-Compliant Covenants as well? If so, should it contain the same data as the new PDF (totals + monitoring/performance breakdown + details), or just the detail rows? If Excel isn't needed for this report, I'll leave it as-is.
-2. Confirming the COUNT column meaning
-In the "Monitoring Covenant Violation Totals" and "Performance Covenant Violation Totals" tables, the COUNT column represents distinct borrowers, not the number of covenant rows. So if one borrower has two covenant types, they're counted once per type in their respective rows, but the "Totals (N borrowers)" line counts them as one borrower. This matches your prototype (e.g. Budget $9.7M + AP Aging $23.4M = $33.1M total across 2 borrowers). Just confirming this is the intended behavior.
-3. Statuses included
-Per your note, the report now includes 'Not Compliant' and 'Past Due' in both the summary totals and the details table. I did not include 'Waived' — please confirm that's correct (you mentioned Not Compliant and Past Due, but not Waived).
-Everything else is done — the routing bug is fixed, the header/footer follow the house standard (report name + page number, no logo), the 8 detail columns are in the order you specified, THRESHOLD/RESULT are blank for Monitoring covenants, and exposure is based on Commitment. I'll do a final test against a real sample once you confirm the above.
-Thanks!
+Non-Compliant Covenants report shows NO data after rebuild. Diagnose where data is lost. READ-ONLY, no edits. Answer, STOP.
+
+1. Frontend routing: when "Non-Compliant Covenants" is selected, confirm it now hits the non-compliant-covenants handler (not covenants-summary). Add a quick check of what id it resolves to.
+
+2. Caller shape mismatch (most likely cause): the PDF was changed to read a new DTO shape (data.details, data.monitoringTotals, data.totalBorrowers, etc.), but does the caller in reports/page.tsx actually pass that shape? Paste the caller (~L969-999) and confirm it passes `data` = the full typed response, NOT the old `items` unwrap. If the PDF expects data.details but receives {items: [...]}, everything renders blank.
+
+3. PDF field names: confirm the PDF component reads the EXACT field names the DTO/response provides (e.g. does the response use `details` or `Details`? camelCase vs PascalCase — JSON serialization casing mismatch is a common blank-data cause). Paste the response JSON field casing vs what the PDF reads.
+
+4. Backend: for a sample with known non-compliant covenants, does the repository actually return rows? Or is TotalBorrowers=0 / Details empty because the sample has no matching covenants?
+
+Report exactly where data is lost: routing, caller shape, JSON casing mismatch, or genuinely-empty backend result. Do NOT fix yet.

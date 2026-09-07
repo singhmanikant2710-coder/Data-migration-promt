@@ -1,12 +1,14 @@
-Your analysis is likely correct — the slowness is probably the ORDER BY [Review_id] I added, not StripHtml. Investigate and fix the REAL cause. READ-ONLY first, then fix.
+Index check done. Now apply the fix: the ORDER BY I added is the cause of the 283s slowdown (deployed has no ORDER BY and is fast). 
 
-READ-ONLY:
-1. Is Review_id the clustered index / primary key of 02_CORE_02_Reviews? Check. If it IS the clustered key, ORDER BY Review_id is nearly free (data already in that order) — then ORDER BY isn't the cause. If it's NOT clustered, sorting 150k rows that include nvarchar(max) rich-text columns (base64 images) forces a massive sort spilling to tempdb — that's the 283s.
-2. Confirm with the actual query cost: was the export fast on local BEFORE the ORDER BY was added? The original was SELECT * WITH (NOLOCK) with NO order by — that's what deployed still runs (fast). We added ORDER BY.
+FILE: ExportsController.cs, ExportReviews SQL:
+Revert to the original fast query — remove ORDER BY, keep WITH (NOLOCK) as it originally was:
+   const string sql = "SELECT * FROM dbo.[02_CORE_02_Reviews] WITH (NOLOCK);";
 
-FIX:
-- The original had WITH (NOLOCK) and no ORDER BY. Geoff's bug #222 was about (a) HTML jargon and (b) encoding — NOT about row order. Row order was my over-engineering.
-- Option 1 (simplest, safest): REMOVE the ORDER BY entirely. Keep the original ordering behavior (no explicit order). This eliminates the sort cost. Also decide on NOLOCK: the original had it; removing NOLOCK was also my addition. If NOLOCK removal isn't required for the bug, restore the original (SELECT * FROM ... WITH (NOLOCK)) with NO order by — matching the fast deployed version — and keep ONLY the StripHtml + BOM changes which are the actual bug fix.
-- So the SQL should go back to the original fast form; only StripHtml (HTML strip) + BOM (encoding) are the real #222 fixes.
+KEEP the real Bug 222 fixes only:
+- StripHtml on string cells (with its fast-path + whitespace normalization) — strips HTML and collapses embedded newlines (this is what fixes CSV row-splitting; ORDER BY was never needed for that).
+- The UTF-8 BOM.
+- stripHtml: true from ExportReviews.
 
-Confirm: is Review_id clustered? And show the SQL reverted to no-ORDER-BY (original fast form) while keeping StripHtml + BOM. Do NOT commit.
+Also DELETE the temp file c:/Users/CC438/AppData/Local/Temp/strip222/equiv.ps1 — it must NOT be part of the changes/commit. Only ExportsController.cs should change.
+
+Rebuild (dotnet build). Do NOT commit. I'll time the download — it should be fast again like deployed.

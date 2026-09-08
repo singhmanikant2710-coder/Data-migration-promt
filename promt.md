@@ -1,12 +1,12 @@
-Bug 216 — CRM Scorecard Results PDF: at a page break (top of page 2), one record's Customer Name cell is blank/missing and the subsequent columns shift left by one position. READ-ONLY, no edits. One pass, answer, STOP.
+Bug 216 fix — CRM Scorecard Results details rows split across page boundaries, causing the top record on page 2 to lose its Customer Name cell and shift all columns left. Fix by preventing row splitting. SINGLE FILE. Show diff, do NOT commit.
 
-The report is a table (Customer Name (Review ID) | Scorecard ID | Eval Date | Status | 4 numeric columns). At the top of page 2, the first record shows an empty Customer Name column, and all following columns are shifted one cell to the left. Normal rows render fine.
+FILE: frontend/src/components/pdf/ScorecardResultsPDF.tsx
 
-Investigate:
-1. Find the CRM Scorecard Results PDF component (ScorecardResultsPDF.tsx). How is the table/rows rendered? Are rows allowed to split across page boundaries? File + line.
-2. This is a classic @react-pdf page-break row-splitting issue. Check: is there a `wrap={false}` on each data row `<View>` to keep it intact across pages? If rows can split, a row landing exactly on the page boundary can render partially (e.g. the Customer Name cell splits/disappears), causing the shift.
-3. Look at how the Customer Name cell specifically renders — is it multi-line (customer name + review id on separate lines)? A multi-line first cell splitting across a page boundary is the likely cause of the "blank name + shifted columns" symptom.
-4. Check the header row and column width definitions — are columns fixed-width? If fixed, a missing first-cell VALUE (but present cell) would shift text visually. Or is the row a flex layout where a missing cell collapses and shifts the rest?
-5. Identify the exact cause: (a) rows split across pages (need wrap={false}), (b) the multi-line Customer Name cell breaks at the page boundary, or (c) something else. And identify the fix location.
+1. Line ~414 (details data-row <View> in the .map over g.rows): add wrap={false} so each data row stays intact and moves whole to the next page instead of splitting. Match the existing pattern already used on the totals rows (lines 379/385) in this same file.
 
-Report file paths + line numbers + whether rows have wrap={false} + the root cause. Do NOT fix yet.
+2. Line ~401 (details header row <View>): add wrap={false} too, so the header row can't split either.
+
+3. Optionally (recommended, matches other CRM reports that span pages): add `fixed` to the details header row so it repeats at the top of each page. This is a UX improvement since the table now spans multiple pages — but if you want to keep the change minimal, do only steps 1-2 and skip this. Include it as a separate clearly-marked line so I can decide.
+
+Do NOT change column widths, the overflow:hidden on styles.table, the data, or anything else. Only wrap={false} on the two rows (+ optional fixed header). 
+Show diff. Rebuild. Do NOT commit.

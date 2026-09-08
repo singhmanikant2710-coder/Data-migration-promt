@@ -1,31 +1,37 @@
-The latest screenshot shows that the Policy Exception Details and Exception Description data are now correct.
+Please compare the attached CURRENT report screenshot with the attached PROTOTYPE screenshot.
 
-However, there is still an aggregation issue in the POLICY EXCEPTION TOTALS table.
+The COUNT aggregation is now correct, but the TOTAL EXPOSURE aggregation is still incorrect.
 
-Current result:
-- E08 - Speculative Land Loan → COUNT = 1
-- E17 - Real Estate - Minimum Equity → COUNT = 1
-- Totals → COUNT = 1 ❌
+CURRENT REPORT:
+- E08 - Speculative Land Loan → COUNT 1 → EXPOSURE $34,194,930
+- E17 - Real Estate - Minimum Equity → COUNT 1 → EXPOSURE $34,194,930
+- TOTAL → COUNT 2 → EXPOSURE $34,194,930 ❌
 
-The total COUNT should be 2 because:
-1 + 1 = 2.
+PROTOTYPE:
+- E44 - Minimum Post-Owner's Fixed Charge Coverage → COUNT 1 → EXPOSURE $23,395,641
+- E43 - Minimum Pre-Owner's Fixed Charge Coverage → COUNT 2 → EXPOSURE $66,736,200
+- TOTAL → COUNT 3 → EXPOSURE $90,131,841
 
-Please compare this with the attached prototype screenshot and inspect the backend aggregation logic that builds the Policy Exception Totals table.
+The prototype makes the aggregation rule clear:
+- Each exception description's EXPOSURE is the sum of the applicable detail-row borrower commitments.
+- The grand TOTAL EXPOSURE is the sum of the exception-description exposure totals.
+- It is NOT simply taking one review/borrower's exposure for the grand total.
 
-Important:
-- The two exception rows belong to the same Review ID (21748), so do not blindly change unique-borrower logic.
-- The COUNT column in the totals table should be the sum of the exception counts by exception description/type.
-- Therefore, for this data, the totals-table COUNT must be 2.
-- If the report separately displays a "Total Borrowers" value, that should continue to follow the prototype's unique-borrower definition. Do not mix unique borrower count with total exception count.
+For the CURRENT dataset:
+$34,194,930 + $34,194,930 = $68,389,860
 
-Please identify exactly why the totals row is currently returning COUNT = 1 instead of 2, fix only the aggregation logic required for this issue, and ensure the exposure total remains correct.
+Therefore the expected current totals are:
 
-Expected result for the attached screenshot:
+COUNT = 2
+EXPOSURE = $68,389,860
 
-EXCEPTION DESCRIPTION                         COUNT
-E08 - Speculative Land Loan                     1
-E17 - Real Estate - Minimum Equity              1
----------------------------------------------------
-Totals                                           2
+Please inspect the backend aggregation logic and fix the TOTAL EXPOSURE calculation so it sums the exposure values represented by the exception rows/categories, consistent with the prototype.
 
-Please do not change the already-correct Exception Description or Policy Exception Details rendering.
+IMPORTANT:
+- Do NOT change the already-correct exception descriptions.
+- Do NOT change the already-correct COUNT = 2.
+- Do NOT change the Policy Exception Details table.
+- Do NOT change the commitment values in the details.
+- Only fix the exposure aggregation so the totals table follows the prototype's calculation.
+
+Also verify that the fix works generally, not only for this specific data.

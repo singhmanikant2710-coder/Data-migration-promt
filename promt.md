@@ -1,13 +1,15 @@
-Two false-positive popups appear even when the user made NO edits (clean Review Form):
-1. The app's styled "Unsaved changes" modal (nav guard) — fires on Home/Review Queue click with no edits.
-2. The browser native "Leave site? Changes you made may not be saved" (beforeunload) — fires on tab/browser close with no edits.
-Both are driven by isDirty being TRUE on a clean, freshly-loaded form. Diagnose the false-dirty. READ-ONLY, no edits. Answer, STOP.
+Fix the false-dirty root cause in CustomerInfoSection.tsx. The segment→unit/market cascade effect (lines ~235-247 and ~264-273) fires on data load, not just user edits, because the "skip initial" guard (prevSegmentRef) records "" during the pre-load pass instead of staying null — so when the payload resolves and segment flips "" → real value, the cascade wrongly stages unit:"" and market:"".
 
-1. When the Review Form loads with NO user input, what gets staged into the changes context so hasDraftableChanges(changes) returns true? Trace exactly which staged key(s) appear on a clean open.
-2. Check EVERY section's mount/init effect, the Edit toggle, and any field that self-initializes (dropdown defaults, dates, IDs, tab state, "Select..." placeholders becoming values). List every place that stages a value WITHOUT a real user edit.
-3. Known traps already handled: transactions empty-bucket, repayment.analysis.activeDiscussionTab. Find any OTHERS not in REVIEW_DRAFT_IGNORED_PATHS / sanitizeDraftChanges.
-4. Specifically the Review Info / Customer Info sections (where it happened): does anything stage on load or on Edit click there?
-5. Also: the beforeunload guard in useUnsavedChangesGuard.ts — does it register beforeunload unconditionally, or only when dirty? Confirm it should register ONLY when isDirtyNow() is true, and unregister when clean. If it's always registered, that itself causes the native popup even when clean.
-6. Report the exact staged key(s) making it falsely dirty, AND confirm whether the beforeunload handler is gated on dirty state.
+FIX (root cause, minimal): Make the cascade fire ONLY on a genuine USER-initiated segment change, not on the initial data-load flip. Options:
+- Initialize prevSegmentRef to the resolved segment value once the review payload has loaded (not to the pre-load ""), OR
+- Guard the cascade so it does not run until the review data has resolved (e.g. skip while the payload/segment is still in its initial/loading state), OR
+- Only run the clear when the segment change originates from the user's onChange handler, not from the effect reacting to a data-load-driven value change.
 
-Report the false-dirty keys + whether beforeunload is dirty-gated. Do NOT fix yet.
+Pick the cleanest option that:
+1. Keeps the genuine cascade behavior (when a user actually changes Segment in Edit mode, Unit/Market DO clear).
+2. Does NOT stage unit:""/market:"" on load or on Edit-click without a real segment change.
+3. Does not touch the 84 other staging sites or the draft layer.
+
+After the fix: on a clean open (even with Edit clicked), no customerInfo.unit/market should be staged, isDirty stays false, and neither popup appears. When the user actually changes Segment, the cascade still clears Unit/Market and the form correctly becomes dirty.
+
+Show the diff. Do NOT commit. I'll re-test TEST 3 and TEST 5.

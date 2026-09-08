@@ -1,35 +1,31 @@
-I’m providing both screenshots: the current generated CRM Policy Exceptions report and the original prototype.
+The latest screenshot shows that the Policy Exception Details and Exception Description data are now correct.
 
-Please compare the implementation against the prototype carefully.
+However, there is still an aggregation issue in the POLICY EXCEPTION TOTALS table.
 
-There are two important mismatches:
+Current result:
+- E08 - Speculative Land Loan → COUNT = 1
+- E17 - Real Estate - Minimum Equity → COUNT = 1
+- Totals → COUNT = 1 ❌
 
-1. Exception Description:
-   Prototype shows actual policy exception descriptions such as:
-   - E44 - Minimum Post-Owner's Fixed Charge Coverage
-   - E43 - Minimum Pre-Owner's Fixed Charge Coverage
+The total COUNT should be 2 because:
+1 + 1 = 2.
 
-   The current report is showing:
-   - Real Estate - Minimum Equity
-   - Speculative Land Loan
+Please compare this with the attached prototype screenshot and inspect the backend aggregation logic that builds the Policy Exception Totals table.
 
-   Please verify whether the backend/data mapping/filtering is returning the correct policy exception description expected by the report.
+Important:
+- The two exception rows belong to the same Review ID (21748), so do not blindly change unique-borrower logic.
+- The COUNT column in the totals table should be the sum of the exception counts by exception description/type.
+- Therefore, for this data, the totals-table COUNT must be 2.
+- If the report separately displays a "Total Borrowers" value, that should continue to follow the prototype's unique-borrower definition. Do not mix unique borrower count with total exception count.
 
-2. Total Borrowers / Totals:
-   Prototype has:
-   - E44 COUNT = 1
-   - E43 COUNT = 2
-   - Total = 3 borrowers
-   - Total exposure = $90,131,841
+Please identify exactly why the totals row is currently returning COUNT = 1 instead of 2, fix only the aggregation logic required for this issue, and ensure the exposure total remains correct.
 
-   The current report has:
-   - No Policy Exceptions = 36
-   - Real Estate - Minimum Equity = 1
-   - Speculative Land Loan = 1
-   - Totals = 36 borrowers
+Expected result for the attached screenshot:
 
-   The current implementation is incorrectly including "No Policy Exceptions" borrowers in the Policy Exception Totals and Details.
+EXCEPTION DESCRIPTION                         COUNT
+E08 - Speculative Land Loan                     1
+E17 - Real Estate - Minimum Equity              1
+---------------------------------------------------
+Totals                                           2
 
-   Per the prototype/UAT requirement, Policy Exception Details should ONLY include borrowers with one or more actual policy exceptions. "No Policy Exceptions" should not contribute to the exception totals or details.
-
-Please identify the exact backend/query/aggregation logic causing these differences before making any changes. Do not assume the current report output is the expected behavior just because the report renders successfully.
+Please do not change the already-correct Exception Description or Policy Exception Details rendering.

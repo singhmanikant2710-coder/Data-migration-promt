@@ -1,11 +1,9 @@
-The plan looks good — additive, handleSave untouched, sections untouched. Confirm before applying:
+TEST 3 FAILED — the "Unsaved changes" popup appears even when the user made NO edits (clean state). This is a false-positive dirty detection. Diagnose which staged change is being added without a real user edit. READ-ONLY, no edits. Answer, STOP.
 
-1. The clear() change in 3.4 — confirm it's ONLY in FormChangesContext (the draft layer), and does NOT modify handleSave or change when/how the existing save clears staged changes on success. The existing dirty-clear-on-successful-save behavior must be byte-identical.
+1. The dirty check uses hasDraftableChanges(changes). When the Review Form loads (or when Edit is clicked) with NO user input, what gets staged into the changes context that makes it non-empty? 
+2. Check every section's mount/init effect and the Edit-mode toggle: does any section stage a value on mount, on Edit click, or on first render (e.g. initializing a field, a dropdown default, a date, a tab state)? List every place that calls the staging/setChanges without a real user interaction.
+3. The known false-dirty traps were: transactions empty-bucket after delete, and repayment.analysis.activeDiscussionTab. Are there OTHERS not covered by sanitizeDraftChanges / REVIEW_DRAFT_IGNORED_PATHS? 
+4. Specifically for the Customer Info section (where the popup appeared): does anything stage a change on load/edit there?
+5. Report exactly what staged key(s) make the form falsely dirty on a clean open, and whether the fix is (a) add those paths to REVIEW_DRAFT_IGNORED_PATHS / sanitize, or (b) prevent them from staging in the first place.
 
-2. Confirm the document-level capture guard does NOT interfere with: (a) the review's internal section tabs (buttons, not links), (b) any other screen's navigation, (c) the existing router.replace section navigation. It must only intercept Home / Review Queue / left-nav links WHEN dirty, and be a complete no-op when clean.
-
-3. Confirm TopChromeBar changes are only 2 OPTIONAL props + a status badge — existing TopChromeBar usage on other screens (if any) stays working with the props absent.
-
-4. Keep the 24h TTL (good balance for banking data on shared machines).
-
-If all confirmed, apply — but show me the final diffs grouped by file. Do NOT auto-approve; I'll review each file's diff before it's committed. Run npm run lint + npm run build (no test deps — use node --test for the logic module only).
+Report the exact staged keys causing false-dirty. Do NOT fix yet.

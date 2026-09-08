@@ -1,10 +1,17 @@
-Please show me the exact SQL query and database table/column currently being used to calculate Exposure for the CRM Findings Summary Table, specifically for BORROWER FINDING TOTALS.
+I have the original and post-fix SQL output now.
 
-I need:
-1. Table name
-2. Exposure column name
-3. JOIN condition to Review/Borrower
-4. Current aggregation (SUM/other)
-5. Exact code/file/line where it is calculated
+I can see that Exposure is calculated using:
 
-Do not change anything. Just identify and show the source of the Exposure value.
+SUM(COALESCE(acc.Review_commitment, 0)) AS Exp
+
+However, the screenshots only show how `acc` is JOINed, not where `acc` itself is defined.
+
+Please show me the complete SQL definition of `acc` (the CTE/subquery immediately before the borrower_exp CTE).
+
+I need the exact:
+- underlying database table name(s)
+- column used for Review_commitment
+- JOINs used to create `acc`
+- whether `acc` returns exactly one row per Review_id
+
+Do not modify any code. Just show the `acc` definition and explain exactly where `Review_commitment` comes from.

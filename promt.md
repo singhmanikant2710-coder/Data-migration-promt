@@ -1,9 +1,13 @@
-TEST 3 FAILED — the "Unsaved changes" popup appears even when the user made NO edits (clean state). This is a false-positive dirty detection. Diagnose which staged change is being added without a real user edit. READ-ONLY, no edits. Answer, STOP.
+Two false-positive popups appear even when the user made NO edits (clean Review Form):
+1. The app's styled "Unsaved changes" modal (nav guard) — fires on Home/Review Queue click with no edits.
+2. The browser native "Leave site? Changes you made may not be saved" (beforeunload) — fires on tab/browser close with no edits.
+Both are driven by isDirty being TRUE on a clean, freshly-loaded form. Diagnose the false-dirty. READ-ONLY, no edits. Answer, STOP.
 
-1. The dirty check uses hasDraftableChanges(changes). When the Review Form loads (or when Edit is clicked) with NO user input, what gets staged into the changes context that makes it non-empty? 
-2. Check every section's mount/init effect and the Edit-mode toggle: does any section stage a value on mount, on Edit click, or on first render (e.g. initializing a field, a dropdown default, a date, a tab state)? List every place that calls the staging/setChanges without a real user interaction.
-3. The known false-dirty traps were: transactions empty-bucket after delete, and repayment.analysis.activeDiscussionTab. Are there OTHERS not covered by sanitizeDraftChanges / REVIEW_DRAFT_IGNORED_PATHS? 
-4. Specifically for the Customer Info section (where the popup appeared): does anything stage a change on load/edit there?
-5. Report exactly what staged key(s) make the form falsely dirty on a clean open, and whether the fix is (a) add those paths to REVIEW_DRAFT_IGNORED_PATHS / sanitize, or (b) prevent them from staging in the first place.
+1. When the Review Form loads with NO user input, what gets staged into the changes context so hasDraftableChanges(changes) returns true? Trace exactly which staged key(s) appear on a clean open.
+2. Check EVERY section's mount/init effect, the Edit toggle, and any field that self-initializes (dropdown defaults, dates, IDs, tab state, "Select..." placeholders becoming values). List every place that stages a value WITHOUT a real user edit.
+3. Known traps already handled: transactions empty-bucket, repayment.analysis.activeDiscussionTab. Find any OTHERS not in REVIEW_DRAFT_IGNORED_PATHS / sanitizeDraftChanges.
+4. Specifically the Review Info / Customer Info sections (where it happened): does anything stage on load or on Edit click there?
+5. Also: the beforeunload guard in useUnsavedChangesGuard.ts — does it register beforeunload unconditionally, or only when dirty? Confirm it should register ONLY when isDirtyNow() is true, and unregister when clean. If it's always registered, that itself causes the native popup even when clean.
+6. Report the exact staged key(s) making it falsely dirty, AND confirm whether the beforeunload handler is gated on dirty state.
 
-Report the exact staged keys causing false-dirty. Do NOT fix yet.
+Report the false-dirty keys + whether beforeunload is dirty-gated. Do NOT fix yet.

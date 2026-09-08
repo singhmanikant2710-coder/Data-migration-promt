@@ -1,16 +1,9 @@
-The double-save reproduces on the deployed (Azure, slow) environment but not locally — this is a race condition: isSaving (useState) updates render-deferred, so on a slow network the window for a duplicated click/event is wider, letting two handleSave calls through before the button disables. Local's fast response hides it. This is a real production risk (duplicate POSTs → duplicate rows for Insert trackers).
+On QA (deployed, slow network) BOTH issues still reproduce: (1) false-dirty from transaction enrichment (console shows collateralDesc/businessTypeDesc/_update staged on load), and (2) double-save on "Save and leave" (two POSTs). Confirm whether these two fixes were actually applied, and if not, apply BOTH now. Also the temporary DIRTY-DEBUG logs are still present and got deployed — remove them.
 
-Apply the minimal re-entrancy guard (Hypothesis A fix). Do NOT modify handleSave. Show diff, do NOT commit.
+1. TRANSACTION ENRICHMENT (Option c — dirty/draft exclusion in reviewDraft.ts): confirm it's applied. The console still shows transactions.<acctId>.collateralDesc / businessTypeDesc / _update making isDirty=true on a clean load. If not applied, apply it: wildcard-ignore transactions.*.collateralDesc/.businessTypeDesc/.purposeDesc and _update in hasDraftableChanges/sanitizeDraftChanges, dropping a transaction bucket that contains ONLY these derived keys, keeping buckets that also have a genuine edit. reviewDraft.ts only. Save payload unchanged.
 
-FILE: page.tsx (ReviewInfoContent)
-1. Add a synchronous savingRef (useRef<boolean>): 
-   - At the very top of handleSaveAndLeave: if (savingRef.current) return; then savingRef.current = true;
-   - Also guard handleRestoreDraft the same way (it also calls the save path).
-   - Reset savingRef.current = false in a finally block after the await completes (success OR error), so a failed save can be retried.
-   A ref flips SYNCHRONOUSLY, so it blocks the same-batch/second click that the render-deferred disabled={isSaving} misses.
+2. DOUBLE-SAVE (savingRef latch): the "Save and leave" saves twice on QA (slow network widens the isSaving render-defer window). Add a synchronous savingRef (useRef) guard at the top of handleSaveAndLeave and handleRestoreDraft: if (savingRef.current) return; set true before await, reset false in finally. Do NOT modify handleSave. Optionally add && !isSaving to TopChromeBar saveEnabled.
 
-2. Optionally (pre-existing, separate): add `&& !isSaving` to the TopChromeBar saveEnabled expression so the toolbar Save can't be re-entered mid-save. One expression change, does not touch handleSave.
+3. REMOVE all TEMP DEBUG UAT#177 instrumentation (the console.trace / console.log / beforeunload+link-click logs in FormChangesContext.tsx and useUnsavedChangesGuard.ts). These must NOT ship.
 
-Do NOT change handleSave itself, the save payload, or any section. Only add the ref latch to the two handlers (+ optional toolbar guard).
-
-Show diff. Rebuild. Do NOT commit. I'll deploy/test to confirm the double-save is gone.
+Show all diffs grouped. Rebuild (npm run build + node --test). Do NOT commit. I'll deploy to QA and re-test both.

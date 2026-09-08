@@ -1,12 +1,16 @@
-NEW ISSUE (separate from the false-dirty, which is now fixed): clicking "Save and leave" saves the review TWICE — two "Review saved" success toasts appear for a single click. This is a duplicate-save, violating the "no duplicate records" acceptance criterion. READ-ONLY, no edits. Answer, STOP.
+The double-save reproduces on the deployed (Azure, slow) environment but not locally — this is a race condition: isSaving (useState) updates render-deferred, so on a slow network the window for a duplicated click/event is wider, letting two handleSave calls through before the button disables. Local's fast response hides it. This is a real production risk (duplicate POSTs → duplicate rows for Insert trackers).
 
-1. Trace the "Save and leave" button handler exactly. What does it call, in what order? (e.g. handleSave() then router.push()? Or something else?)
-2. Is handleSave being invoked more than once for a single "Save and leave" click? Check:
-   a. Does the button handler call handleSave directly AND something else (a flush, the guard, an unmount effect) also call handleSave / a save?
-   b. On navigation/unmount after Save-and-leave, does the FormChangesContext unmount-flush or the useUnsavedChangesGuard fire a second save?
-   c. Is there any beforeunload / pagehide handler that also triggers a save?
-3. Is the "Save and leave" button missing a double-invocation guard (e.g. isSaving check, or disabling during save), so a single logical action calls save twice?
-4. After the first save succeeds, does clear() run and isDirty become false BEFORE the second trigger — or does the second trigger fire on still-stale dirty state?
-5. Identify exactly where the second save originates and the minimal fix (e.g. Save-and-leave should call the existing save ONCE, wait for success, then navigate; and the guard/flush must NOT re-save when a save is already in progress or just completed).
+Apply the minimal re-entrancy guard (Hypothesis A fix). Do NOT modify handleSave. Show diff, do NOT commit.
 
-Report the two call sites that both trigger a save on one "Save and leave", and the minimal fix. Do NOT fix yet.
+FILE: page.tsx (ReviewInfoContent)
+1. Add a synchronous savingRef (useRef<boolean>): 
+   - At the very top of handleSaveAndLeave: if (savingRef.current) return; then savingRef.current = true;
+   - Also guard handleRestoreDraft the same way (it also calls the save path).
+   - Reset savingRef.current = false in a finally block after the await completes (success OR error), so a failed save can be retried.
+   A ref flips SYNCHRONOUSLY, so it blocks the same-batch/second click that the render-deferred disabled={isSaving} misses.
+
+2. Optionally (pre-existing, separate): add `&& !isSaving` to the TopChromeBar saveEnabled expression so the toolbar Save can't be re-entered mid-save. One expression change, does not touch handleSave.
+
+Do NOT change handleSave itself, the save payload, or any section. Only add the ref latch to the two handlers (+ optional toolbar guard).
+
+Show diff. Rebuild. Do NOT commit. I'll deploy/test to confirm the double-save is gone.

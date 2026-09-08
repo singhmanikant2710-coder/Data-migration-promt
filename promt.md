@@ -1,37 +1,81 @@
-Please compare the attached CURRENT report screenshot with the attached PROTOTYPE screenshot.
+Please investigate and fix UAT Bug #214 for the CRM Findings Summary Table report.
 
-The COUNT aggregation is now correct, but the TOTAL EXPOSURE aggregation is still incorrect.
+I have attached:
+1. The UAT issue screenshot showing the reported defect.
+2. The CRM Findings Summary Table report screenshot showing the current output.
 
-CURRENT REPORT:
-- E08 - Speculative Land Loan → COUNT 1 → EXPOSURE $34,194,930
-- E17 - Real Estate - Minimum Equity → COUNT 1 → EXPOSURE $34,194,930
-- TOTAL → COUNT 2 → EXPOSURE $34,194,930 ❌
+BUG:
+In the CRM Findings Summary Table, under BORROWER FINDING TOTALS, the Credit Servicing row is double-counting exposure when the same borrower has multiple findings for the same CRM Component.
 
-PROTOTYPE:
-- E44 - Minimum Post-Owner's Fixed Charge Coverage → COUNT 1 → EXPOSURE $23,395,641
-- E43 - Minimum Pre-Owner's Fixed Charge Coverage → COUNT 2 → EXPOSURE $66,736,200
-- TOTAL → COUNT 3 → EXPOSURE $90,131,841
+Current Credit Servicing values:
+- COUNT = 5
+- EXPOSURE = $223,630,000
+- FINDING TOTALS COUNT = 6
 
-The prototype makes the aggregation rule clear:
-- Each exception description's EXPOSURE is the sum of the applicable detail-row borrower commitments.
-- The grand TOTAL EXPOSURE is the sum of the exception-description exposure totals.
-- It is NOT simply taking one review/borrower's exposure for the grand total.
+The COUNT is correct and must remain 5.
 
-For the CURRENT dataset:
-$34,194,930 + $34,194,930 = $68,389,860
+The issue is the EXPOSURE calculation.
 
-Therefore the expected current totals are:
+The Collier at Clift Farm LLC has:
+- Exposure = $30,100,000
+- 2 Credit Servicing findings
 
-COUNT = 2
-EXPOSURE = $68,389,860
+The current aggregation is counting this borrower's $30,100,000 exposure twice because the borrower has two findings.
 
-Please inspect the backend aggregation logic and fix the TOTAL EXPOSURE calculation so it sums the exposure values represented by the exception rows/categories, consistent with the prototype.
+Expected Credit Servicing exposure:
+$223,630,000 - $30,100,000 = $193,530,000
 
-IMPORTANT:
-- Do NOT change the already-correct exception descriptions.
-- Do NOT change the already-correct COUNT = 2.
-- Do NOT change the Policy Exception Details table.
-- Do NOT change the commitment values in the details.
-- Only fix the exposure aggregation so the totals table follows the prototype's calculation.
+Therefore the expected row should be:
 
-Also verify that the fix works generally, not only for this specific data.
+Credit Servicing
+COUNT = 5
+EXPOSURE = $193,530,000
+
+The FINDING TOTALS COUNT = 6 should remain unchanged because there are 6 findings across 5 unique borrowers.
+
+IMPORTANT BUSINESS RULE:
+For BORROWER FINDING TOTALS, COUNT and EXPOSURE must be calculated at the UNIQUE BORROWER/REVIEW level within each CRM Component, not at the individual finding-row level.
+
+If a borrower has multiple findings for the same CRM Component:
+- Count that borrower only once in BORROWER FINDING TOTALS.
+- Include that borrower's exposure only once.
+- Do NOT sum the same borrower's exposure once per finding.
+
+However, FINDING TOTALS should continue to count individual findings, so the existing FINDING TOTALS COUNT should not be changed.
+
+Please inspect the backend repository/query/aggregation logic that builds:
+- UNSATISFACTORY TRANSACTIONS
+- BORROWER FINDING TOTALS
+- FINDING TOTALS
+
+Identify exactly where the Credit Servicing exposure is being duplicated and fix the aggregation at the correct layer rather than hardcoding this specific borrower or amount.
+
+Also verify that the fix works generally for any CRM Component where a borrower has multiple findings.
+
+Expected result for this dataset:
+
+Risk Recognition:
+  Borrower Count = 2
+  Borrower Exposure = $66,600,000
+
+Scorecard Management:
+  Borrower Count = 0
+  Borrower Exposure = $0
+
+Underwriting:
+  Borrower Count = 2
+  Borrower Exposure = $89,813,569
+
+Credit Servicing:
+  Borrower Count = 5
+  Borrower Exposure = $193,530,000  <-- FIX REQUIRED
+
+Loan Administration:
+  Borrower Count = 2
+  Exposure should remain based on unique borrowers
+
+Do NOT change the finding counts or the FINDING TOTALS logic unless the investigation proves they are incorrect.
+
+Also verify the percentage displayed for BORROWER FINDING TOTALS after correcting the exposure, because the percentage is calculated from the corrected exposure against the sample exposure.
+
+Please provide the root cause and exact files/lines changed before considering the bug fixed.

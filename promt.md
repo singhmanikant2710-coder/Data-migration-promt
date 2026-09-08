@@ -1,19 +1,13 @@
-Implement Option (c) — exclude the auto-derived transaction enrichment values from the DIRTY/DRAFT computation ONLY, without changing the save payload or touching TransactionsSection/useTransactions. Contained entirely in frontend/src/lib/reviewDraft.ts (new module, no other consumers).
+Hi Geoff,
 
-The false-dirty comes from load-time enrichment staging: transactions.<acctId>.collateralDesc, .businessTypeDesc, .purposeDesc, and _update:true — auto-derived, not user edits.
+I noticed that you have added 17 new enhancements in the Excel sheet. I wanted to clarify the scope so that we can make sure we are covering all the required changes correctly.
 
-REQUIREMENTS:
-1. Add WILDCARD support to the ignore logic (current REVIEW_DRAFT_IGNORED_PATHS only handles static paths). Support patterns like:
-   - transactions.*.collateralDesc
-   - transactions.*.businessTypeDesc
-   - transactions.*.purposeDesc
-   where * matches any account id.
-2. Also treat _update as a non-meaningful marker in this context (a bucket containing only derived keys + _update is NOT a genuine edit).
-3. CRITICAL rule for hasDraftableChanges / sanitizeDraftChanges: for each transaction row bucket:
-   - If the bucket contains ONLY ignored/derived keys (collateralDesc, businessTypeDesc, purposeDesc, _update) → DROP the bucket (not dirty).
-   - If the bucket ALSO contains a genuine user-edited key (anything else) → KEEP the bucket intact (dirty + restorable), including its derived keys.
-   This ensures: load-time enrichment → clean; real transaction edit → still dirty and recoverable.
-4. Do NOT change the save payload. Do NOT modify TransactionsSection.tsx, useTransactions.ts, or updateRow. The staging into `changes` stays exactly as-is (so collateralDesc etc. still persist on save). Only the DIRTY/DRAFT view of `changes` filters these out.
-5. Keep it in reviewDraft.ts only. Add 3-4 node --test cases covering: bucket with only derived keys → not dirty; bucket with a real edit + derived keys → dirty and fully preserved; wildcard matches any acctId; the existing static ignore (repayment.analysis.activeDiscussionTab) still works.
+Apart from these 17 enhancements, there also appear to be some reports that are currently missing and have not yet been added. Could you please confirm how many reports are still missing in total?
 
-Show the diff (reviewDraft.ts + new tests). Rebuild + run node --test. Do NOT commit. I'll re-test TEST 3a/3b/5 and a genuine transaction edit.
+Also, could you please share the templates and detailed requirements for those missing reports, including any specific expectations or business rules, so that we can review and plan the implementation accordingly?
+
+One more clarification regarding the 17 enhancements listed in the Excel sheet: are these enhancements also related to the missing report templates/reports that need to be implemented, or are they separate enhancements in addition to the missing reports?
+
+We just want to make sure we have a clear understanding of the complete scope before proceeding, so that we don't miss any reports or requirements and can avoid impacting the existing functionality.
+
+Thank you for your guidance and support.

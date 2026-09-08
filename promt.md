@@ -1,14 +1,19 @@
-FOUND IT via instrumentation. The false-dirty is NOT CustomerInfo — it's TransactionsSection. On a clean load (no user edit), useTransactions.ts:439 (called from TransactionsSection.tsx:552) stages into the changes context automatically:
-  transactions.<acctId>.collateralDesc = "OOOS - CRB OWNER OCCUPIED OFFICE SPACE"
-  transactions.<acctId>.businessTypeDesc = "CREDIT BASED PERMANENT"
-  _update: true
-This makes isDirty=true on load, triggering both popups.
+Implement Option (c) — exclude the auto-derived transaction enrichment values from the DIRTY/DRAFT computation ONLY, without changing the save payload or touching TransactionsSection/useTransactions. Contained entirely in frontend/src/lib/reviewDraft.ts (new module, no other consumers).
 
-READ-ONLY first — do NOT fix yet, just answer:
-1. Open useTransactions.ts around line 439 and TransactionsSection.tsx around line 552. What exactly stages collateralDesc / businessTypeDesc / _update on load? Is it an enrichment/lookup effect that converts a raw code (e.g. "OOOS") into a description and writes it back into the changes context — WITHOUT the user editing anything?
-2. Is this staging happening inside a useEffect that runs on mount/data-load, rather than in an onChange user handler? Paste the exact code at useTransactions.ts:439 and its surrounding effect/trigger.
-3. Is collateralDesc/businessTypeDesc a DISPLAY-only derived value (looked up from a code for showing in the UI), or a real editable field the user changes? If it's display-only enrichment, it should NOT be staged into changes at all.
-4. Does _update:true get set automatically on load too? That would make every transaction row look edited.
-5. What's the minimal fix: (a) stop this enrichment from staging into the changes context on load (only stage on genuine user onChange), or (b) if it must populate the display, do it in local state / the fetched data, not in the changes/draft context?
+The false-dirty comes from load-time enrichment staging: transactions.<acctId>.collateralDesc, .businessTypeDesc, .purposeDesc, and _update:true — auto-derived, not user edits.
 
-Report the exact code + root cause + minimal fix location. Do NOT fix yet.
+REQUIREMENTS:
+1. Add WILDCARD support to the ignore logic (current REVIEW_DRAFT_IGNORED_PATHS only handles static paths). Support patterns like:
+   - transactions.*.collateralDesc
+   - transactions.*.businessTypeDesc
+   - transactions.*.purposeDesc
+   where * matches any account id.
+2. Also treat _update as a non-meaningful marker in this context (a bucket containing only derived keys + _update is NOT a genuine edit).
+3. CRITICAL rule for hasDraftableChanges / sanitizeDraftChanges: for each transaction row bucket:
+   - If the bucket contains ONLY ignored/derived keys (collateralDesc, businessTypeDesc, purposeDesc, _update) → DROP the bucket (not dirty).
+   - If the bucket ALSO contains a genuine user-edited key (anything else) → KEEP the bucket intact (dirty + restorable), including its derived keys.
+   This ensures: load-time enrichment → clean; real transaction edit → still dirty and recoverable.
+4. Do NOT change the save payload. Do NOT modify TransactionsSection.tsx, useTransactions.ts, or updateRow. The staging into `changes` stays exactly as-is (so collateralDesc etc. still persist on save). Only the DIRTY/DRAFT view of `changes` filters these out.
+5. Keep it in reviewDraft.ts only. Add 3-4 node --test cases covering: bucket with only derived keys → not dirty; bucket with a real edit + derived keys → dirty and fully preserved; wildcard matches any acctId; the existing static ignore (repayment.analysis.activeDiscussionTab) still works.
+
+Show the diff (reviewDraft.ts + new tests). Rebuild + run node --test. Do NOT commit. I'll re-test TEST 3a/3b/5 and a genuine transaction edit.

@@ -1,3 +1,4 @@
-DELETE FROM tblMain
-WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
-  AND LTRIM(RTRIM(strMonthKey)) IN ('202606','202607','202608','202609','202610','202611','202612','202701');
+-- Exact rows dhundho jo delete karne hain
+SELECT anmMain, strCustomerName, strMonthKey, intFiscalYear
+FROM tblMain
+WHERE strMonthKey IN ('202701','202612','202611','202610');

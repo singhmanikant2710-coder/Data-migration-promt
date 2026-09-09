@@ -1,4 +1,3 @@
-SELECT '[' + strMonthKey + ']' AS mk_exact, LEN(strMonthKey) AS len
-FROM tblMain
+DELETE FROM tblMain
 WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
-  AND strMonthKey LIKE '2027%';
+  AND LTRIM(RTRIM(strMonthKey)) IN ('202606','202607','202608','202609','202610','202611','202612','202701');

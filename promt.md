@@ -1,6 +1,26 @@
-Apply all the diffs exactly as shown:
-- Fix 1: lookups.ts (both functions — forceRefresh param, delete cache + inflight, skipCache: forceRefresh)
-- Fix 2a: blackbook/edit/page.tsx (import + handleRefreshSave force-refresh + handleAddNewMonth cache purge)
-- Fix 2b: customer/edit/page.tsx (init effect both calls true)
-Leave covenants/edit and all other call sites unchanged (forceRefresh defaults false).
-Apply now, then run the frontend typecheck/build and report any errors.
+SELECT strMonthKey, intFiscalYear, intFiscalMonth
+FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
+ORDER BY strMonthKey DESC;
+
+SELECT strMonthKey, intFiscalYear, intFiscalMonth
+FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
+  AND strMonthKey >= '202606'   -- jo test mein add kiye (202606 se aage)
+ORDER BY strMonthKey DESC;
+
+-- Pehle dekho kitne delete honge (SELECT):
+SELECT COUNT(*) AS test_months
+FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
+  AND strMonthKey > '202605';
+
+-- Confirm karke, delete (test months, 202605 tak original rakho):
+DELETE FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
+  AND strMonthKey > '202605';
+
+  SELECT strMonthKey, intFiscalYear, intFiscalMonth
+FROM tblMain
+WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
+ORDER BY strMonthKey DESC;

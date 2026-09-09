@@ -1,34 +1,38 @@
-Fix the maxMonthKey cache staleness. Show unified diffs BEFORE applying.
+Apply all of the following. Show final diffs, then apply.
 
-PROBLEM: getMaxMonthKey and getMaxMonthKeyWithCovenants (frontend/src/lib/lookups.ts) use getOnce (window.__bcat_cache). After Refresh/Save or Add, the cached value is stale, so the month/structure becomes inconsistent ("works, then wrong after refresh/save").
+FIX 1 (lookups.ts): Add forceRefresh param to getMaxMonthKey and getMaxMonthKeyWithCovenants. When forceRefresh:
+- delete BOTH window.__bcat_cache[key] AND window.__bcat_inflight[key] (not just cache — a stale in-flight promise must be dropped too).
+- pass skipCache: forceRefresh into the inner get() call (to bypass the 1500ms api.ts TTL cache).
+Apply exactly as in the proposed diff (both functions).
 
-=== FIX 1: Add forceRefresh to both lookups (frontend/src/lib/lookups.ts) ===
-For getMaxMonthKey, add an optional forceRefresh param that deletes the cache key before fetching:
+FIX 2a (blackbook/edit/page.tsx):
+- Add getMaxMonthKeyWithCovenants to the import.
+- In handleRefreshSave, AFTER the monthkey-series refresh, add:
+    try {
+      const mkFresh = await getMaxMonthKey(name.trim(), true);
+      await getMaxMonthKeyWithCovenants(name.trim(), true);
+      if (mkFresh) setMaxMonthKey(mkFresh);
+    } catch {}
+- In handleAddNewMonth, keep setMaxMonthKey(mk) and ADD after it:
+    try { await getMaxMonthKey(name.trim(), true); await getMaxMonthKeyWithCovenants(name.trim(), true); } catch {}
+  (so the shared window cache is corrected, not just local state)
 
-    export async function getMaxMonthKey(customer: string, forceRefresh = false): Promise<string | null> {
-        const cust = String(customer || "").trim();
-        const key = `context:maxMonthKey:v3:${cust}`;
-        if (forceRefresh && typeof window !== "undefined") {
-            try { delete (window as any).__bcat_cache?.[key]; } catch {}
-        }
-        return await getOnce<string | null>(key, async () => {
-            // ... existing fetcher body UNCHANGED ...
-        });
-    }
+FIX 2b (customer/edit/page.tsx): In the monthKey init effect (L613-619), change:
+    getMaxMonthKeyWithCovenants(qpName) -> getMaxMonthKeyWithCovenants(qpName, true)
+    getMaxMonthKey(qpName) -> getMaxMonthKey(qpName, true)
+  (this effect re-runs after profile reload/save, serving stale values).
 
-Do the SAME for getMaxMonthKeyWithCovenants (add forceRefresh param, compute its key, delete before getOnce). Keep the fetcher bodies unchanged.
+ALSO (agent flagged this — do it too): covenants/edit/page.tsx L151 initMonthRange uses getMaxMonthKey(customerName) and that page saves covenants without busting the cache — this is a likely source of stale max-with-covenants seen later. Add a forced refresh there too if it's safe (quote it first; if it's a read-only init that runs once per mount with a fresh window, leave it — but if it runs after a covenant save on the same page, force-refresh).
 
-=== FIX 2: Pass forceRefresh=true in the Refresh/Save and Add paths ===
-Find every call to getMaxMonthKey / getMaxMonthKeyWithCovenants in:
-- frontend/src/app/blackbook/edit/page.tsx (Refresh/Save handler handleRefreshSave, and handleAddNewMonth)
-- frontend/src/app/customer/edit/page.tsx (monthKey init effect)
+DO NOT touch the pure read-only view/report call sites (blackbook/view, blackbook/report) — those don't need forceRefresh.
 
-In the Refresh/Save handler and after Add, change getMaxMonthKey(name) → getMaxMonthKey(name, true) and getMaxMonthKeyWithCovenants(name) → getMaxMonthKeyWithCovenants(name, true), so they bust the cache and fetch fresh.
+STRICT: forceRefresh defaults to false, so all existing callers are unaffected. Only the add/save/init paths pass true.
 
-Do NOT change the initial context-load call's behaviour unless needed (that runs on customer change with a fresh window anyway) — but the Refresh/Save path MUST force-refresh.
+VERIFY BEFORE SHOWING DIFFS:
+a) Both lookups delete cache AND inflight, and pass skipCache: forceRefresh.
+b) handleRefreshSave and handleAddNewMonth now force-refresh the shared cache.
+c) customer/edit init effect passes true.
+d) forceRefresh defaults false — read-only callers unchanged.
+e) Quote covenants/edit L151 context to decide if it needs true.
 
-Show me:
-1) Updated getMaxMonthKey + getMaxMonthKeyWithCovenants with forceRefresh (Fix 1), quoted.
-2) Every call site of these two functions, quoted, so I can confirm which get forceRefresh=true (Refresh/Save + Add paths).
-
-Show diffs. Apply nothing until I confirm.
+Show all diffs. Apply nothing until I confirm.

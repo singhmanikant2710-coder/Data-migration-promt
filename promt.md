@@ -1,8 +1,4 @@
-DELETE FROM tblMain
-WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
-  AND strMonthKey > '202605';
-
-  SELECT strMonthKey, intFiscalYear, intFiscalMonth
+SELECT '[' + strMonthKey + ']' AS mk_exact, LEN(strMonthKey) AS len
 FROM tblMain
 WHERE LTRIM(RTRIM(strCustomerName)) LIKE '%BANKERS HEALTHCARE%'
-ORDER BY strMonthKey DESC;
+  AND strMonthKey LIKE '2027%';

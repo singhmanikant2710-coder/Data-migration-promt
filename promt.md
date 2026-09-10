@@ -1,21 +1,10 @@
-SINGLE-FILE, BOUNDED EDIT. Only frontend/src/blackbook/mappings/generic.ts. Show unified diff BEFORE applying.
+Apply the Option A diff exactly as shown in generic.ts:
+Replace the two lines (Net C/O $ + YTD Net C/O $) with:
+    { label: "YTD Net C/O $", value: sumYtd(currentYearSeries, latestPoint, netCoDollarAliases) ?? pick(v(latestPoint), ytdNetCoDollarAliases), kind: "currency" },
+    { label: "TTM Net C/O %", ... }
 
-ISSUE (E3): The Cash & Charge-offs panel has its own "YTD Net C/O $" tile (generic.ts ~L386) that is a plain pick(v(latestPoint), ytdNetCoDollarAliases) — pure server passthrough. It shows $0 while the Top Strip YTD Net C/O shows $50,473 (which now sums correctly via Fix 2). They disagree.
+Wait — the diff shows removing the "Net C/O $" line too. Confirm: the diff REPLACES both "Net C/O $" and "YTD Net C/O $" lines with just the YTD line? Or does it keep "Net C/O $" and only change "YTD Net C/O $"? 
 
-FIX: Make the in-panel YTD Net C/O $ sum the monthly Net C/O too, consistent with the Top Strip.
+Quote the exact before/after so I confirm we're NOT accidentally removing the "Net C/O $" input tile (which must stay — it's the editable field). We only want to change the YTD Net C/O $ line to sum; the Net C/O $ line must remain.
 
-BUT NOTE (from prior analysis): the generic mapper is invoked with the RAW `series`, not seriesWithEdits, so a sum inside the mapper won't reflect in-flight edits until saved. 
-
-So there are two options — tell me which:
-OPTION A (make it sum, reflects on save): Change generic.ts L386 YTD Net C/O render/value to sum monthly Net C/O via sumYtdForRow (if available in that file) or an equivalent monthly sum, matching the Top Strip aliases ["curNetChargeOff","NetChargeOff","NetCO","NetChargeOffDollar"]. It will match after save (mapper uses raw series).
-
-OPTION B (drop the duplicate tile): Remove the "YTD Net C/O $" tile from the generic middle panel entirely, so the Top Strip is the single source of truth (no disagreement). Cleaner — no two widgets showing different values.
-
-First QUOTE:
-1) The generic.ts YTD Net C/O $ tile line (~L386) + ytdNetCoDollarAliases.
-2) Whether sumYtdForRow (or any monthly-sum helper) is importable/available in generic.ts.
-3) How the mapper receives series (raw vs seriesWithEdits) — confirm it's raw at the call site.
-
-Then recommend A or B based on what's cleanest and lowest-risk, and show the diff for the recommended option.
-
-No apply yet. Findings + recommended diff.
+Show the corrected diff if needed, then apply.

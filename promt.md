@@ -1,17 +1,28 @@
-READ-ONLY. Find why editing Net C/O in the "Cash & Charge-offs" section does NOT update YTD Net C/O, while editing it in the Summary (Top Strip) DOES. Quote with paths.
+SINGLE-FILE, BOUNDED EDIT. Only frontend/src/app/blackbook/edit/page.tsx, only canonicalFromLabel (~L2435-2448). Show unified diff BEFORE applying.
 
-CONTEXT: We fixed YTD Net C/O $ to sum monthly Net C/O (Fix 2, in monthSummaryRegistry.ts — top-strip + makeColumn). Editing Net C/O in the Top Strip now updates YTD Net C/O. BUT editing Net C/O in the "Cash & Charge-offs" section does NOT update YTD Net C/O.
+BUG: The Cash & Charge-offs middle-panel tiles ("Net C/O $", "Cash Collections $", "60+ DPD $") are generic tiles created WITHOUT aliases. So writeKey resolves to "" and setEdits is never called — edits in this panel are silently discarded (the typed text stays visible only because the input is uncontrolled). "CPLTD (prior period)" works only because canonicalFromLabel has an explicit case for it.
 
-1) Find the "Cash & Charge-offs" section render (likely a DetailGrid or a separate panel component). Where is its "Net C/O $" input? Quote it. What field key does its onChange write to (which alias — curNetChargeOff, NetCO, etc.)?
-2) Compare with the Top Strip's "Net C/O $" input — what field key does IT write to? Are they the SAME key or DIFFERENT?
-3) The YTD Net C/O sum (Fix 2) uses netChargeOffMonthlyAliases = ["NetChargeOff","NetCO","NetChargeOffDollar","curNetCO","curNetChargeOff"]. When the Cash & Charge-offs section writes Net C/O, does it write to one of THESE aliases (so the sum picks it up), or to a different key not in this list?
-4) Does the Cash & Charge-offs section use seriesWithEdits (which runs the recompute loop) OR a separate data path that doesn't feed into the YTD sum? Quote how the Cash & Charge-offs panel gets/writes its row data.
-5) Does the Cash & Charge-offs section have its own YTD Net C/O render (separate from monthSummaryRegistry), and does THAT one sum or just passthrough?
+FIX (E1): Add the missing label cases to canonicalFromLabel, alongside the existing "cpltd (prior period)" case, so these tiles resolve to their real column key:
 
-OUTPUT:
-- A) Cash & Charge-offs "Net C/O $" input + the key its onChange writes, quoted.
-- B) Top Strip "Net C/O $" input + its key, quoted. Same or different key?
-- C) Does Cash & Charge-offs' Net C/O write to an alias in netChargeOffMonthlyAliases (so YTD sum sees it)? Or a different key?
-- D) Root cause: (i) different field key (edit not picked by sum), (ii) separate data path (not seriesWithEdits), or (iii) separate YTD render that doesn't sum.
-- E) Exact fix so both edit locations update YTD Net C/O consistently.
-- No fix. Findings only.
+Find the existing case (around L2446):
+    if (s === "cpltd (prior period)") return "curCPLTD";   // (or whatever the exact existing case is — quote it)
+
+Add these three cases right next to it:
+    if (s === "net c/o $") return "curNetChargeOff";
+    if (s === "cash collections $") return "curCashCollections";
+    if (s === "60+ dpd $") return "cur60DPD";
+
+Match the exact style/format of the existing cpltd case (same lowercase comparison variable `s`, same return pattern). 
+
+CONFIRM the canonical column names are correct:
+- "Net C/O $" → curNetChargeOff (matches netChargeOffMonthlyAliases / the row column)
+- "Cash Collections $" → curCashCollections
+- "60+ DPD $" → cur60DPD
+Quote the existing cpltd case and the surrounding canonicalFromLabel function so we match the pattern exactly and confirm these column names exist as real tblMain columns.
+
+VERIFY BEFORE SHOWING DIFF:
+a) Three new cases added, matching the existing cpltd case style.
+b) Canonical names: curNetChargeOff, curCashCollections, cur60DPD (confirm these are the real column keys the Top Strip also writes to — e.g. Top Strip Net C/O writes curNetChargeOff).
+c) Only canonicalFromLabel changed; nothing else.
+
+Show the unified diff. Apply nothing until I confirm.

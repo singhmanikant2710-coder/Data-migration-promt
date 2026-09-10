@@ -1,53 +1,19 @@
-Hi John,
+READ-ONLY. Find why some derived fields recompute instantly on edit (YTD Revenue) but others don't (YTD PBT, Cash Collections %, YTD Net C/O). Quote with paths.
 
-Could you please share your detailed plan for the BCAT UAT and sign-off?
+OBSERVED on edit (1ST FRANKLIN):
+- WORKS instantly: YTD Revenue updates when Month Revenue is entered.
+- DOES NOT work instantly: YTD PBT (on Month PBT), Cash Collections % (on Cash Collections, using Principal NR/Gross NR), YTD Net C/O (on Net C/O).
 
-From our side, we are currently planning to target the BCAT UAT sign-off by 15th September. To align our activities accordingly, could you please let us know how many rounds of UAT you are planning to conduct and the expected timeline for each round?
+In frontend/src/app/blackbook/edit/page.tsx and mappings/tblMainCalcs.ts (or expr/tblMainCalcs.ts):
+1) Find seriesWithEdits / latestPointComputed — the loop that runs tblMainCalcs on edited values: for (const [key, fn] of Object.entries(tblMainCalcs)) { merged[key] = fn(inputs); }. Quote it. This is what makes edits recompute live.
+2) In tblMainCalcs, is there a calc for YTD Revenue (curRevenueOrSalesYTD)? Quote it — this one works. 
+3) Is there a calc for YTD PBT (curProfitBeforeTaxesYTD), YTD Net C/O (curNetChargeOffYTD)? Quote them, or confirm they're MISSING from tblMainCalcs (which would explain why they don't recompute live — they'd only come from the backend on save).
+4) For Cash Collections %, the calc exists (perCashCollections) but needs Principal NR/Gross NR PRIOR month. Are those prior-month inputs present in the edited row (merged)? If missing, the calc returns 0 → appears "not calculating". Quote whether prior-month fields are hydrated.
+5) Compare: YTD Revenue calc vs YTD PBT calc — why does one exist/work and the other not?
 
-It would be helpful if you could share the plan in detail, including:
-
-- Number of UAT rounds planned
-- Expected timeline for each round
-- Expected date for completion of UAT
-- Target date for UAT sign-off
-- Any key dependencies or activities required from our side
-
-This will help us plan and prioritize the remaining BCAT activities accordingly and ensure we are aligned with the overall timeline.
-
-Thanks in advance for sharing your plan.
-
-Best regards,
-Manikant
-
-
-SELECT intFiscalYearMonthStart, COUNT(*) AS customer_count
-FROM tblCustomer
-WHERE intFiscalYearMonthStart IS NOT NULL
-GROUP BY intFiscalYearMonthStart
-ORDER BY intFiscalYearMonthStart;
-
-SELECT 
-    t.intFiscalYearMonthStart AS fiscal_start_month,
-    t.strCustomerName,
-    lm.strMonthKey AS latest_month,
-    lm.intFiscalYear AS latest_fiscal_year,
-    lm.intFiscalMonth AS latest_fiscal_month
-FROM (
-    SELECT c.intFiscalYearMonthStart,
-           c.strCustomerName,
-           ROW_NUMBER() OVER (
-               PARTITION BY c.intFiscalYearMonthStart 
-               ORDER BY c.strCustomerName
-           ) AS rn
-    FROM tblCustomer c
-    WHERE c.intFiscalYearMonthStart IS NOT NULL
-      AND c.strStatus = 'Active'     -- sirf active customers
-) t
-OUTER APPLY (
-    SELECT TOP 1 m.strMonthKey, m.intFiscalYear, m.intFiscalMonth
-    FROM tblMain m
-    WHERE LTRIM(RTRIM(m.strCustomerName)) = LTRIM(RTRIM(t.strCustomerName))
-    ORDER BY m.strMonthKey DESC
-) lm
-WHERE t.rn = 1
-ORDER BY t.intFiscalYearMonthStart;
+OUTPUT:
+- A) The tblMainCalcs live-recompute loop, quoted.
+- B) Which YTD/derived calcs EXIST in tblMainCalcs (YTD Revenue yes; YTD PBT? YTD Net C/O? Cash Coll %?), quoted or "missing".
+- C) For each non-working field: is it (i) missing from tblMainCalcs entirely, (ii) present but missing input data (prior-month), or (iii) computed only on backend save?
+- D) Exact fix: add the missing YTD/derived calcs to tblMainCalcs (or hydrate missing inputs) so they recompute live like YTD Revenue.
+- No fix. Findings only.

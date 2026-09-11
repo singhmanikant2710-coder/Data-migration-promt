@@ -1,37 +1,32 @@
-Read-only this turn — diff only, no modifications.
+Read-only. No modifications made. Let me confirm the exact on-disk state so the report is accurate.
 
-Read-only. No files modified.
+Confirmed — nothing was modified this turn. Verified on-disk state:
 
-## First — a defect in what I applied last turn that you were right to question
+| Location | State |
+|---|---|
+| L1960 }, [isConsumerFinance, latestPoint]); | **Applied** (two turns ago) |
+| L1912-1944 stored-selector seed block | **Applied** (two turns ago) |
+| if (!latestPoint) guard — Hunk 1 | **Not applied** |
+| L3547 const effectiveVal = pendingVal !== undefined ? pendingVal : t.value; | **Not applied** (still const, no override) |
+| L3529/3554/3555 + L3623/3625/3626 display inline expressions | **Not applied** (still inline) |
+| L4191-4197 middle-panel override | Pre-existing, untouched |
 
-**Adding `latestPoint` to the deps cannot overwrite manual state.** The `if (!next[lbl])` guard makes every re-run a no-op for any label that already holds a value, manual or otherwise. So on that axis it's safe.
+## The finding, restated
 
-**But the seed as currently applied is a no-op in practice.** Sequence on page load:
-1. `isConsumerFinance` is true immediately (from the `industry` query param), while `series` is still empty and `latestPoint` is `null`.
-2. Effect runs: `lv = {}` → all three stored selectors read as `""` → `norm("")` returns `def` → **all six labels get seeded to the Principal default**.
-3. Row arrives, `latestPoint` changes, effect re-runs — and `if (!next[lbl])` is now false for all six, so the real stored basis is **never applied**.
+The stored-selector seed currently on disk is **dead code**. `isConsumerFinance` becomes true from the `industry` query param on first render, while `series` is empty and `latestPoint` is null. The effect therefore runs with `lv = {}`, all three selectors read as `""`, `norm("")` returns `def`, and all six labels are written with the Principal default. When the row later arrives and the effect re-runs via the `latestPoint` dependency, `if (!next[lbl])` is false for every label, so the customer's real stored basis is never applied.
 
-So the fix I applied last turn doesn't actually do anything. The `latestPoint` dependency is necessary but not sufficient; the effect must also decline to seed until the row exists. Hunk 1 below fixes that. Keeping `latestPoint` in the deps is correct — removing it would make the stored basis permanently unreachable.
+Net effect today: the ~7-11% Gross customers still display Principal, exactly as before my change. The change is inert rather than harmful.
 
----
+## Why the dependency stays
 
-## Unified diff — 3 hunks, all in `frontend/src/app/blackbook/edit/page.tsx`
+To your earlier concern — `latestPoint` in the deps **cannot** overwrite a manual selection. The `if (!next[lbl])` guard short-circuits any label that already holds a value, regardless of origin. Removing the dependency would make the stored basis permanently unreachable, so the dependency is necessary; it just isn't sufficient without the `!latestPoint` early return.
 
-**Hunk 1 — seeding effect: don't seed from an empty row (L1910)**
+## Outstanding work, all still unapplied
 
-```diff
-@@ -1907,6 +1907,15 @@ (async () => {
-     const opts = await getPrincipalOrGrossOptions();
-     const options = (Array.isArray(opts) && opts.length > 0) ? opts : ["Principal N/R"];
-     const def = options.find(o => /principal/i.test(o)) || options[0];
-     if (cancelled) return;
-+
-+    // Do not seed before the row is available: seeding from an empty row would lock in
-+    // "def" via the "if (!next[lbl])" guard below and permanently mask the customer's
-+    // stored basis when it arrives. Options are still published so the dropdown renders.
-+    if (!latestPoint) {
-+      setPrincipalGrossOptions(options);
-+      return;
-+    }
-+
-+    // Seed each metric's basis from the customer's stored selector on the latest row.
+1. **Hunk 1** — `if (!latestPoint) { setPrincipalGrossOptions(options); return; }` after `if (cancelled) return;`. Makes the seed actually function.
+2. **Hunks 2-3** — Top Strip `let effectiveVal` + CF percent override gated on `pendingVal === undefined`, then use `effectiveVal` in the inline display expressions.
+3. **Not in scope, still recommended** — `setPrincipalGrossByLabel({})` in the `[name]` reset effect (L544-548). Once Hunk 1 makes seeding real, CF customer A → CF customer B navigation will leak A's basis onto B, because the component re-renders without remounting and the guard blocks re-seeding.
+
+Two caveats on your stated expectations, unchanged from my last message: there is **no Net C/O % tile in the Top Strip** (only `Net C/O $`, `YTD Net C/O $`, `TTM Net C/O %`), so expectation #4 has nothing to synchronize; and **TTM Net C/O %** correctly will not follow the dropdown, since `perNetChargeOffTTM` has no selector in legacy.
+
+Standing by — tell me which hunks to apply.

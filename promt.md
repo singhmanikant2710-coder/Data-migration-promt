@@ -40,22 +40,26 @@ Do not make any other changes.
 
 SELECT
     c.strCustomerName,
-    c.intFiscalYearMonthStart,
-    mk.strMonthKey,
-    mk.intFiscalYear,
-    mk.intFiscalMonth
-FROM <CustomerTable> c
-JOIN <MonthKeyTable> mk
-    ON mk.intCustomerID = c.intCustomerID
+    c.intFiscalYearMonthStart AS fiscal_start_month,
+    m.strMonthKey,
+    m.intFiscalYear AS stored_fiscal_year,
+    m.intFiscalMonth AS stored_fiscal_month,
+    YEAR(CONVERT(date, m.strMonthKey + '01')) AS calendar_year,
+    MONTH(CONVERT(date, m.strMonthKey + '01')) AS calendar_month,
+    CASE
+        WHEN MONTH(CONVERT(date, m.strMonthKey + '01')) >= c.intFiscalYearMonthStart
+            THEN YEAR(CONVERT(date, m.strMonthKey + '01')) + 1
+        ELSE YEAR(CONVERT(date, m.strMonthKey + '01'))
+    END AS expected_fiscal_year,
+    CASE
+        WHEN MONTH(CONVERT(date, m.strMonthKey + '01')) >= c.intFiscalYearMonthStart
+            THEN MONTH(CONVERT(date, m.strMonthKey + '01')) - c.intFiscalYearMonthStart + 1
+        ELSE MONTH(CONVERT(date, m.strMonthKey + '01')) + 12 - c.intFiscalYearMonthStart + 1
+    END AS expected_fiscal_month
+FROM tblCustomer c
+INNER JOIN tblMain m
+    ON LTRIM(RTRIM(m.strCustomerName)) = LTRIM(RTRIM(c.strCustomerName))
 WHERE c.strCustomerName = 'ADIR INTERNATIONAL LLC'
-  AND mk.strMonthKey IN ('202412', '202501')
-ORDER BY mk.strMonthKey;
-
-SELECT
-    strCustomerName,
-    intFiscalYearMonthStart,
-    latest_month,
-    latest_fiscal_year,
-    latest_fiscal_month
-FROM <YourExistingCustomerLatestMonthQuery/Table>
-WHERE strCustomerName = 'ADIR INTERNATIONAL LLC';
+  AND c.strStatus = 'Active'
+  AND m.strMonthKey IN ('202411', '202412', '202501', '202502')
+ORDER BY m.strMonthKey;

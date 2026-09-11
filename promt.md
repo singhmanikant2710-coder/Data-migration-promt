@@ -1,7 +1,82 @@
-You can send it like this:
+SELECT
+    c.strCustomerName,
+    c.intFiscalYearMonthStart AS fiscal_start_month,
+    lm.strMonthKey AS latest_month_key,
+    lm.intFiscalYear AS latest_stored_fiscal_year,
+    lm.intFiscalMonth AS latest_stored_fiscal_month,
 
-> I’ve closed all the BCAT bugs today and have now started working on CASRR. I’ll make sure to resolve the new CASRR bugs by Monday.
+    CONVERT(varchar(6),
+        DATEADD(
+            MONTH,
+            1,
+            CONVERT(date, lm.strMonthKey + '01')
+        ),
+        112
+    ) AS next_month_key,
 
-I have one question regarding the new functionality and enhancements you’ve shared for CASRR. Once we complete all of these items, will CASRR be considered 100% complete, or should we expect any additional functionality or enhancements to be added later?
+    CASE
+        WHEN MONTH(
+            DATEADD(
+                MONTH,
+                1,
+                CONVERT(date, lm.strMonthKey + '01')
+            )
+        ) >= c.intFiscalYearMonthStart
+        THEN YEAR(
+            DATEADD(
+                MONTH,
+                1,
+                CONVERT(date, lm.strMonthKey + '01')
+            )
+        ) + 1
+        ELSE YEAR(
+            DATEADD(
+                MONTH,
+                1,
+                CONVERT(date, lm.strMonthKey + '01')
+            )
+        )
+    END AS expected_next_fiscal_year,
 
-I just want to make sure I have a clear understanding of the scope and priorities so I can plan the work accordingly.
+    CASE
+        WHEN MONTH(
+            DATEADD(
+                MONTH,
+                1,
+                CONVERT(date, lm.strMonthKey + '01')
+            )
+        ) >= c.intFiscalYearMonthStart
+        THEN MONTH(
+            DATEADD(
+                MONTH,
+                1,
+                CONVERT(date, lm.strMonthKey + '01')
+            )
+        ) - c.intFiscalYearMonthStart + 1
+        ELSE MONTH(
+            DATEADD(
+                MONTH,
+                1,
+                CONVERT(date, lm.strMonthKey + '01')
+            )
+        ) + 12 - c.intFiscalYearMonthStart + 1
+    END AS expected_next_fiscal_month
+
+FROM tblCustomer c
+
+OUTER APPLY
+(
+    SELECT TOP 1
+        m.strMonthKey,
+        m.intFiscalYear,
+        m.intFiscalMonth
+    FROM tblMain m
+    WHERE LTRIM(RTRIM(m.strCustomerName))
+        = LTRIM(RTRIM(c.strCustomerName))
+    ORDER BY m.strMonthKey DESC
+) lm
+
+WHERE c.intFiscalYearMonthStart IS NOT NULL
+  AND c.strStatus = 'Active'
+
+ORDER BY c.strCustomerName;

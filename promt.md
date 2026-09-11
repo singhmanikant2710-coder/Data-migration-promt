@@ -1,70 +1,61 @@
-Do NOT modify any code or database data yet.
+I understand that you cannot access the database because MFA is required.
 
-Proceed with Route A, but first complete the read-only validation.
+Do NOT attempt any connection or code change.
 
-Run the validation SQL you prepared against the actual database for ALL customers and ALL valid MonthKey rows.
+Prepare ONE self-contained READ-ONLY SQL query that I can copy directly into my already-authenticated SSMS session.
 
-I need the actual results, not predictions.
+Requirements:
 
-Return these exact outputs:
+1. Read from:
+   dbo.tblMain
+   dbo.tblCustomer
 
-1. Total number of tblMain rows checked.
-2. Total number of rows where stored intFiscalYear/intFiscalMonth MATCH the required END-YEAR calculation.
-3. Total number of mismatched rows.
-4. Number of affected customers.
-5. Mismatch count grouped by intFiscalYearMonthStart.
-6. For every customer, show:
-   - Customer Name
-   - Fiscal Start Month
-   - Earliest MonthKey
-   - Latest MonthKey
-   - Stored FY/FM
-   - Calculated FY/FM
-   - Number of mismatched rows
+2. Use tblCustomer.intFiscalYearMonthStart as the ONLY source for each customer's fiscal start month.
 
-Also specifically validate these customers/examples:
+3. Calculate Fiscal Year and Fiscal Month from strMonthKey using the END-YEAR convention:
 
-ADIR INTERNATIONAL LLC
-Start Month = 2
-202402 -> FY2025 / FM1
-202403 -> FY2025 / FM2
-202412 -> FY2025 / FM11
-202501 -> FY2025 / FM12
-202502 -> FY2026 / FM1
-202503 -> FY2026 / FM2
+   Fiscal Month:
+   IF calendarMonth >= fiscalStartMonth
+       THEN calendarMonth - fiscalStartMonth + 1
+       ELSE calendarMonth + 12 - fiscalStartMonth + 1
 
-WORLD ACCEPTANCE CORPORATION
-Start Month = 4
-202603 -> FY2026 / FM12
-202604 -> FY2027 / FM1
-202605 -> FY2027 / FM2
-202606 -> FY2027 / FM3
-202607 -> FY2027 / FM4
+   Fiscal Year:
+   IF fiscalStartMonth = 1
+       THEN calendarYear
+       ELSE
+           IF calendarMonth >= fiscalStartMonth
+               THEN calendarYear + 1
+               ELSE calendarYear
 
-For January-start customers:
-202601 -> FY2026 / FM1
-202602 -> FY2026 / FM2
-202612 -> FY2026 / FM12
+4. The query must NOT hardcode any customer name or fiscal start month.
 
-IMPORTANT:
-Do not assume the current stored FY/FM values are correct.
-Do not use customer-specific exceptions.
-Do not hardcode any customer or start month.
+5. I need the query to return these result sets:
+   - Overall totals: rows checked, rows matching, rows mismatched, customers checked, customers affected.
+   - Mismatch count grouped by fiscalStartMonth.
+   - One row per customer showing:
+       customer
+       fiscalStartMonth
+       earliestMonthKey
+       latestMonthKey
+       storedFY
+       storedFM
+       calculatedFY
+       calculatedFM
+       mismatchedRows
+       totalRows
+   - Rows with missing/invalid fiscal start separately.
 
-The calculation must always use:
+6. Also include a clearly separated spot-check section for:
+   ADIR INTERNATIONAL LLC
+   WORLD ACCEPTANCE CORPORATION
+   and one dynamically selected January-start customer.
 
-strMonthKey + tblCustomer.intFiscalYearMonthStart
+7. IMPORTANT:
+   The query must be completely READ-ONLY.
+   No UPDATE, INSERT, DELETE, MERGE, ALTER, DROP or permanent/temp table creation.
+   Do not modify code or database.
 
-using the END-YEAR convention.
+8. Make the output easy to copy/paste back here.
 
-After running the validation, STOP.
-
-Do not:
-- UPDATE tblMain
-- DELETE anything
-- INSERT anything
-- modify source code
-- modify frontend code
-- modify the Add New Month logic
-
-Show me the actual validation output and summary first. We will use those numbers to prepare a safe migration script and then make the minimal code change to prevent future incorrect FY/FM values.
+After providing the SQL, STOP.
+Do not make any assumptions about the actual mismatch count until I run it.

@@ -1,17 +1,38 @@
-READ-ONLY. Two checks. Quote with paths.
+SINGLE-FILE, BOUNDED EDIT. frontend/src/app/blackbook/edit/page.tsx, only the loadMonthKeys effect (~L726). Show diff BEFORE applying.
 
-CHECK 1 — FY switch month glitch: When switching Fiscal Year (e.g. 2026 → 2025), the previously-selected month (2026's) briefly persists before the correct latest month of the new year appears. Top Strip Month Key/Fiscal also briefly shows the old value.
+BUG (FY switch glitch): On FY change, selectedMonthKey isn't reset. loadMonthKeys seeds def from the OLD selectedMonthKey (e.g. 202603 from 2026), which is truthy, so the "pick new year's latest" branch is skipped, and it re-commits the stale month against the new year's list.
 
-1) In frontend/src/app/blackbook/edit/page.tsx, find the FY (year) dropdown onChange and how selectedMonthKey is reset when selectedYear changes. Quote it. When selectedYear changes, is selectedMonthKey cleared/reset immediately, or does it wait for the new series/monthkey-series to load (causing the stale flash)?
-2) Is there an effect that, on selectedYear change, sets selectedMonthKey to the new year's latest month? Quote it and its timing. Does the old selectedMonthKey render until the new one is set?
-3) Exact fix location: reset selectedMonthKey (or show a loading state) immediately on FY change so the stale month doesn't flash.
+FIX (agent's tighter option): Validate selectedMonthKey against the newly loaded arr. If it doesn't belong to the new year, fall through to the existing "prefer maxMonthKey, else last" logic.
 
-CHECK 2 — 60+ DPD % basis in Top Strip: Legacy shows 60+ DPD % on a PRINCIPAL N/R basis in the Top Strip for ALL customers.
-4) In frontend/src/blackbook/expr/tblMainCalcs.ts, quote per60DPD — what denominator does it use (Principal N/R or Gross N/R)? Is it fixed to Principal, or selection-based?
-5) In the Top Strip 60+ DPD % render (monthSummaryRegistry.ts), quote how it computes/picks the value. Does it force Principal N/R basis, or use a selection dropdown (which could give Gross for some customers)?
-6) Confirm: for the Top Strip, is 60+ DPD % ALWAYS Principal N/R (legacy parity), or can it be Gross for some customers based on a selection field?
+Find:
+    let def = selectedMonthKey;
+    const mk = (maxMonthKey || "").trim();
+    if (!def) {
+        const mkp = monthKeyParam.trim();
+        if (/^\d{6}$/.test(mkp) && arr.includes(mkp)) {
+            def = mkp;
+        } else {
+            def = arr.includes(mk) ? mk : arr[arr.length - 1] || "";
+        }
+    }
 
-OUTPUT:
-- CHECK 1: A) FY-change selectedMonthKey reset timing, quoted. B) Does old month flash before new? C) Fix location.
-- CHECK 2: D) per60DPD denominator (Principal/Gross/selection), quoted. E) Top Strip 60+ DPD % render basis, quoted. F) Is it always Principal (legacy) or can be Gross?
-- No fix. Findings only.
+Change the first line so a selectedMonthKey NOT in the new arr is treated as empty:
+    let def = arr.includes(selectedMonthKey) ? selectedMonthKey : "";
+    const mk = (maxMonthKey || "").trim();
+    if (!def) {
+        const mkp = monthKeyParam.trim();
+        if (/^\d{6}$/.test(mkp) && arr.includes(mkp)) {
+            def = mkp;
+        } else {
+            def = arr.includes(mk) ? mk : arr[arr.length - 1] || "";
+        }
+    }
+
+Only that one line change (def seed). Everything else unchanged.
+
+VERIFY:
+a) def = arr.includes(selectedMonthKey) ? selectedMonthKey : ""
+b) If selectedMonthKey is in the new year's arr, it's kept (no unnecessary reset); if not, falls through to latest.
+c) Nothing else changed.
+
+Show diff. Apply nothing until I confirm.

@@ -1,10 +1,17 @@
-Apply the Option A diff exactly as shown in generic.ts:
-Replace the two lines (Net C/O $ + YTD Net C/O $) with:
-    { label: "YTD Net C/O $", value: sumYtd(currentYearSeries, latestPoint, netCoDollarAliases) ?? pick(v(latestPoint), ytdNetCoDollarAliases), kind: "currency" },
-    { label: "TTM Net C/O %", ... }
+READ-ONLY. Two checks. Quote with paths.
 
-Wait — the diff shows removing the "Net C/O $" line too. Confirm: the diff REPLACES both "Net C/O $" and "YTD Net C/O $" lines with just the YTD line? Or does it keep "Net C/O $" and only change "YTD Net C/O $"? 
+CHECK 1 — FY switch month glitch: When switching Fiscal Year (e.g. 2026 → 2025), the previously-selected month (2026's) briefly persists before the correct latest month of the new year appears. Top Strip Month Key/Fiscal also briefly shows the old value.
 
-Quote the exact before/after so I confirm we're NOT accidentally removing the "Net C/O $" input tile (which must stay — it's the editable field). We only want to change the YTD Net C/O $ line to sum; the Net C/O $ line must remain.
+1) In frontend/src/app/blackbook/edit/page.tsx, find the FY (year) dropdown onChange and how selectedMonthKey is reset when selectedYear changes. Quote it. When selectedYear changes, is selectedMonthKey cleared/reset immediately, or does it wait for the new series/monthkey-series to load (causing the stale flash)?
+2) Is there an effect that, on selectedYear change, sets selectedMonthKey to the new year's latest month? Quote it and its timing. Does the old selectedMonthKey render until the new one is set?
+3) Exact fix location: reset selectedMonthKey (or show a loading state) immediately on FY change so the stale month doesn't flash.
 
-Show the corrected diff if needed, then apply.
+CHECK 2 — 60+ DPD % basis in Top Strip: Legacy shows 60+ DPD % on a PRINCIPAL N/R basis in the Top Strip for ALL customers.
+4) In frontend/src/blackbook/expr/tblMainCalcs.ts, quote per60DPD — what denominator does it use (Principal N/R or Gross N/R)? Is it fixed to Principal, or selection-based?
+5) In the Top Strip 60+ DPD % render (monthSummaryRegistry.ts), quote how it computes/picks the value. Does it force Principal N/R basis, or use a selection dropdown (which could give Gross for some customers)?
+6) Confirm: for the Top Strip, is 60+ DPD % ALWAYS Principal N/R (legacy parity), or can it be Gross for some customers based on a selection field?
+
+OUTPUT:
+- CHECK 1: A) FY-change selectedMonthKey reset timing, quoted. B) Does old month flash before new? C) Fix location.
+- CHECK 2: D) per60DPD denominator (Principal/Gross/selection), quoted. E) Top Strip 60+ DPD % render basis, quoted. F) Is it always Principal (legacy) or can be Gross?
+- No fix. Findings only.

@@ -1,6 +1,8 @@
-UPDATE tblMain
-SET intFiscalMonth = 12
+SELECT
+    strCustomerName,
+    strMonthKey,
+    intFiscalYear,
+    intFiscalMonth
+FROM tblMain
 WHERE LTRIM(RTRIM(strCustomerName)) = 'ADIR INTERNATIONAL LLC'
-    AND strMonthKey = '202501'
-    AND intFiscalYear = 2025
-    AND intFiscalMonth = 1;
+  AND strMonthKey = '202402';

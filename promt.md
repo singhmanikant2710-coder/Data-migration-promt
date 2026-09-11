@@ -1,46 +1,17 @@
-SINGLE-FILE, BOUNDED EDIT. frontend/src/app/blackbook/edit/page.tsx. Show unified diff BEFORE applying.
+READ-ONLY. Find how to make the Top Strip's 60+ DPD % and Cash Collections % follow the Principal/Gross dropdown (principalGrossByLabel), the same way the middle-panel tiles already do via computeConsumerFinancePercentOverride. Quote with paths.
 
-FIX (Option b — clobber guard): The recompute loop overwrites per60DPD/perCashCollections/perNetChargeOff with a wrong-basis (Gross, since selector string is absent) value — often 0 or wrong — destroying the server's correct per-customer basis value. Guard the assignment so a computed value does NOT overwrite a non-zero server value when the computed is 0, OR more safely: skip overwriting the three selector-driven percent metrics entirely (let the server's correct value stand).
+REQUIREMENT (confirmed vs legacy): In legacy, when a customer has BOTH Principal and Gross values, changing the Principal/Gross dropdown CHANGES the displayed % (live). The middle-panel tiles already do this via computeConsumerFinancePercentOverride(label, values, principalGrossByLabel, principalGrossOptions). But the Top Strip does NOT — it does pickExact(server value) then falls back to the raw calc, ignoring the dropdown.
 
-There are THREE copies of the loop: latestPointComputed (~L1253), rolling24WithEdits (~L1330), seriesWithEdits (~L1400). Apply to ALL THREE identically.
+1) Quote where the Top Strip tiles are rendered and where effectiveVal is computed (edit/page.tsx ~L4160-4175 — the middle-panel path that calls computeConsumerFinancePercentOverride). Is there a separate Top Strip render path that does NOT call the override?
+2) Quote the Top Strip tile render (the one showing 60+ DPD % / Cash Collections % in the green Summary strip). Does it use monthSummaryColumns' render (which does pickExact), and is that where we'd add the override?
+3) computeConsumerFinancePercentOverride uses principalGrossByLabel (dropdown state) + correct denominators (Cash Coll→prior, 60+DPD→current, NetC/O→AvgTTM). Confirm it's already imported/available in the Top Strip render scope.
+4) EXACT FIX: In the Top Strip render for the ConsumerFinance percent tiles (Cash Collections %, 60+ DPD %), apply computeConsumerFinancePercentOverride (same as middle panel) BEFORE the pickExact/server value, so the dropdown drives the Top Strip too. Where exactly?
+5) Does this need the guard (Option b) at all, or does applying the override make the guard unnecessary? (If the override runs on the Top Strip AND the recompute-loop clobber is the issue, we may still need to prevent the loop from writing wrong-basis per* — OR the override on render supersedes it since render happens after.)
 
-Current (each copy):
-    for (const [key, fn] of Object.entries(tblMainCalcs)) {
-        try {
-            const val = (fn as (i: TblMainInputs) => number)(inputs);
-            if (val != null && Number.isFinite(val)) {
-                (baseValues as any)[key] = val;
-            }
-        } catch { }
-    }
-
-Change to add a guard: for the three selector-driven percent keys (perCashCollections, per60DPD, perNetChargeOff), do NOT overwrite a non-zero existing (server) value with the calc result (since the calc can't see the selector string and would use the wrong Gross basis). For all other keys, keep current behavior.
-
-    const selectorDrivenPercentKeys = new Set(["perCashCollections", "per60DPD", "perNetChargeOff"]);
-    for (const [key, fn] of Object.entries(tblMainCalcs)) {
-        try {
-            const val = (fn as (i: TblMainInputs) => number)(inputs);
-            if (val != null && Number.isFinite(val)) {
-                // For selector-driven percents, the calc can't see the basis selector string
-                // (numeric-only values bag), so it would compute a wrong-basis value.
-                // Don't let it clobber a non-zero server value that already has the correct basis.
-                if (selectorDrivenPercentKeys.has(key)) {
-                    const existing = toNumberLike((baseValues as any)[key]);
-                    if (existing !== null && existing !== 0) {
-                        continue; // keep server's correct-basis value
-                    }
-                }
-                (baseValues as any)[key] = val;
-            }
-        } catch { }
-    }
-
-Apply to all THREE loop copies identically. Confirm toNumberLike is in scope in all three.
-
-VERIFY BEFORE SHOWING DIFF:
-a) Guard added for perCashCollections/per60DPD/perNetChargeOff — skips overwrite when server value is non-zero.
-b) Other keys unchanged (still overwrite for live edits).
-c) All three loop copies updated identically.
-d) toNumberLike available in each scope.
-
-Show the unified diff for all three. Apply nothing until I confirm.
+OUTPUT:
+- A) Top Strip render path for the % tiles, quoted. Does it call computeConsumerFinancePercentOverride today?
+- B) Where to add the override in the Top Strip render (exact location), quoted.
+- C) Is computeConsumerFinancePercentOverride available in that scope?
+- D) Interaction with the recompute-loop clobber: does render-time override win regardless, or do we still need the guard?
+- E) Recommended: apply override to Top Strip render (dropdown-follow, legacy parity). Confirm it's generic (works when both Principal & Gross values exist) and safe for View/Report.
+- No fix. Findings only.

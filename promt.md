@@ -36,3 +36,26 @@ After applying:
 4. Show me the exact diff before considering the fix complete.
 
 Do not make any other changes.
+
+
+SELECT
+    c.strCustomerName,
+    c.intFiscalYearMonthStart,
+    mk.strMonthKey,
+    mk.intFiscalYear,
+    mk.intFiscalMonth
+FROM <CustomerTable> c
+JOIN <MonthKeyTable> mk
+    ON mk.intCustomerID = c.intCustomerID
+WHERE c.strCustomerName = 'ADIR INTERNATIONAL LLC'
+  AND mk.strMonthKey IN ('202412', '202501')
+ORDER BY mk.strMonthKey;
+
+SELECT
+    strCustomerName,
+    intFiscalYearMonthStart,
+    latest_month,
+    latest_fiscal_year,
+    latest_fiscal_month
+FROM <YourExistingCustomerLatestMonthQuery/Table>
+WHERE strCustomerName = 'ADIR INTERNATIONAL LLC';

@@ -1,23 +1,46 @@
-READ-ONLY. Find how to carry the Principal/Gross selector to the recompute so 60+ DPD %, Cash Collections %, and Net C/O % use the correct basis, and so the panel dropdown selection reflects in the Top Strip. Quote with paths.
+SINGLE-FILE, BOUNDED EDIT. frontend/src/app/blackbook/edit/page.tsx. Show unified diff BEFORE applying.
 
-ROOT CAUSE (confirmed): The tblMainCalcs recompute loop runs per60DPD/perCashCollections/perNetChargeOff over a numeric-only values bag. The selector string (strPrincipalOrGrossCalculationSelectionper60DPD / ...CashCollection / ...NetChargeOff) never survives the DTO, so sel="" → the calc takes the Gross branch and CLOBBERS the server's correct Principal-basis value. Also, the panel's Principal/Gross <Select> (principalGrossByLabel state) drives computeConsumerFinancePercentOverride for middle-panel tiles but NOT the Top Strip.
+FIX (Option b — clobber guard): The recompute loop overwrites per60DPD/perCashCollections/perNetChargeOff with a wrong-basis (Gross, since selector string is absent) value — often 0 or wrong — destroying the server's correct per-customer basis value. Guard the assignment so a computed value does NOT overwrite a non-zero server value when the computed is 0, OR more safely: skip overwriting the three selector-driven percent metrics entirely (let the server's correct value stand).
 
-USER REQUIREMENT: When the user selects Principal (or Gross) in the panel dropdown for a metric, the Top Strip's same metric % must use that SAME basis (consistent).
+There are THREE copies of the loop: latestPointComputed (~L1253), rolling24WithEdits (~L1330), seriesWithEdits (~L1400). Apply to ALL THREE identically.
 
-1) Quote the recompute loop (edit/page.tsx ~L1253) and confirm it clobbers per60DPD/perCashCollections/perNetChargeOff with a wrong-basis value when the selector string is absent.
-2) Quote the three selector strings' names and how principalGrossByLabel maps labels → selection (Principal N/R / Gross N/R). How does the panel dropdown set them?
-3) Quote computeConsumerFinancePercentOverride and how it resolves the basis from principalGrossByLabel + uses the correct denominators (prior-month for Cash Coll, current for 60+DPD, Avg-TTM for Net C/O). This already works for middle-panel tiles.
-4) Quote the Top Strip render for 60+ DPD %, Cash Collections %, Net C/O % (monthSummaryRegistry) — currently they do pickExact (server value) then fallback to the calc. The clobbered value is what pickExact finds.
-5) FIX OPTIONS — evaluate:
-   (a) Hydrate the selector strings onto the row (baseValues/merged) from principalGrossByLabel state before the recompute loop runs, so per60DPD/perCashCollections/perNetChargeOff take the correct branch. This makes both Top Strip and panel consistent with the dropdown.
-   (b) Stop the clobber: in the loop, skip overwriting per* when the computed value is 0 or when a non-zero server value exists (guard). This restores the server's correct basis but doesn't make the Top Strip follow the dropdown live.
-   (c) Apply computeConsumerFinancePercentOverride to the Top Strip render too (like middle-panel), so the dropdown selection drives the Top Strip %.
-   Which option (or combination) makes the Top Strip follow the panel dropdown selection (user's requirement) with lowest risk and no regression to read-only View/Report pages?
+Current (each copy):
+    for (const [key, fn] of Object.entries(tblMainCalcs)) {
+        try {
+            const val = (fn as (i: TblMainInputs) => number)(inputs);
+            if (val != null && Number.isFinite(val)) {
+                (baseValues as any)[key] = val;
+            }
+        } catch { }
+    }
 
-OUTPUT:
-- A) The clobbering loop, quoted.
-- B) Selector strings + principalGrossByLabel mapping + how dropdown sets them, quoted.
-- C) computeConsumerFinancePercentOverride (basis resolution + denominators), quoted.
-- D) Top Strip render for the three metrics, quoted.
-- E) Recommended fix: which option(s) make Top Strip follow the panel dropdown for all three metrics, generic across customers, without breaking View/Report pages. Exact location(s).
-- No fix. Findings only.
+Change to add a guard: for the three selector-driven percent keys (perCashCollections, per60DPD, perNetChargeOff), do NOT overwrite a non-zero existing (server) value with the calc result (since the calc can't see the selector string and would use the wrong Gross basis). For all other keys, keep current behavior.
+
+    const selectorDrivenPercentKeys = new Set(["perCashCollections", "per60DPD", "perNetChargeOff"]);
+    for (const [key, fn] of Object.entries(tblMainCalcs)) {
+        try {
+            const val = (fn as (i: TblMainInputs) => number)(inputs);
+            if (val != null && Number.isFinite(val)) {
+                // For selector-driven percents, the calc can't see the basis selector string
+                // (numeric-only values bag), so it would compute a wrong-basis value.
+                // Don't let it clobber a non-zero server value that already has the correct basis.
+                if (selectorDrivenPercentKeys.has(key)) {
+                    const existing = toNumberLike((baseValues as any)[key]);
+                    if (existing !== null && existing !== 0) {
+                        continue; // keep server's correct-basis value
+                    }
+                }
+                (baseValues as any)[key] = val;
+            }
+        } catch { }
+    }
+
+Apply to all THREE loop copies identically. Confirm toNumberLike is in scope in all three.
+
+VERIFY BEFORE SHOWING DIFF:
+a) Guard added for perCashCollections/per60DPD/perNetChargeOff — skips overwrite when server value is non-zero.
+b) Other keys unchanged (still overwrite for live edits).
+c) All three loop copies updated identically.
+d) toNumberLike available in each scope.
+
+Show the unified diff for all three. Apply nothing until I confirm.

@@ -1,32 +1,148 @@
-Read-only. No modifications made. Let me confirm the exact on-disk state so the report is accurate.
+We need to fix ONE specific UI synchronization bug in:
 
-Confirmed — nothing was modified this turn. Verified on-disk state:
+frontend/src/app/blackbook/edit/page.tsx
 
-| Location | State |
-|---|---|
-| L1960 }, [isConsumerFinance, latestPoint]); | **Applied** (two turns ago) |
-| L1912-1944 stored-selector seed block | **Applied** (two turns ago) |
-| if (!latestPoint) guard — Hunk 1 | **Not applied** |
-| L3547 const effectiveVal = pendingVal !== undefined ? pendingVal : t.value; | **Not applied** (still const, no override) |
-| L3529/3554/3555 + L3623/3625/3626 display inline expressions | **Not applied** (still inline) |
-| L4191-4197 middle-panel override | Pre-existing, untouched |
+DO NOT change backend, API, DTO, formulas, recompute logic, Add New Month logic, or any existing calculation behavior.
 
-## The finding, restated
+CURRENT BEHAVIOR:
+In the new application, the middle "Cash & Charge-offs" panel works correctly.
 
-The stored-selector seed currently on disk is **dead code**. `isConsumerFinance` becomes true from the `industry` query param on first render, while `series` is empty and `latestPoint` is null. The effect therefore runs with `lv = {}`, all three selectors read as `""`, `norm("")` returns `def`, and all six labels are written with the Principal default. When the row later arrives and the effect re-runs via the `latestPoint` dependency, `if (!next[lbl])` is false for every label, so the customer's real stored basis is never applied.
+Example:
+- Cash Collections % = Principal N/R -> 5.82%
+- Change dropdown to Gross N/R -> middle panel immediately becomes 4.50%
 
-Net effect today: the ~7-11% Gross customers still display Principal, exactly as before my change. The change is inert rather than harmful.
+BUT the Summary Top Strip still shows the old 5.82%.
 
-## Why the dependency stays
+Same problem exists for 60+ DPD:
+- Principal N/R -> 4.88%
+- Gross N/R -> 3.51%
+The middle panel changes, but Summary Top Strip does not follow it.
 
-To your earlier concern — `latestPoint` in the deps **cannot** overwrite a manual selection. The `if (!next[lbl])` guard short-circuits any label that already holds a value, regardless of origin. Removing the dependency would make the stored basis permanently unreachable, so the dependency is necessary; it just isn't sufficient without the `!latestPoint` early return.
+LEGACY BEHAVIOR:
+The Summary Top Strip follows the selected dropdown immediately:
+- Cash Collections: Principal 5.82% / Gross 4.50%
+- 60+ DPD: Principal 4.88% / Gross 3.51%
 
-## Outstanding work, all still unapplied
+IMPORTANT REGRESSION REQUIREMENT:
+The application has existing live formula behavior.
 
-1. **Hunk 1** — `if (!latestPoint) { setPrincipalGrossOptions(options); return; }` after `if (cancelled) return;`. Makes the seed actually function.
-2. **Hunks 2-3** — Top Strip `let effectiveVal` + CF percent override gated on `pendingVal === undefined`, then use `effectiveVal` in the inline display expressions.
-3. **Not in scope, still recommended** — `setPrincipalGrossByLabel({})` in the `[name]` reset effect (L544-548). Once Hunk 1 makes seeding real, CF customer A → CF customer B navigation will leak A's basis onto B, because the component re-renders without remounting and the guard blocks re-seeding.
+When the user enters/changes a value in Add New Month, frontend formulas immediately recalculate dependent cells and the UI updates instantly.
 
-Two caveats on your stated expectations, unchanged from my last message: there is **no Net C/O % tile in the Top Strip** (only `Net C/O $`, `YTD Net C/O $`, `TTM Net C/O %`), so expectation #4 has nothing to synchronize; and **TTM Net C/O %** correctly will not follow the dropdown, since `perNetChargeOffTTM` has no selector in legacy.
+DO NOT modify or bypass this existing calculation/recompute flow.
 
-Standing by — tell me which hunks to apply.
+The fix must ONLY make the Top Strip display the already-calculated Consumer Finance percentage.
+
+ROOT CAUSE:
+In the Top Strip render around L3512-3601, `effectiveVal` is currently calculated from:
+
+    pendingVal !== undefined ? pendingVal : t.value
+
+but the display expressions independently use:
+
+    pendingVal !== undefined ? pendingVal : t.value
+
+Therefore the Top Strip does not use the Consumer Finance percentage override that the middle panel already uses.
+
+SAFE FIX:
+
+1. Change:
+
+    const effectiveVal = pendingVal !== undefined ? pendingVal : t.value;
+
+to:
+
+    let effectiveVal = pendingVal !== undefined ? pendingVal : t.value;
+
+2. Immediately after that, add the EXISTING Consumer Finance override logic:
+
+    if (
+      pendingVal === undefined &&
+      isConsumerFinance &&
+      String(t.kind || "").toLowerCase() === "percent"
+    ) {
+      const ov = computeConsumerFinancePercentOverride(
+        String(t.label || ""),
+        (latestPointComputed?.values || {}) as any,
+        principalGrossByLabel,
+        principalGrossOptions
+      );
+
+      if (ov !== null) {
+        effectiveVal = ov;
+      }
+    }
+
+IMPORTANT:
+`pendingVal` must have priority.
+
+If a user is editing/entering a value in Add New Month and `pendingVal` exists, DO NOT replace it with the override.
+
+This is critical to preserve existing live-edit behavior.
+
+3. In the Top Strip `displayText`, replace ONLY the inline:
+
+    pendingVal !== undefined ? pendingVal : t.value
+
+with:
+
+    effectiveVal
+
+Do this for:
+- YTD PBT formatting
+- Inventory Turn / A/R Turn Days formatting
+- renderTopStripValue()
+
+Do not change the formatting functions themselves.
+
+4. Do the same in the read-only Top Strip `<span>`.
+
+The six existing inline display occurrences identified previously should use `effectiveVal`.
+
+DO NOT modify the middle-panel calculation.
+
+DO NOT modify `computeConsumerFinancePercentOverride()`.
+
+DO NOT modify the formula/recompute loop.
+
+DO NOT modify pending edit handling.
+
+DO NOT modify Add New Month.
+
+DO NOT modify t.value generation.
+
+DO NOT add any clobber guard.
+
+DO NOT change MetricPoint type.
+
+DO NOT change backend.
+
+EXPECTED RESULT:
+
+A) Cash Collections:
+    Principal N/R -> 5.82% in middle panel AND Summary Top Strip
+    Gross N/R    -> 4.50% in middle panel AND Summary Top Strip
+
+B) 60+ DPD:
+    Principal N/R -> 4.88% in middle panel AND Summary Top Strip
+    Gross N/R    -> 3.51% in middle panel AND Summary Top Strip
+
+C) Changing Cash Collections dropdown must NOT change 60+ DPD.
+
+D) Changing 60+ DPD dropdown must NOT change Cash Collections.
+
+E) Existing Add New Month/live formula calculation must behave exactly as before.
+
+F) Existing pending/user-entered values must always win over the display override.
+
+SCOPE:
+Only:
+frontend/src/app/blackbook/edit/page.tsx
+
+BEFORE APPLYING:
+- Show me the complete unified diff.
+- Do NOT modify the file yet.
+- Do NOT run build.
+- Do NOT run tests.
+- Wait for my confirmation.
+
+First inspect the existing code and show the diff only.

@@ -1,148 +1,100 @@
-We need to fix ONE specific UI synchronization bug in:
+APPLY THE REVIEWED DIFF NOW — STRICTLY BOUNDED, NO EXTRA CHANGES.
 
-frontend/src/app/blackbook/edit/page.tsx
+We have confirmed the requirement and reviewed the current diff.
 
-DO NOT change backend, API, DTO, formulas, recompute logic, Add New Month logic, or any existing calculation behavior.
+GOAL:
+Fix ONLY the Consumer Finance Summary Top Strip display so that its percentage value follows the same Principal/Gross basis selected in the corresponding Cash Collections % / 60+ DPD % dropdown, matching the legacy application's behavior.
 
-CURRENT BEHAVIOR:
-In the new application, the middle "Cash & Charge-offs" panel works correctly.
+STRICT SCOPE:
+- Only modify: frontend/src/app/blackbook/edit/page.tsx
+- Apply ONLY the already-reviewed Top Strip diff (Hunk 1 + Hunk 2 shown in the previous diff).
+- Do NOT create any new rows.
+- Do NOT remove any existing rows.
+- Do NOT change the layout or row structure.
+- Do NOT change any backend file.
+- Do NOT change MetricPoint or any TypeScript type.
+- Do NOT change tblMain/API/DTO/mapping.
+- Do NOT change calculation formulas.
+- Do NOT change tblMainCalcs.
+- Do NOT change the recompute loops.
+- Do NOT change Add New Month logic.
+- Do NOT change live-edit logic.
+- Do NOT change month switching.
+- Do NOT change edits/setEdits/commitIfChanged/chooseWriteKey.
+- Do NOT add any clobber/guard logic outside the reviewed diff.
+- Do NOT modify View/Report behavior.
+- Do NOT modify non-Consumer-Finance behavior.
 
-Example:
-- Cash Collections % = Principal N/R -> 5.82%
-- Change dropdown to Gross N/R -> middle panel immediately becomes 4.50%
+IMPORTANT EXISTING-BEHAVIOR SAFETY:
+The existing calculation path MUST remain untouched.
 
-BUT the Summary Top Strip still shows the old 5.82%.
+For Add New Month and live editing:
+- When the user enters/changes a value, the existing pendingVal must continue to have priority.
+- Existing frontend formulas/recompute behavior must continue to update cells instantly exactly as before.
+- A user-entered/manual value must NEVER be replaced by the new display override.
+- The new override is DISPLAY ONLY for the Consumer Finance percentage Top Strip tiles.
+- The existing middle-panel Cash Collections / Net C/O / 60+ DPD calculations and dropdown behavior must remain unchanged.
 
-Same problem exists for 60+ DPD:
-- Principal N/R -> 4.88%
-- Gross N/R -> 3.51%
-The middle panel changes, but Summary Top Strip does not follow it.
+IMPLEMENTATION REQUIREMENT:
+Use the reviewed logic exactly:
 
-LEGACY BEHAVIOR:
-The Summary Top Strip follows the selected dropdown immediately:
-- Cash Collections: Principal 5.82% / Gross 4.50%
-- 60+ DPD: Principal 4.88% / Gross 3.51%
+1. Keep:
+   const pendingVal = (editMode && mk && writeKey) ? edits[mk]?.[writeKey] : undefined;
 
-IMPORTANT REGRESSION REQUIREMENT:
-The application has existing live formula behavior.
+2. Keep:
+   const effectiveVal = pendingVal !== undefined ? pendingVal : t.value;
 
-When the user enters/changes a value in Add New Month, frontend formulas immediately recalculate dependent cells and the UI updates instantly.
+3. For Consumer Finance percentage Top Strip tiles only:
+   - call computeConsumerFinancePercentOverride(...)
+   - pass latestPointComputed?.values || {}
+   - pass principalGrossByLabel
+   - pass principalGrossOptions
+   - only use the returned override when it is not null.
+   - only run this override when pendingVal === undefined.
+   - therefore a pending user edit ALWAYS wins.
 
-DO NOT modify or bypass this existing calculation/recompute flow.
+4. Keep the existing display formatting behavior for:
+   - YTD PBT
+   - Inventory Turn
+   - A/R Turn Days
+   - all other non-CF percentage/currency/ratio tiles.
 
-The fix must ONLY make the Top Strip display the already-calculated Consumer Finance percentage.
+5. Apply the same effectiveVal/display expression to the existing read-only <span> so that the Summary Top Strip displays the same basis-aware value.
 
-ROOT CAUSE:
-In the Top Strip render around L3512-3601, `effectiveVal` is currently calculated from:
+6. Do NOT alter the edit <input> behavior or its default value logic beyond what is already included in the reviewed diff.
 
-    pendingVal !== undefined ? pendingVal : t.value
+SEED FIX:
+The previously reviewed stored-selector seed fix is already present and must NOT be removed or rewritten.
+It must continue to:
+- wait until latestPoint exists,
+- read the customer's stored Cash Collections / 60+ DPD / Net C/O selectors,
+- seed both $ and % labels,
+- preserve the existing `if (!next[lbl])` guard,
+- never overwrite a user's manual dropdown selection.
 
-but the display expressions independently use:
-
-    pendingVal !== undefined ? pendingVal : t.value
-
-Therefore the Top Strip does not use the Consumer Finance percentage override that the middle panel already uses.
-
-SAFE FIX:
-
-1. Change:
-
-    const effectiveVal = pendingVal !== undefined ? pendingVal : t.value;
-
-to:
-
-    let effectiveVal = pendingVal !== undefined ? pendingVal : t.value;
-
-2. Immediately after that, add the EXISTING Consumer Finance override logic:
-
-    if (
-      pendingVal === undefined &&
-      isConsumerFinance &&
-      String(t.kind || "").toLowerCase() === "percent"
-    ) {
-      const ov = computeConsumerFinancePercentOverride(
-        String(t.label || ""),
-        (latestPointComputed?.values || {}) as any,
-        principalGrossByLabel,
-        principalGrossOptions
-      );
-
-      if (ov !== null) {
-        effectiveVal = ov;
-      }
-    }
-
-IMPORTANT:
-`pendingVal` must have priority.
-
-If a user is editing/entering a value in Add New Month and `pendingVal` exists, DO NOT replace it with the override.
-
-This is critical to preserve existing live-edit behavior.
-
-3. In the Top Strip `displayText`, replace ONLY the inline:
-
-    pendingVal !== undefined ? pendingVal : t.value
-
-with:
-
-    effectiveVal
-
-Do this for:
-- YTD PBT formatting
-- Inventory Turn / A/R Turn Days formatting
-- renderTopStripValue()
-
-Do not change the formatting functions themselves.
-
-4. Do the same in the read-only Top Strip `<span>`.
-
-The six existing inline display occurrences identified previously should use `effectiveVal`.
-
-DO NOT modify the middle-panel calculation.
-
-DO NOT modify `computeConsumerFinancePercentOverride()`.
-
-DO NOT modify the formula/recompute loop.
-
-DO NOT modify pending edit handling.
-
-DO NOT modify Add New Month.
-
-DO NOT modify t.value generation.
-
-DO NOT add any clobber guard.
-
-DO NOT change MetricPoint type.
-
-DO NOT change backend.
-
-EXPECTED RESULT:
-
-A) Cash Collections:
-    Principal N/R -> 5.82% in middle panel AND Summary Top Strip
-    Gross N/R    -> 4.50% in middle panel AND Summary Top Strip
-
-B) 60+ DPD:
-    Principal N/R -> 4.88% in middle panel AND Summary Top Strip
-    Gross N/R    -> 3.51% in middle panel AND Summary Top Strip
-
-C) Changing Cash Collections dropdown must NOT change 60+ DPD.
-
-D) Changing 60+ DPD dropdown must NOT change Cash Collections.
-
-E) Existing Add New Month/live formula calculation must behave exactly as before.
-
-F) Existing pending/user-entered values must always win over the display override.
-
-SCOPE:
-Only:
-frontend/src/app/blackbook/edit/page.tsx
+DO NOT ADD ANY OTHER FIX.
 
 BEFORE APPLYING:
-- Show me the complete unified diff.
-- Do NOT modify the file yet.
-- Do NOT run build.
-- Do NOT run tests.
-- Wait for my confirmation.
+- Inspect the current file and make sure the reviewed diff still matches the current code.
+- If the current code has materially changed and the reviewed diff cannot be applied safely, STOP and show me the conflict/difference instead of guessing.
 
-First inspect the existing code and show the diff only.
+AFTER APPLYING:
+1. Show the exact `git diff -- frontend/src/app/blackbook/edit/page.tsx`.
+2. Confirm that ONLY the intended Top Strip changes were applied.
+3. Run `git diff --check`.
+4. Confirm there are no changes to any other file.
+5. Do NOT refactor, clean up, optimize, or make any additional changes.
+6. Do NOT modify anything if the diff contains unexpected changes.
+7. Do NOT run a build yet. I will explicitly confirm before the build/test step.
+
+FINAL VERIFICATION:
+Confirm explicitly:
+- No rows added.
+- No rows removed.
+- No calculation logic changed.
+- No Add New Month logic changed.
+- No live-edit/recompute logic changed.
+- Manual/pending values still have priority.
+- Principal/Gross dropdown basis now controls the corresponding Consumer Finance Summary percentage display.
+- Non-Consumer-Finance behavior remains unchanged.
+- Only frontend/src/app/blackbook/edit/page.tsx was modified.

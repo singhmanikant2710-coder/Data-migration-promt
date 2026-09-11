@@ -1,82 +1,52 @@
 SELECT
     c.strCustomerName,
     c.intFiscalYearMonthStart AS fiscal_start_month,
-    lm.strMonthKey AS latest_month_key,
-    lm.intFiscalYear AS latest_stored_fiscal_year,
-    lm.intFiscalMonth AS latest_stored_fiscal_month,
-
-    CONVERT(varchar(6),
-        DATEADD(
-            MONTH,
-            1,
-            CONVERT(date, lm.strMonthKey + '01')
-        ),
-        112
-    ) AS next_month_key,
+    m.strMonthKey,
+    m.intFiscalYear AS stored_fiscal_year,
+    m.intFiscalMonth AS stored_fiscal_month,
 
     CASE
-        WHEN MONTH(
-            DATEADD(
-                MONTH,
-                1,
-                CONVERT(date, lm.strMonthKey + '01')
-            )
-        ) >= c.intFiscalYearMonthStart
-        THEN YEAR(
-            DATEADD(
-                MONTH,
-                1,
-                CONVERT(date, lm.strMonthKey + '01')
-            )
-        ) + 1
-        ELSE YEAR(
-            DATEADD(
-                MONTH,
-                1,
-                CONVERT(date, lm.strMonthKey + '01')
-            )
-        )
-    END AS expected_next_fiscal_year,
+        WHEN CAST(RIGHT(m.strMonthKey, 2) AS INT) >= c.intFiscalYearMonthStart
+        THEN CAST(LEFT(m.strMonthKey, 4) AS INT) + 1
+        ELSE CAST(LEFT(m.strMonthKey, 4) AS INT)
+    END AS expected_fiscal_year,
 
     CASE
-        WHEN MONTH(
-            DATEADD(
-                MONTH,
-                1,
-                CONVERT(date, lm.strMonthKey + '01')
-            )
-        ) >= c.intFiscalYearMonthStart
-        THEN MONTH(
-            DATEADD(
-                MONTH,
-                1,
-                CONVERT(date, lm.strMonthKey + '01')
-            )
-        ) - c.intFiscalYearMonthStart + 1
-        ELSE MONTH(
-            DATEADD(
-                MONTH,
-                1,
-                CONVERT(date, lm.strMonthKey + '01')
-            )
-        ) + 12 - c.intFiscalYearMonthStart + 1
-    END AS expected_next_fiscal_month
+        WHEN CAST(RIGHT(m.strMonthKey, 2) AS INT) >= c.intFiscalYearMonthStart
+        THEN CAST(RIGHT(m.strMonthKey, 2) AS INT)
+             - c.intFiscalYearMonthStart + 1
+        ELSE CAST(RIGHT(m.strMonthKey, 2) AS INT)
+             + 12 - c.intFiscalYearMonthStart + 1
+    END AS expected_fiscal_month
 
-FROM tblCustomer c
-
-OUTER APPLY
-(
-    SELECT TOP 1
-        m.strMonthKey,
-        m.intFiscalYear,
-        m.intFiscalMonth
-    FROM tblMain m
-    WHERE LTRIM(RTRIM(m.strCustomerName))
-        = LTRIM(RTRIM(c.strCustomerName))
-    ORDER BY m.strMonthKey DESC
-) lm
+FROM tblMain m
+INNER JOIN tblCustomer c
+    ON LTRIM(RTRIM(c.strCustomerName))
+       = LTRIM(RTRIM(m.strCustomerName))
 
 WHERE c.intFiscalYearMonthStart IS NOT NULL
   AND c.strStatus = 'Active'
+  AND
+  (
+      m.intFiscalYear <>
+      CASE
+          WHEN CAST(RIGHT(m.strMonthKey, 2) AS INT) >= c.intFiscalYearMonthStart
+          THEN CAST(LEFT(m.strMonthKey, 4) AS INT) + 1
+          ELSE CAST(LEFT(m.strMonthKey, 4) AS INT)
+      END
 
-ORDER BY c.strCustomerName;
+      OR
+
+      m.intFiscalMonth <>
+      CASE
+          WHEN CAST(RIGHT(m.strMonthKey, 2) AS INT) >= c.intFiscalYearMonthStart
+          THEN CAST(RIGHT(m.strMonthKey, 2) AS INT)
+               - c.intFiscalYearMonthStart + 1
+          ELSE CAST(RIGHT(m.strMonthKey, 2) AS INT)
+               + 12 - c.intFiscalYearMonthStart + 1
+      END
+  )
+
+ORDER BY
+    c.strCustomerName,
+    m.strMonthKey;

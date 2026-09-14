@@ -1,14 +1,20 @@
-Bug 214 — CRM Summary Table report, 3 issues. READ-ONLY, no edits. One pass, answer everything, STOP.
+Bug 214 issue 2 fix — 2 decimal places on the 4 percentage columns. SINGLE FILE. Show diff, do NOT commit.
 
-CONTEXT: 
-1. Exposure column under BORROWER FINDING TOTALS double-counts borrowers with 2+ findings for that CRM Component (Count total is correct, Exposure is not — e.g. The Collier at Clift Farm LLC, Sample ID 353).
-2. Percent totals under UNSATISFACTORY TRANSACTIONS and BORROWER FINDING TOTALS (all 4 percentage calculations) need 2 decimal places (e.g. 2/58 = 3.54%) — currently not showing 2 decimals despite a prior attempt ("Not Addressed").
-3. NEW: add a "Commitment" column to the detail tables, summing Customer Commitment per row.
+FILE: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
 
-Investigate:
-1. Find the CRM Summary Table PDF component (likely CrmSummaryTablePDF.tsx) and its backend repository (SqlCrmSummaryTableReportRepository.cs). 
-2. EXPOSURE DOUBLE-COUNT: find the exact SQL/aggregation that computes Exposure under "BORROWER FINDING TOTALS". Is it double-counting because a borrower with multiple findings for the same CRM Component gets their exposure summed once per finding row instead of once per borrower? Paste the exact query/aggregation logic. Also confirm the Count aggregation (which is correct) so we can see why one is right and the other isn't.
-3. PERCENT FORMATTING: find where the 4 percentage columns (under UNSATISFACTORY TRANSACTIONS and BORROWER FINDING TOTALS) are formatted/rendered. What format string/logic is used today? Why might a prior fix attempt not have worked (e.g. wrong file, wrong component, a second render path)?
-4. COMMITMENT COLUMN: find the "detail tables" in this report (the per-row/per-borrower tables, not the totals tables). Is Commitment data already available in the backend response (reuse from other reports' SUM(Accounts.Commitment) pattern), or does it need to be added to the query/DTO? List each detail table that would need this new column.
+1. Lines ~343, ~346 (countPct, expPct): change the hardcoded pct01(frac, 0) to pct01(frac, 2) in both functions.
+2. Line ~337 (the Intl.NumberFormat call inside pct01): add minimumFractionDigits: maxFrac alongside maximumFractionDigits: maxFrac, so both are set to the same value (fixed 2 decimals, not just an upper bound). Also apply the same fix to the catch-fallback (line 339, .toFixed(maxFrac) already handles this correctly, no change needed there).
 
-Report file paths + line numbers for all three issues, the double-count root cause, why percent formatting didn't stick, and whether Commitment data needs a backend addition. Do NOT propose or write a fix yet.
+Verify: 0 → "0.00%", 0.03 → "3.00%", 0.0344827 → "3.45%". Mirror the correct pattern already used in ManagementSummaryPDF.tsx (198-199) / pageSetup.ts (405-406).
+
+Do NOT change pct01's default parameter value — the fix must be at the two call sites (343, 346) plus the minimumFractionDigits addition, since defaults are irrelevant when call sites pass explicit values.
+
+Show diff. Rebuild. Do NOT commit.
+
+
+Hi Geoff, on the Commitment column request for CRM Summary Table detail tables — a quick clarification needed. The detail tables show one row per finding, so a borrower with 2 findings appears on 2 rows. If we show that borrower's full Commitment on every row, the number will visually repeat and anyone summing the column would get a doubled total (the same issue as the Exposure bug you reported).
+Which would you prefer:
+A) Show Commitment only on the borrower's first row, blank on subsequent finding rows for the same borrower (cleanest — no risk of double-counting if summed)
+B) Repeat the full Commitment on every finding row (simplest, but a naive column sum would double-count)
+C) Add a section subtotal at the bottom (distinct borrowers only)
+My recommendation is A. Let me know and I'll implement it — this also needs a small backend addition (Commitment isn't in the details query today) so I want to get the design right the first time.

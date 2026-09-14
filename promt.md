@@ -1,10 +1,16 @@
-Bug 227 — CORE Exports date fields should be Date Only (MM-DD-YYYY) for 02_CORE_01_Samples, 02_CORE_02_Reviews, 02_CORE_04_Accounts, 02_CORE_05_Covenants. READ-ONLY, no edits. One pass, answer, STOP.
+SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'dbo'
+  AND TABLE_NAME IN ('02_CORE_01_Samples', '02_CORE_02_Reviews', '02_CORE_04_Accounts', '02_CORE_05_Covenants')
+  AND DATA_TYPE IN ('date','datetime','datetime2','smalldatetime','datetimeoffset','time')
+ORDER BY TABLE_NAME, ORDINAL_POSITION;
 
-Investigate:
-1. Find ExportsController.cs (or wherever these 4 exports are generated — CSV via WriteCsvFromSqlAsync, same file as Bug 222). Find ToInvariantString (or whatever formats cell values before writing to CSV).
-2. How are DateTime/DateOnly values currently formatted? Paste the exact format string used today (we saw 'yyyy-MM-ddTHH:mm:ss' during Bug 222 investigation — confirm if that's still the case, or if it changed).
-3. For EACH of the 4 exports (Samples, Reviews, Accounts, Covenants), confirm the underlying SQL column types for their date columns — are they DATETIME2, DATE, or something else in the DB? This matters because a DATETIME2 column with a time component of 00:00:00 vs one with a real time value need to be handled the same way (format-only, not data truncation).
-4. Is the formatting logic SHARED across all exports (one ToInvariantString used everywhere), or does each export have its own formatting path? This determines whether one change covers all 4, or 4 separate changes are needed.
-5. Are there any OTHER exports (besides these 4) that also go through the same formatting function? If so, would fixing it there affect exports NOT in scope for this bug (e.g. the other 3 CORE exports, or non-CORE reports)?
+SELECT COUNT(*) AS rows_with_time
+FROM dbo.[02_CORE_01_Samples] WITH (NOLOCK)
+WHERE Created_date IS NOT NULL AND CAST(Created_date AS time) <> '00:00:00';
 
-Report the exact format string, whether it's shared, and the blast radius of a change. Do NOT propose or write a fix yet.
+
+Hi Geoff, quick confirmation before I make all date fields in these 4 exports Date-Only:
+A couple of date columns (like Sample's Created_date, Closed_Date) actually store a real time-of-day, not just midnight. Formatting them as MM-DD-YYYY would drop that time from the export. Is that OK, or should time-bearing columns keep their time?
+MM-DD-YYYY is ambiguous in Excel if opened on a non-US regional setting (03-04-2026 could read as March 4 or April 3). Is MM-DD-YYYY specifically required, or would MM/DD/YYYY or a clearer format work? (Just confirming since it affects how other teams might read the file.)
+Once confirmed I'll implement — it's a single shared function, so easy to change once we're aligned on the exact format.

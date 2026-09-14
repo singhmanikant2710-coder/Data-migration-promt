@@ -1,15 +1,8 @@
-Bug 220 update — Geoff confirmed (via Teams) that "Waived" covenants MUST be included as Non-Compliant, alongside the already-working "Not Compliant" and "Past Due". SINGLE FILE. Show diff, do NOT commit.
+Bug 225 — CRM Summary PDF: Scorecard Assessment table rows split across page boundaries (same mechanism as Bug 216), causing columns to shift left on the following page. Confirmed by Geoff on pages 7&8, 13&14, 17&18. READ-ONLY, no edits. One pass, answer, STOP.
 
-FILE: backend/src/Casrr.Infrastructure/SqlServer/SqlNonCompliantCovenantsReportRepository.cs
+1. Find the CRM Summary PDF component (CrmSummaryPDF.tsx) and the Scorecard Assessment table's row rendering (the table with SCORECARD ID | DATE | BANK PD | BANK LGD | CAS PD | CAS LGD | SCORECARD TYPE | SCORECARD ASSESSMENT columns). File + line.
+2. Does the data-row <View> have wrap={false}? Does the header row have it?
+3. Confirm the Scorecard ID cell is the multi-line cell (from the Bug 191 hyphen-wrap fix) causing the row height variance that triggers the split, same as Bug 216's Customer Name cell.
+4. Report the exact line(s) needing wrap={false}, mirroring the Bug 216 fix pattern (and NonCompliantCovenantsPDF/CroProductionSummaryPDF's correct usage).
 
-The normalized status predicate (~line 360-365) currently matches:
-  REPLACE(REPLACE(UPPER(LTRIM(RTRIM(ISNULL(c.[Covenant_last_eval_status], '')))), '-', ''), ' ', '') IN ('NONCOMPLIANT','NOTCOMPLIANT','PASTDUE')
-
-Add 'WAIVED' to that IN list (normalized form, no hyphen/space stripping needed since "Waived" has neither):
-  IN ('NONCOMPLIANT','NOTCOMPLIANT','PASTDUE','WAIVED')
-
-Do NOT change the Covenant_financial_result check (that one already handles a separate field — confirm whether "Waived" applies there too, or only to Covenant_last_eval_status; check the data pattern from our earlier query results, where Waived appeared only in Covenant_last_eval_status, not Covenant_financial_result).
-
-Do NOT touch IsPerformanceCategory, the routing, the PDF component, or anything else already working. Only this one predicate addition.
-
-Show diff. Rebuild. Do NOT commit.
+Report file + line numbers. Do NOT fix yet.

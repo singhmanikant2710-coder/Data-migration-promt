@@ -1,9 +1,9 @@
-CRM Summary Table Excel export issue — after clicking Export, a green "Report execution accepted" message appears, but no Save/download dialog ever appears afterward. Unclear if the file downloaded or not. READ-ONLY, no edits. One pass, answer, STOP.
+Bug 218 — CRM Policy Exceptions report: change the header date/time (top-right) text color to white. SINGLE FILE. Show diff, do NOT commit.
 
-1. Find the CRM Summary Table Excel export flow (frontend/src/app/reports/page.tsx or wherever "Export Excel" is wired for this report). Is it a synchronous download (blob → save immediately) or an async job (submit → poll/wait → download when ready)?
-2. If async: what does "Report execution accepted" mean in this flow — is that a submission acknowledgment, after which the frontend is supposed to poll a status endpoint and then trigger a browser download? Find that polling/completion logic.
-3. Is there a bug where the flow stops after showing "accepted" and never proceeds to the actual download step — e.g. a missing poll, a silently failing status check, or an error being swallowed?
-4. Check the browser Network tab pattern this would produce: is there a follow-up request after "accepted" that should fetch the file? Does it fire at all?
-5. Compare to how OTHER reports' Excel export works (if any other report exports to Excel successfully) — is CRM Summary Table using a different/newer export path that might be incomplete or broken?
+FILE: frontend/src/components/pdf/PolicyExceptionsPDF.tsx (the CRM Policy Exceptions report — confirm this is the correct file; if the report is named differently in the codebase, find the right one)
 
-Report the export flow, where it breaks (if it does), and whether this is a genuine bug or just missing UI feedback while a background job completes. Do NOT fix yet.
+Find the header's right-side date/time <Text> (the one added earlier in Bug 218 for the header showing download date/time, replacing the old sample caption). Change its color to white (e.g. color: "#FFFFFF" or the colors.white token from pageSetup.ts if one exists — check and reuse if available).
+
+Do NOT change the header background/banner color, font size, position, or any other styling — only the text color of that one date field.
+
+Show diff. Rebuild. Do NOT commit.

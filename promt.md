@@ -1,19 +1,14 @@
-Bug 207 follow-up fix. Apply all 4 changes. Show diffs, rebuild, run node --test, do NOT commit.
+Bug 214 — CRM Summary Table report, 3 issues. READ-ONLY, no edits. One pass, answer everything, STOP.
 
-FILE: frontend/src/app/review/[ecif]/review-info/components/sections/hooks/useCovenants.ts
+CONTEXT: 
+1. Exposure column under BORROWER FINDING TOTALS double-counts borrowers with 2+ findings for that CRM Component (Count total is correct, Exposure is not — e.g. The Collier at Clift Farm LLC, Sample ID 353).
+2. Percent totals under UNSATISFACTORY TRANSACTIONS and BORROWER FINDING TOTALS (all 4 percentage calculations) need 2 decimal places (e.g. 2/58 = 3.54%) — currently not showing 2 decimals despite a prior attempt ("Not Addressed").
+3. NEW: add a "Commitment" column to the detail tables, summing Customer Commitment per row.
 
-1. Line ~52 — FREQUENCY_PRESET: add "N/A" to the array (e.g. append after "Other", or in a sensible position).
+Investigate:
+1. Find the CRM Summary Table PDF component (likely CrmSummaryTablePDF.tsx) and its backend repository (SqlCrmSummaryTableReportRepository.cs). 
+2. EXPOSURE DOUBLE-COUNT: find the exact SQL/aggregation that computes Exposure under "BORROWER FINDING TOTALS". Is it double-counting because a borrower with multiple findings for the same CRM Component gets their exposure summed once per finding row instead of once per borrower? Paste the exact query/aggregation logic. Also confirm the Count aggregation (which is correct) so we can see why one is right and the other isn't.
+3. PERCENT FORMATTING: find where the 4 percentage columns (under UNSATISFACTORY TRANSACTIONS and BORROWER FINDING TOTALS) are formatted/rendered. What format string/logic is used today? Why might a prior fix attempt not have worked (e.g. wrong file, wrong component, a second render path)?
+4. COMMITMENT COLUMN: find the "detail tables" in this report (the per-row/per-borrower tables, not the totals tables). Is Commitment data already available in the backend response (reuse from other reports' SUM(Accounts.Commitment) pattern), or does it need to be added to the query/DTO? List each detail table that would need this new column.
 
-2. Line ~416 — eval status base list: add "N/A" to the array.
-
-3. Line ~75 (normEvalStatus) — the regex currently matches \bn/a\b and maps it to "Not Due". Change this so "N/A" is preserved as its own value, NOT collapsed into "Not Due". Keep all other normalization behavior (Compliant/Not-Compliant/Waived/Past Due mappings) unchanged — only carve out N/A into its own passthrough branch.
-
-FILE: frontend/src/app/review/[ecif]/review-info/components/sections/CovenantsSection.tsx
-
-4. Lines ~322-350 (the existing Covenant Type onChange, which already resolves getLibraryMetaForType(val) and writes sourceCategory/covenantTypeCode/covenantCategoryOrder into both updateRow(...) and stagePatch(...)): 
-   When val.toLowerCase() is "no monitoring covenants" OR "no performance covenants", ALSO set frequency: "N/A" and lastEvalStatus: "N/A" in that SAME updateRow(...) and stagePatch(...) call (do not add a separate useEffect/ref — use this existing onChange hook only, per the CustomerInfo lesson from UAT #177).
-   For any OTHER covenant type selected, do NOT force these fields (leave them as user-set or blank as today).
-
-Do NOT touch the backend (both columns are unvalidated NVARCHAR(50), no DTO change needed — confirmed). Do NOT use a useEffect+ref cascade pattern.
-
-Show diffs. Rebuild. Run node --test. Do NOT commit.
+Report file paths + line numbers for all three issues, the double-count root cause, why percent formatting didn't stick, and whether Commitment data needs a backend addition. Do NOT propose or write a fix yet.

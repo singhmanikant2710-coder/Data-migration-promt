@@ -1,9 +1,15 @@
-Bug 218 — CRM Policy Exceptions report: change the header date/time (top-right) text color to white. SINGLE FILE. Show diff, do NOT commit.
+Bug 220 update — Geoff confirmed (via Teams) that "Waived" covenants MUST be included as Non-Compliant, alongside the already-working "Not Compliant" and "Past Due". SINGLE FILE. Show diff, do NOT commit.
 
-FILE: frontend/src/components/pdf/PolicyExceptionsPDF.tsx (the CRM Policy Exceptions report — confirm this is the correct file; if the report is named differently in the codebase, find the right one)
+FILE: backend/src/Casrr.Infrastructure/SqlServer/SqlNonCompliantCovenantsReportRepository.cs
 
-Find the header's right-side date/time <Text> (the one added earlier in Bug 218 for the header showing download date/time, replacing the old sample caption). Change its color to white (e.g. color: "#FFFFFF" or the colors.white token from pageSetup.ts if one exists — check and reuse if available).
+The normalized status predicate (~line 360-365) currently matches:
+  REPLACE(REPLACE(UPPER(LTRIM(RTRIM(ISNULL(c.[Covenant_last_eval_status], '')))), '-', ''), ' ', '') IN ('NONCOMPLIANT','NOTCOMPLIANT','PASTDUE')
 
-Do NOT change the header background/banner color, font size, position, or any other styling — only the text color of that one date field.
+Add 'WAIVED' to that IN list (normalized form, no hyphen/space stripping needed since "Waived" has neither):
+  IN ('NONCOMPLIANT','NOTCOMPLIANT','PASTDUE','WAIVED')
+
+Do NOT change the Covenant_financial_result check (that one already handles a separate field — confirm whether "Waived" applies there too, or only to Covenant_last_eval_status; check the data pattern from our earlier query results, where Waived appeared only in Covenant_last_eval_status, not Covenant_financial_result).
+
+Do NOT touch IsPerformanceCategory, the routing, the PDF component, or anything else already working. Only this one predicate addition.
 
 Show diff. Rebuild. Do NOT commit.

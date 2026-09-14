@@ -1,20 +1,9 @@
-Bug 214 issue 2 fix — 2 decimal places on the 4 percentage columns. SINGLE FILE. Show diff, do NOT commit.
+CRM Summary Table Excel export issue — after clicking Export, a green "Report execution accepted" message appears, but no Save/download dialog ever appears afterward. Unclear if the file downloaded or not. READ-ONLY, no edits. One pass, answer, STOP.
 
-FILE: frontend/src/components/pdf/CrmSummaryTablePDF.tsx
+1. Find the CRM Summary Table Excel export flow (frontend/src/app/reports/page.tsx or wherever "Export Excel" is wired for this report). Is it a synchronous download (blob → save immediately) or an async job (submit → poll/wait → download when ready)?
+2. If async: what does "Report execution accepted" mean in this flow — is that a submission acknowledgment, after which the frontend is supposed to poll a status endpoint and then trigger a browser download? Find that polling/completion logic.
+3. Is there a bug where the flow stops after showing "accepted" and never proceeds to the actual download step — e.g. a missing poll, a silently failing status check, or an error being swallowed?
+4. Check the browser Network tab pattern this would produce: is there a follow-up request after "accepted" that should fetch the file? Does it fire at all?
+5. Compare to how OTHER reports' Excel export works (if any other report exports to Excel successfully) — is CRM Summary Table using a different/newer export path that might be incomplete or broken?
 
-1. Lines ~343, ~346 (countPct, expPct): change the hardcoded pct01(frac, 0) to pct01(frac, 2) in both functions.
-2. Line ~337 (the Intl.NumberFormat call inside pct01): add minimumFractionDigits: maxFrac alongside maximumFractionDigits: maxFrac, so both are set to the same value (fixed 2 decimals, not just an upper bound). Also apply the same fix to the catch-fallback (line 339, .toFixed(maxFrac) already handles this correctly, no change needed there).
-
-Verify: 0 → "0.00%", 0.03 → "3.00%", 0.0344827 → "3.45%". Mirror the correct pattern already used in ManagementSummaryPDF.tsx (198-199) / pageSetup.ts (405-406).
-
-Do NOT change pct01's default parameter value — the fix must be at the two call sites (343, 346) plus the minimumFractionDigits addition, since defaults are irrelevant when call sites pass explicit values.
-
-Show diff. Rebuild. Do NOT commit.
-
-
-Hi Geoff, on the Commitment column request for CRM Summary Table detail tables — a quick clarification needed. The detail tables show one row per finding, so a borrower with 2 findings appears on 2 rows. If we show that borrower's full Commitment on every row, the number will visually repeat and anyone summing the column would get a doubled total (the same issue as the Exposure bug you reported).
-Which would you prefer:
-A) Show Commitment only on the borrower's first row, blank on subsequent finding rows for the same borrower (cleanest — no risk of double-counting if summed)
-B) Repeat the full Commitment on every finding row (simplest, but a naive column sum would double-count)
-C) Add a section subtotal at the bottom (distinct borrowers only)
-My recommendation is A. Let me know and I'll implement it — this also needs a small backend addition (Commitment isn't in the details query today) so I want to get the design right the first time.
+Report the export flow, where it breaks (if it does), and whether this is a genuine bug or just missing UI feedback while a background job completes. Do NOT fix yet.

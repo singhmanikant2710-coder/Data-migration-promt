@@ -1,5 +1,1 @@
-Hi Geoff, on the Checklist Questionnaire report — good news, most of the design already exists in the code (a 5-column layout: Section, Category, Question, Response, Comments), it just needs the backend data wired up. Three quick things to confirm before I build it:
-Section column: The database only tracks "Category" for checklist questions, not a separate "Section." Should I (a) remove the Section column and just show Category, or (b) show the Category value in both columns?
-Guidance: Users can see guidance text when answering checklist questions on the Review Form, but the current report design doesn't include a Guidance column. Do you want guidance text included in the printed report, or is it fine to leave it out (since it's more of an in-app help text)?
-Should the report show the applied filters (sample, date range, etc.) at the end, like the other CRM reports do? (Small fix either way, just confirming.)
-Once confirmed, this is mostly a backend SQL task (~30-60 min) — the report structure and PDF layout are already built.
+Hi Geoff, we have a total of 18 new functionalities. How many of them are high priority and need to be completed urgently? This information is important because I need to discuss the new enhancements with the APNE team, especially those that need to be completed on an urgent basis.

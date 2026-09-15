@@ -1,4 +1,9 @@
-SELECT DelinquentID, COUNT(*) 
-FROM dbo.[dbo_CommercialCreditDataAcq] WITH (NOLOCK)
+SELECT TABLE_NAME 
+FROM INFORMATION_SCHEMA.TABLES 
+WHERE TABLE_NAME LIKE '%CommercialCreditDataAcq%' 
+   OR TABLE_NAME LIKE '%CreditData%';
+
+   SELECT DelinquentID, COUNT(*) 
+FROM dbo.[<sahi_table_naam>] WITH (NOLOCK)
 GROUP BY DelinquentID 
 ORDER BY 2 DESC;

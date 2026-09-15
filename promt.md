@@ -1,3 +1,10 @@
-Update on the Delinquent_status issue — I traced it back further and found this isn't isolated to the 8 UAT records; there are actually 1,248 rows in the Data Mart with the same "30-Jan" corruption instead of "1-30". Our account-loading code is confirmed clean (it doesn't touch or convert this value) — the corruption is happening upstream, before the data reaches our system, most likely from the same Excel auto-date-conversion issue, but at the point where the source data is prepared (likely during file upload/import).
-Since I can't fully trace the exact upstream step right now, I'm going to add protection on our end regardless: (1) lock the Delinquent_status column as Text format in our upload template so Excel can't auto-convert it, and (2) add a validation check on import that catches and flags any date-shaped values in this field instead of silently accepting them. This will stop new corruption from entering, whether it comes from the upload process or the source file itself.
-The 1,248 existing corrupted records in the Data Mart and Accounts table will still need a one-time data correction — happy to provide that update query once you confirm you want it run (it's a larger cleanup than the original 8 records).
+Fix Delinquent_status import corruption at the source. Two changes, both in the Monthly Upload pipeline. Show diffs, do NOT commit.
+
+FILE 1: frontend/src/app/api/monthly-upload/parse/route.ts and save/route.ts
+Add validation for the DelinquentID column: the valid domain is a small known set (curr, 1-30, 30-59, 60-89, 90+, and their "NonAccr " prefixed variants). If an uploaded value for this column does NOT match that pattern (case-insensitive), OR matches a date-shaped pattern (e.g. looks like it was Excel-coerced — day-month text patterns), flag it as an import error/warning for that row rather than silently accepting it. Follow the existing error/warning reporting pattern already used elsewhere in this upload flow (however parse errors are currently surfaced to the user).
+
+FILE 2: Fix the dead/broken .xlsx template path reference (parse/route.ts:104, save/route.ts:150) — both point to "01_DATA_01_Data Mart Trial_LOAD.xlsx" which doesn't exist (only the .csv does). Either remove this dead code path if headers are genuinely resolved from schema.ts (confirm first), or fix the reference if it's actually needed.
+
+Do NOT change the account-load SQL (SqlSampleLoadRepository.cs) — confirmed clean, not the source of the issue.
+
+Show diffs. Rebuild. Do NOT commit.

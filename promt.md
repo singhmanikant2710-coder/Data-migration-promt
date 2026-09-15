@@ -1,9 +1,3 @@
-SELECT TABLE_NAME 
-FROM INFORMATION_SCHEMA.TABLES 
-WHERE TABLE_NAME LIKE '%CommercialCreditDataAcq%' 
-   OR TABLE_NAME LIKE '%CreditData%';
-
-   SELECT DelinquentID, COUNT(*) 
-FROM dbo.[<sahi_table_naam>] WITH (NOLOCK)
-GROUP BY DelinquentID 
-ORDER BY 2 DESC;
+Update on the Delinquent_status issue — I traced it back further and found this isn't isolated to the 8 UAT records; there are actually 1,248 rows in the Data Mart with the same "30-Jan" corruption instead of "1-30". Our account-loading code is confirmed clean (it doesn't touch or convert this value) — the corruption is happening upstream, before the data reaches our system, most likely from the same Excel auto-date-conversion issue, but at the point where the source data is prepared (likely during file upload/import).
+Since I can't fully trace the exact upstream step right now, I'm going to add protection on our end regardless: (1) lock the Delinquent_status column as Text format in our upload template so Excel can't auto-convert it, and (2) add a validation check on import that catches and flags any date-shaped values in this field instead of silently accepting them. This will stop new corruption from entering, whether it comes from the upload process or the source file itself.
+The 1,248 existing corrupted records in the Data Mart and Accounts table will still need a one-time data correction — happy to provide that update query once you confirm you want it run (it's a larger cleanup than the original 8 records).

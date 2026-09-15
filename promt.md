@@ -1,10 +1,7 @@
-Fix Delinquent_status import corruption at the source. Two changes, both in the Monthly Upload pipeline. Show diffs, do NOT commit.
+Q1: A — Block with 400 error, mirroring the existing "Header mismatch" pattern exactly. Simple, safe, reuses the existing error channel, zero new UI needed.
 
-FILE 1: frontend/src/app/api/monthly-upload/parse/route.ts and save/route.ts
-Add validation for the DelinquentID column: the valid domain is a small known set (curr, 1-30, 30-59, 60-89, 90+, and their "NonAccr " prefixed variants). If an uploaded value for this column does NOT match that pattern (case-insensitive), OR matches a date-shaped pattern (e.g. looks like it was Excel-coerced — day-month text patterns), flag it as an import error/warning for that row rather than silently accepting it. Follow the existing error/warning reporting pattern already used elsewhere in this upload flow (however parse errors are currently surfaced to the user).
+Q2: A — parse.ts + save.ts only. Do not touch page.tsx. Since Save depends on a successful parse, gating there covers both CSV and xlsx uploads with the smallest possible change.
 
-FILE 2: Fix the dead/broken .xlsx template path reference (parse/route.ts:104, save/route.ts:150) — both point to "01_DATA_01_Data Mart Trial_LOAD.xlsx" which doesn't exist (only the .csv does). Either remove this dead code path if headers are genuinely resolved from schema.ts (confirm first), or fix the reference if it's actually needed.
+Note: Geoff confirmed this data mart refresh is a monthly external process (owned by Jothi/Jessica), so they will also manually verify source-file cleanliness going forward. This code change is a safety net for future uploads through OUR pipeline, not a fix for the already-corrupted 1,248 rows (that's a separate one-time data correction, not in scope here).
 
-Do NOT change the account-load SQL (SqlSampleLoadRepository.cs) — confirmed clean, not the source of the issue.
-
-Show diffs. Rebuild. Do NOT commit.
+Proceed with the validation as scoped: reject any DelinquentID value that doesn't match the known domain (curr, 1-30, 30-59, 60-89, 90+, and NonAccr-prefixed variants) or looks date-shaped, with a 400 error listing the bad row(s) — same UX as the existing header-mismatch block.

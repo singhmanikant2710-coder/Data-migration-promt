@@ -1,28 +1,16 @@
-Geoff Ke Liye Message
+Bug 228 — Access control for Maintenance screens. READ-ONLY, no edits. One pass, answer everything, STOP.
 
----
+CONTEXT: Non-Admin CROs currently have full edit access to Library maintenance screens (e.g. Policy Exceptions library, CAS Findings library, Selections, etc.) and can see/use the CORE Exports page. Geoff confirmed Users table access is ALREADY hidden from non-admins — some permission mechanism already exists in the app. Goal:
+1. Libraries (maintenance screens): Non-Admin users get READ-ONLY access (can view, cannot edit/add/delete).
+2. CORE Exports page: HIDDEN entirely from Non-Admins (not just disabled — not visible/accessible at all, including direct URL access).
+3. Admins: unchanged, full access to everything.
 
-Confirmed — I checked the database directly. For all 8 of those Review ID / Account ID combinations, the `Delinquent_status` field is literally storing the text **"30-Jan"**, not "1-30". This isn't a display issue on our end (our recent export fix is working correctly for every other record) — the value itself is incorrect in the database for these 8 specific records.
+Investigate:
+1. How does the app currently determine if a user is an "Admin"? Find the role/permission model — is there an "Administrator" flag/role in the Users table (03_LIBRARY_05_CAS_Users or similar)? How is it read (backend claim, JWT, session, API call)?
+2. How is the Users table ALREADY hidden from non-admins today? Find the exact mechanism — frontend route guard, sidebar conditional rendering, backend authorization policy (e.g. [Authorize(Policy = "RequireActiveUser")] mentioned in earlier work — is there an Admin-specific policy too?), or something else. This is the pattern to mirror.
+3. List every "Maintenance" screen/route currently in the app (Policy Exceptions library, CAS Findings library, Selections, CORE Exports, Users, any others) — file paths for each page/route.
+4. For the Library screens specifically: are Add/Edit/Delete actions separate UI components/buttons that could be conditionally hidden/disabled for non-admins, or is the whole page one editable form that would need broader changes to go read-only?
+5. For CORE Exports: is it a single page/route that can be gated by a route guard (frontend) + endpoint authorization (backend), mirroring however Users table access is currently blocked?
+6. Is the "Admin" check available on both frontend (for hiding UI) AND backend (for blocking the API even if someone bypasses the UI)? Confirm whether backend authorization already exists for the Users-table-hidden pattern, or if that's frontend-only (which would be a security gap worth flagging).
 
-This matches your suspicion: it looks like these records were entered/imported with "30-Jan" instead of "1-30" — likely the same Excel-style date misinterpretation happened during the Load Accounts import for this batch, and it got saved that way rather than just displayed that way.
-
-Since this is a data correction (not a code fix), can you please have John (since he handles the database) run the following update to correct these 8 records? I've included the exact query below — it only touches these 8 specific Review ID / Account ID combinations, nothing else.
-
-```sql
-UPDATE dbo.[02_CORE_04_Accounts]
-SET [Delinquent_status] = '1-30'
-WHERE ([Review_id] = 21902 AND [Account_id] = 75183)
-   OR ([Review_id] = 21903 AND [Account_id] = 75184)
-   OR ([Review_id] = 21904 AND [Account_id] = 75185)
-   OR ([Review_id] = 21934 AND [Account_id] = 75325)
-   OR ([Review_id] = 21935 AND [Account_id] = 75326)
-   OR ([Review_id] = 21936 AND [Account_id] = 75327)
-   OR ([Review_id] = 21915 AND [Account_id] = 75263)
-   OR ([Review_id] = 21909 AND [Account_id] = 75218);
-```
-
-Separately — since these were UAT test records, would you like us to look into whether the Load Accounts import workflow itself could cause this same date-misinterpretation issue with real production data going forward? If so, I can investigate that as its own item.
-
----
-
-Yeh message copy-paste karke Geoff ko bhej do. SQL code block already saaf format mein hai, easy to copy.
+Report the existing role/permission mechanism, the Users-hiding pattern to mirror, every affected Library screen, and whether backend enforcement already exists or needs adding. Do NOT propose or write a fix yet.

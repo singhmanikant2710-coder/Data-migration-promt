@@ -1,15 +1,5 @@
-Checklist Questionnaire report (Selection_id 10) — no visual prototype exists from Geoff. Investigate what already exists to determine the report's expected layout and data shape from the codebase itself, not guesswork. READ-ONLY, no edits. One pass, answer, STOP.
-
-1. Open ChecklistQuestionnairePDF.tsx fully. Does it already have a defined layout (header, table columns, sections)? Paste its structure — what columns/fields does it render today (even though the data is currently empty)? This tells us the INTENDED design, since someone built this component against a real spec.
-
-2. Open ChecklistQuestionnaireModels.cs (the DTO). What fields does the response shape carry (client info block, question rows — what properties exactly)? 
-
-3. Find the Review Form's "Checklist" section (frontend/src/app/review/[ecif]/review-info/components/sections/ChecklistSection.tsx or similar) — this is where users enter checklist answers today. What questions/fields/structure does THAT UI have? The report should presumably reflect this same data.
-
-4. Find the backend table(s) that store checklist answers (grep for "Checklist" in SqlReviewRepository.cs or similar) — what columns exist (question text, answer/response, comments, category)?
-
-5. Check discovery/ folder or any legacy Access query references for "Checklist Questionnaire" — is there a legacy SQL query or Access report definition anywhere in the repo (even if just referenced by name) that shows the original report's shape?
-
-6. Confirm: does completing the backend query need any NEW frontend PDF changes, or does ChecklistQuestionnairePDF.tsx already render whatever the DTO provides (meaning backend-only work completes this report)?
-
-Report the PDF component's current layout, the DTO shape, the Review Form Checklist section's structure, and the backend storage columns. This gives us the report's design without needing a Geoff-provided prototype. Do NOT propose or write a fix yet.
+Hi Geoff, on the Checklist Questionnaire report — good news, most of the design already exists in the code (a 5-column layout: Section, Category, Question, Response, Comments), it just needs the backend data wired up. Three quick things to confirm before I build it:
+Section column: The database only tracks "Category" for checklist questions, not a separate "Section." Should I (a) remove the Section column and just show Category, or (b) show the Category value in both columns?
+Guidance: Users can see guidance text when answering checklist questions on the Review Form, but the current report design doesn't include a Guidance column. Do you want guidance text included in the printed report, or is it fine to leave it out (since it's more of an in-app help text)?
+Should the report show the applied filters (sample, date range, etc.) at the end, like the other CRM reports do? (Small fix either way, just confirming.)
+Once confirmed, this is mostly a backend SQL task (~30-60 min) — the report structure and PDF layout are already built.

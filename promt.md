@@ -1,2 +1,4 @@
-Quick confirmation needed before I finalize the Delinquent_status validation — I've built a check that only allows these specific values: curr, 1-30, 30-59, 60-89, 90+, and their "NonAccr" versions. Anything else (like "30-Jan") will now be blocked at upload with a clear error message.
-Can you confirm with Jothi/Jessica whether this is the complete list of values their system ever sends? If there's a value I'm missing (like a "90-119" bucket, or something else), the very next monthly upload could get blocked unexpectedly. Want to make sure we don't accidentally interrupt the monthly process.
+SELECT DelinquentID, COUNT(*) 
+FROM dbo.[dbo_CommercialCreditDataAcq] 
+GROUP BY DelinquentID 
+ORDER BY 2 DESC;

@@ -1,29 +1,38 @@
 Context: .NET 8 Clean Architecture backend + Next.js/React/TypeScript frontend,
-CASRR project. I'm fixing the header/footer styling of the
-ChecklistQuestionnairePDF.tsx report component (Selection_id 10) so it matches the
-standard CRM report header/footer pattern already used by other working reports in
-this codebase (e.g. the "Non-Compliant Covenants" PDF component — inspect that
-component/style first and use it as the reference pattern).
+CASRR project. I need to add a brand-new report entry called "CRM Summary for
+Management" that does not currently exist in the report dropdown.
 
-IMPORTANT: Only touch header/footer styling in ChecklistQuestionnairePDF.tsx (and,
-if the header/footer is a shared component used across multiple reports, only the
-specific style props/classes relevant to this fix). Do not change table data logic,
-columns, or any other report's styling/behavior.
+IMPORTANT: Do not modify, remove, or refactor any existing working report pipeline,
+routing logic, or shared services other than the specific additions described below.
 
-Issues to fix:
-1. Header (top navy bar): the date/time text on the right side (currently rendering
-   in a dark/default color, hard to read against the navy background) must be white
-   — same as the date text color in the reference "Non-Compliant Covenants" report
-   header.
-2. Footer: currently shows only "Page X of Y" in the bottom-right corner. It must
-   instead follow the standard pattern used by other CRM reports: the report name
-   + page number, centered at the bottom — e.g. "Checklist Questionnaire • Page 1 of 2"
-   centered, exactly matching the format/style seen in "Non-Compliant Covenants"
-   report's footer ("Non-Compliant Covenants • Page 1 of 3").
+Requirements:
+1. Add a new Selection entry in 03_LIBRARY_09_Selections so "CRM Summary for
+   Management" appears as a new option in the report dropdown (follow the exact
+   pattern used by existing Selection entries in that table).
+2. This report must mirror the structure/layout of the existing "CRM Summary" and
+   "CRM Findings and Observations" reports (reuse their existing PDF layout/component
+   patterns as the visual/structural reference).
+3. Data filter: only include records where CORE Findings.Finding_level = "Finding"
+   (i.e., this is a Findings-only filtered version of the CRM Summary report).
+4. I have a reference prototype PDF titled "Review Summary for Management"
+   (original filename `10_Review Summary for Management`) — I will attach/paste its
+   structure separately; use it as the exact layout/column spec once I share it.
+   If I haven't shared it yet in this conversation, ask me for it before finalizing
+   column layout — don't guess the structure.
+5. Filename rule: the downloaded file name must be "Review Summary for Management"
+   — strip any numeric prefix (do NOT include "10_" in the output filename).
+6. Implementation approach: prefer deriving/reusing the existing CRM Summary
+   report's backend pipeline (repository/service/controller) with an added
+   Finding_level = "Finding" filter, rather than building a fully new pipeline from
+   scratch — but check existing code first and follow whichever pattern keeps this
+   consistent with how other CRM reports are structured in this codebase.
+7. Header/footer must follow the same styling pattern as other CRM reports in this
+   codebase (white date/time text on the navy header bar, footer centered showing
+   report name + page number — e.g. "Review Summary for Management • Page 1 of X").
 
 Acceptance criteria:
-- Generated Checklist Questionnaire PDF shows white date/time text in the header,
-  right-aligned, on the navy background.
-- Footer shows "Checklist Questionnaire • Page X of Y" centered at the bottom,
-  matching the visual style of other CRM reports' footers.
-- No other report's header/footer is affected.
+- New "CRM Summary for Management" option appears in the report dropdown.
+- Generates a PDF matching the Review Summary for Management prototype's structure,
+  filtered to Finding-level records only, with correct filename (no number prefix).
+- Header/footer styling matches the rest of the CRM reports.
+- No existing report is altered or broken.

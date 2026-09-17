@@ -1,9 +1,14 @@
-Cross-check the DELINQUENT_ALLOWED validation regex/allow-list in parse/route.ts and save/route.ts against Geoff's confirmed complete domain list:
+Apply the 4-line fix. Rebuild, confirm typecheck/build pass. Show diff. Do NOT commit.
 
-1-30, 31-59, 60-89, 90+, curr, NonAccr 1-30, NonAccr 31-59, NonAccr 60-89, NonAccr 90+, NonAccr Curr
+FILE 1: frontend/src/app/api/monthly-upload/parse/route.ts
+- Line 105: 30-59 → 31-59 in DELINQUENT_ALLOWED regex
+- Line ~133: 30-59 → 31-59 in error message string
 
-Paste the EXACT current regex/allow-list from both files. Specifically confirm: does it say "30-59" or "31-59"? Check character-by-character — this determines whether legitimate "31-59" values will be incorrectly blocked on the next real upload.
+FILE 2: frontend/src/app/api/monthly-upload/save/route.ts
+- Line 152: 30-59 → 31-59 in DELINQUENT_ALLOWED regex
+- Line ~180: 30-59 → 31-59 in error message string
 
-If there's a mismatch (code has "30-59" instead of "31-59", or any other discrepancy against Geoff's list), fix it in both files. Show diff, do NOT commit. Rebuild and confirm typecheck/build pass.
+Leave the \s* (permissive whitespace matching for "NonAccr") as-is — not changing to \s+.
+Do NOT touch the ExportsController.cs comments (cosmetic only, zero behavior impact) or SqlSampleLoadRepository.cs (unrelated, doesn't reference 31-59).
 
-If the code already exactly matches Geoff's list, just confirm that clearly — no changes needed.
+Show diff. Rebuild. Do NOT commit.

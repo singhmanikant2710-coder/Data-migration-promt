@@ -1,24 +1,54 @@
 Context: .NET 8 Clean Architecture backend + Next.js/React/TypeScript frontend,
-CASRR project. Two small visual tweaks to the "Review Summary for Management"
-PDF component (the one we just built for CRM Summary for Management).
+CASRR project. Found a pagination bug in the "Review Summary for Management" PDF
+(CRM Summary for Management report) — attaching a screenshot showing the issue:
+on one customer's review, page 3 ends with the Scorecard table + the 5-column
+category-ratings table (Risk Recognition/Scorecard Management/Underwriting/
+Credit Servicing/Loan Administration), and page 4 is then completely blank
+(only the footer "Review Summary for Management • Page 4 of 141" renders, no
+content) before the next section/review continues.
 
-IMPORTANT: Only touch these two specific styling points in this component. Do not
-change any table structure, data logic, or other report's styling.
+IMPORTANT: Only fix the page-break/pagination logic in this component (and the
+underlying page-break primitive it uses, if shared). Do not change any table
+data, column layout, or styling unrelated to pagination. Do not touch other
+reports unless you confirm they share the exact same page-break primitive/component
+and are provably affected by the same root cause.
 
-1. Customer name font size: currently too large/prominent relative to the rest of
-   the page (see attached screenshot — "198 MADISON AVE REALTY NY LLC" under
-   "CUSTOMER NAME"). Reduce it to a size closer to the section headings (e.g.
-   "RISK RATING JUSTIFICATION") rather than a large display heading — it should
-   read as a bold label value, not a page title.
+Investigate:
+- This is likely a page-break threshold issue — when a section's remaining content
+  is just slightly more than what fits on the current page, the renderer pushes
+  ALL of it to the next page instead of only the overflow, or a fixed-height
+  section/table wrapper is forcing a break even when there's little/no content
+  left to place, leaving a mostly-empty page behind.
+- Check how page breaks are computed for this document (react-pdf, or whatever
+  PDF engine this project uses — check ChecklistQuestionnairePDF.tsx /
+  CrmSummaryDocument's existing pattern for the same mechanism) and whether table
+  rows/sections are allowed to split across a page boundary or are treated as
+  atomic blocks that must fit entirely on one page — an all-or-nothing atomic
+  block is likely triggering the empty page here.
 
-2. Header right-side text: currently shows date AND time (e.g. "9/18/2026,
-   7:01:26 PM", white text on the navy bar). Change it to show DATE ONLY (e.g.
-   "9/18/2026") — remove the time portion. Keep the white color and right
-   alignment as-is.
+Fix requirement:
+- No review's content should ever produce a fully blank page (only a footer, no
+  actual content) anywhere in the generated document.
+- Content should flow to fill each page as fully as possible before breaking —
+  don't force a break to the next page unless the current page truly has no room
+  left for the next atomic element.
+
+Testing requirement (important — this needs to be verified across variable content
+lengths, not just one sample):
+- Regenerate the full report across MULTIPLE reviews with different content sizes
+  (short risk-rating-justification paragraphs, long ones, reviews with many
+  findings rows, reviews with zero findings, single-scorecard vs
+  multiple-scorecard reviews) and confirm no blank pages appear anywhere in the
+  output, not just on the review shown in the attached screenshot.
+- Also check whether this same page-break primitive is reused by any other CRM
+  report (e.g. CRM Findings and Observations, CRM Summary) — if so, confirm
+  whether they exhibit the same blank-page issue; if they do, flag it back to me
+  before fixing them (since that would mean touching a shared component used by
+  reports outside this task's scope).
 
 Acceptance criteria:
-- Customer name renders smaller/less dominant, consistent with the rest of the
-  page's visual hierarchy.
-- Header right side shows only the date (no time), still white, still
-  right-aligned.
-- No other part of this report or any other report is affected.
+- No blank/near-empty pages anywhere in a freshly generated "Review Summary for
+  Management" PDF across at least 5-10 different sample reviews with varying
+  content lengths.
+- No existing report's pagination is altered unless you've confirmed and flagged
+  it shares the same root cause.

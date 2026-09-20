@@ -19,3 +19,14 @@ CONTEXT: Section/Guidance columns already removed, header time already removed (
    - Keep the existing columns (Category, Question, Response, Comments minus Section/Guidance, as already fixed) — just add the number prefix and the filter/group behavior.
 
 Investigate the question-ordering mechanism first (item 1) and report what you find before implementing — I want to confirm the "natural order" source is correct before it's baked into both tables. Then implement all three pieces together. Show diffs (backend + frontend). Rebuild, run tests. Do NOT commit.
+
+
+Yes, exactly! You can add it directly through the Selections Library in Maintenance — that's actually simpler than running a SQL script, so let's do it that way instead.
+Here's what to add:
+Go to: Maintenance → Selections (Library)
+Tab: Reporting
+Section: Report Selections
+Add two new rows, one for each report:
+Selection: CRM Summary for Management
+Selection: CRM Findings for Management
+Once those are added, both reports will show up in the Reports dropdown and I'll be able to generate and share them with you for review. Let me know once they're in and I'll follow up!

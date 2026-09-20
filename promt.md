@@ -1,31 +1,21 @@
-Geoff Ke Liye Message
+Checklist Questionnaire — Geoff's feedback fully confirmed. Implement all three pieces. Show diffs, do NOT commit.
 
----
+CONTEXT: Section/Guidance columns already removed, header time already removed (both done). Now adding:
 
-Hi Geoff,
+1. QUESTION NUMBERING (new): The Checklist Questions have no explicit sequence number in the database — they're ordered by however they appear on the Review Form's Checklist section (i.e., the same order ChecklistSection.tsx displays them in, likely tied to the load-order from dbo.[04_TEMP_02_Sample Checklists] or insertion order in 02_CORE_08_Checklists). 
+   - Determine the correct "natural order" for a given Sample ID's questions — investigate READ-ONLY first: what column/mechanism determines display order in ChecklistSection.tsx today (an ID, a sort column, or just row insertion order)?
+   - Generate a sequence number (1, 2, 3...) per question in that natural order, and prefix it to the question text wherever it's displayed — e.g. "1. Was the field exam completed timely?" — in BOTH the new summary table and the existing detail table.
 
-Quick update on the four new reports you requested. Here's where things stand and a couple of questions before we close this out.
+2. NEW SUMMARY TABLE (before the detail table): Columns: CHECKLIST QUESTION (numbered, ascending = natural Review Form order) | COUNT | EXPOSURE.
+   - Scope: this report is effectively single-Sample-ID by design (Geoff confirmed usage is almost exclusively within one Sample). Build the summary table over whatever set of reviews/questions the applied filters return — do not add special-casing for "single sample" since the existing filters already naturally constrain it; just aggregate over the filtered result set.
+   - COUNT = number of borrowers/reviews with a "No" response to that question.
+   - EXPOSURE = combined committed exposure of those "No"-response borrowers for that question (reuse the existing Commitment-join pattern already used elsewhere in this report's backend, if not already present — confirm).
+   - NO totals row (Geoff explicitly declined one).
 
-**1. Two SQL scripts need to be run against the database**
+3. DETAIL TABLE — filter + group (update existing table): 
+   - Group by Borrower Name (Review ID), one block per customer.
+   - Include ONLY questions with a "No" response for that borrower — a borrower whose answers are all "Yes"/"N/A" is excluded entirely (no empty block for them).
+   - Apply the same question-numbering prefix here too.
+   - Keep the existing columns (Category, Question, Response, Comments minus Section/Guidance, as already fixed) — just add the number prefix and the filter/group behavior.
 
-Two of the four new reports ("CRM Summary for Management" and "CRM Findings for Management") needed a new entry added to the Report Selections table so they show up in the Reports dropdown. I've prepared the SQL insert scripts for both, but I don't have direct database write access myself — can you pass these along to John and have him run them? Once that's done, both reports will appear as selectable options in the dropdown and I'll be able to generate and share them for your review.
-
-**2. Question on Excel exports for all four reports**
-
-I've built the PDF generation for all four reports and confirmed it works. Before I move on, I want to check on the Excel/spreadsheet export option — right now, when someone clicks "Export Report" (as opposed to "Generate PDF"), it's a separate feature that produces an Excel file instead of a PDF.
-
-Do you want Excel export built for **all four** of these new reports, or only some of them? If only some, can you let me know which ones need it and which don't? I don't want to assume — happy to build it for whichever ones you need.
-
-**3. Sharing three of the four for your review**
-
-I'll be sending over three of the four reports (PDFs) shortly so you can verify the output matches what you expect. If anything looks off or you have questions about the layout or data, just let me know and I'll adjust.
-
-The fourth one — Checklist Questionnaire — I'm still finishing up. I'm applying the changes you asked for (the new summary table, filtering the detail table to only show "No" responses grouped by borrower, and removing the time from the header), so I'll send that one separately once it's ready.
-
-Let me know on the Excel export question whenever you get a chance, and I'll share the three PDFs for your review shortly.
-
-Thanks!
-
----
-
-Yeh message copy-paste karke Geoff ko bhej do. Ek baar uska reply aa jaye (Excel export ka scope, aur PDFs pe feedback), hum agle steps decide kar lenge.
+Investigate the question-ordering mechanism first (item 1) and report what you find before implementing — I want to confirm the "natural order" source is correct before it's baked into both tables. Then implement all three pieces together. Show diffs (backend + frontend). Rebuild, run tests. Do NOT commit.

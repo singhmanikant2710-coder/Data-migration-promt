@@ -1,9 +1,9 @@
-Investigate current state of "Unsatisfactory Transactional Ratings" (Selection_id 5) — it now appears in the dropdown (confirmed via screenshot), but does clicking Generate actually produce a working report? READ-ONLY, no edits. One pass, answer everything, STOP.
+Before scoping "Unsatisfactory Transactional Ratings" from scratch, check whether the underlying data already exists somewhere that gives us a design hint. READ-ONLY, no edits.
 
-1. In reports/page.tsx, does toReportId() have a rule matching "Unsatisfactory Transactional Ratings" (or "unsatisfactory transactional ratings")? What report ID does it resolve to?
-2. In onGeneratePdf(), is there an is*() guard matching that report ID? Does it call a real PDF component, or does it fall through to the generic placeholder (the "PDF generation is not implemented for this report" toast we saw before for this exact report)?
-3. Is there a PDF component file for it anywhere in frontend/src/components/pdf/ (even a stub)?
-4. Backend: is there a model, repository, service, and controller endpoint for "unsatisfactory-transactional-ratings" (or similar route)? Search ReportsController.cs and StartupExtensions.cs for any registration.
-5. If backend pieces exist, are they wired end-to-end (DI registered, controller endpoint reachable), or do dead/orphaned pieces exist that were never connected?
+1. The Reports page has an existing "CRM Findings and Observations" or similar report with a column/section for "UNSATISFACTORY TRANSACTIONS" — does that give any structural hint (columns, grouping) for what "Unsatisfactory Transactional Ratings" should look like as its OWN report?
+2. Find where "unsatisfactory" transaction/rating data is captured in the Review Form (CrmRatingsSection.tsx or similar — the same section referenced before as the data-entry source). What fields exist there (transaction type, rating, comments, date)?
+3. Check the backend table(s) that store this data (grep for "Unsatisfactory" or "Transactional" in SqlReviewRepository.cs). What columns exist?
+4. Check discovery/ folder or legacy Access artifacts for any report definition, query, or form reference related to "Unsatisfactory Transactional Ratings" — similar to how we found the Checklist subform reference.
+5. Is there a natural column structure this data suggests (e.g. similar to CRM Findings for Management's Component/Code/Comments pattern, or something transaction-specific like Transaction Type/Date/Amount/Rating/Comments)?
 
-Report the EXACT current state — what exists, what's missing, and what happens today if a user selects this report and clicks Generate. Do NOT assume based on naming similarity to other reports; verify each layer independently.
+Report what data exists and whether it suggests an obvious report design, or whether this genuinely needs a Geoff-provided prototype/spec before building. Do NOT propose or write a fix yet.

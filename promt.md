@@ -1,10 +1,1 @@
-Confirm the following about ReviewSummaryForManagementPDF.tsx by pasting the EXACT lines, not summarizing:
-
-1. Paste the full import block (top of the file) — every import statement.
-2. Paste the header component code (the navy bar with title left / date right).
-3. Paste the footer component code (page number, no logo).
-4. Search the file for "softBreakId" — is it imported from ./pageSetup, or is there a local function definition of softBreakId inside THIS file? Paste whichever it is.
-5. Search the file for "package.json", "pageSetup.js" (not .ts), or any reference to a folder outside components/pdf/ — confirm there are none.
-6. Confirm the table column widths use getPageWidthPts (from pageSetup) with fixed pixel/point widths, not flexBasis percentages.
-
-Paste the raw code for each, do not paraphrase.
+Yes — hoist softBreakId into pageSetup.ts as a shared export. Update CrmSummaryPDF.tsx to import it from there instead of its own local copy, and use the shared import in ReviewSummaryForManagementPDF.tsx too. Show this as a small, isolated diff (3 files: pageSetup.ts, CrmSummaryPDF.tsx, ReviewSummaryForManagementPDF.tsx) before touching anything else. Rebuild and confirm CrmSummaryPDF still renders correctly (Bug 225's fix on that file must not regress).

@@ -1,10 +1,8 @@
-Quick clarification before I finish the Checklist Questionnaire numbering — I dug into how the Review Form actually orders the checklist questions, and it turns out it's alphabetical by question text (there's no separate sequence/order field stored anywhere in the system). 
+CRITICAL check before implementing numbering — Geoff confirmed their User Manual instructs users to include numbers when entering checklist questions (e.g. "1. Question one?"). This means the stored Checklist_question text MIGHT already contain a leading number.
 
-So numbering "in Review Form order" = numbering alphabetically. I can do that with no extra work, and it's technically accurate to your original ask. Two things to flag though:
+READ-ONLY first:
+1. Pull 10-20 sample rows from dbo.[02_CORE_08_Checklists].Checklist_question (or dbo.[04_TEMP_02_Sample Checklists] if that's the template source) — do the actual stored question texts already start with a number prefix like "1. " or "1)" etc.? Show the raw values.
+2. If YES (numbers already present in the text): do NOT add a second number prefix — the alphabetical sort will already produce the correct order since "1." sorts before "2." etc. In this case, the "numbering" requirement is already satisfied by the existing data, and no code change is needed for numbering — just confirm the sort is alphabetical (already is) and that no guidance/section stripping accidentally removed the leading number (check the existing Section/Guidance-removal fix from earlier didn't touch question text).
+3. If NO (no numbers in the text, or inconsistent): proceed with generating a sequence number (1, 2, 3...) in alphabetical order and prefixing it to the question text at render time in both the summary and detail tables, as originally planned — but note if some rows already have manual numbers and others don't, that needs flagging since it would produce inconsistent-looking output (e.g. "1. 3. Some question" for rows that already have a number, or double-numbering).
 
-1. The numbers will look somewhat arbitrary from a business standpoint — e.g. a question starting with "Are..." might get numbered before one starting with "Was..." even if it doesn't feel like it should come first logically.
-2. If a checklist question's wording is ever edited later, the numbering could shift, since there's no permanent number stored — it's recalculated from alphabetical order each time.
-
-If that's acceptable, I'll proceed with alphabetical numbering (no extra work needed). If you'd rather have a fixed, permanent sequence number that doesn't depend on alphabetical order or shift when text changes, that's a bigger change (adding a new database field and updating how questions get loaded) — let me know if that's worth doing, or if alphabetical is fine for now.
-
-One more small thing: this report is meant to be used with a specific Sample ID selected, correct? If someone runs it without picking a sample, questions from different samples could get mixed together in the numbering, which wouldn't make sense. Should I just leave that as-is since you said this will almost always be run with a Sample selected, or should I require a Sample ID before the report can run?
+Report what the actual data shows. Do NOT implement numbering logic until this is confirmed.

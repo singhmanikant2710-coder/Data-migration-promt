@@ -1,11 +1,5 @@
--- pehle backup (ek baar, dono bugs ke liye kaafi)
-SELECT *
-INTO tblMain_Athens_Backup_20260921
+SELECT strMonthKey, strCustomerName, intFiscalYear, intFiscalMonth, datFiscalYearStart,
+       curTangibleNetWorth, /* baaki jo bhi columns Black Book screen pe dikhte hain */ *
 FROM tblMain
-WHERE strCustomerName = 'ATHENS PAPER COMPANY INC';
-
-
-DELETE FROM tblMain WHERE strCustomerName = 'ATHENS PAPER COMPANY INC';
-
-INSERT INTO tblMain
-SELECT * FROM tblMain_Athens_Backup_20260921;
+WHERE strCustomerName = 'ATHENS PAPER COMPANY INC'
+ORDER BY strMonthKey;

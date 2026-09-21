@@ -1,15 +1,26 @@
-SELECT strMonthKey, strCovenantName, strCovenantThreshold, strCovenantActual, strCovenantReported, strCovenantDescription
+SELECT COLUMN_NAME, DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'tblMain'
+  AND (COLUMN_NAME LIKE '%TNW%'
+    OR COLUMN_NAME LIKE '%Tangible%'
+    OR COLUMN_NAME LIKE '%NetWorth%'
+    OR COLUMN_NAME LIKE '%Covenant%'
+    OR COLUMN_NAME LIKE '%Threshold%'
+    OR COLUMN_NAME LIKE '%Min%')
+ORDER BY COLUMN_NAME;
+
+SELECT TOP 20 strCustomerNumber, strCustomerName, strCovenantName, strMonthKey, strCovenantThreshold
 FROM tblMainCovenants
-WHERE strCustomerNumber = '84942562'
-  AND strCovenantName LIKE '%Tangible%'
-ORDER BY strMonthKey;
+ORDER BY strMonthKey DESC;
 
-SELECT strMonthKey, strCovenantName, strThreshold1, strActual1, strReported1, strCovenantDescription1
+SELECT DISTINCT strCustomerNumber, strCustomerName, strCovenantName
+FROM tblMainCovenants
+WHERE strCustomerName LIKE '%ATHENS%';
+
+SELECT TOP 20 strCustomerNumber, strCustomerName, strMonthKey, strCovenantName, strThreshold1
 FROM tblMainDisplayCovenants
-WHERE strCustomerNumber = '84942562'
-  AND strMonthKey = '202510';
+ORDER BY strMonthKey DESC;
 
-  SELECT *
+SELECT TOP 20 CustomerId, IndustryCode, MonthKey, CovenantName
 FROM v_ifu_covenants
-WHERE CustomerId = '84942562'
-ORDER BY MonthKey;
+ORDER BY MonthKey DESC;

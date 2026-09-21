@@ -1,28 +1,38 @@
-Reviewed the 30-row sample — this confirms ID-based matching is SAFE, but the
-verdict logic in Query 4 has a false-negative bug: it's flagging every row as
-"NAMES DIFFER" purely because of the FIRST-MIDDLE-LAST vs LAST, FIRST-MIDDLE
-format difference (e.g. "NATHANIEL J SPEARS" vs "SPEARS, NATHANIEL J" — same
-person). Across all 30 rows, I don't see a single case where the underlying
-person is actually different — it's a format-comparison artifact, not a data
-problem.
+Moving forward — enough SQL verification, let's finalize this feature.
 
-HOWEVER: ID 41249 needs a closer look specifically. In query 3's output:
-- Data Mart: "JOSEPH W AGNE..." (truncated, need full value)
-- Distribution Parties: "AGNETTA, JOSEPH W"
-These actually might be the SAME person too (Joseph W Agnetta) — my earlier
-"Michael Smaldone" read was from a blurry/reused photo and may have been
-misread, or was pre-repopulation stale data. Please re-run this specific check
-and paste the FULL untruncated names for ID 41249 from both sources, plus
-re-check that specific review (198 Madison Ave Realty NY LLC, Review ID 21592)
-in the app UI right now to see what Portfolio Manager currently displays for it.
+Confirmed context: Recipient_role storing Employee ID in Distribution Parties
+is intentional per Geoff/DB team direction. The mismatches found during testing
+(format differences, and one stale legacy record in review 21592) are not
+logic bugs — they're expected data artifacts we've already accounted for with
+the NULL-fallback and normalized-name warning tripwire.
 
-Once 41249 is confirmed as either a genuine match (same person, format
-difference only) or a real anomaly, proceed as follows:
-- If confirmed clean: switch RM/PM email resolution to join on employee ID
-  (Recipient_role = dropdown's employee ID) instead of name matching. This is
-  now verified as reliable.
-- Additionally, as a safety net (not a blocker), log a warning whenever the
-  ID-matched Distribution Parties name and the Data Mart name don't agree even
-  AFTER normalizing both to a common format (strip punctuation, reorder
-  Last/First, drop suffixes) — this would catch a genuine future anomaly like a
-  reused/reassigned employee ID without relying on manual review.
+Final requirement before this is merge-ready:
+
+1. Confirm (just point me to the exact line/method, one-line answer, no more
+   SQL needed) that the RM/PM email resolver runs against the employee ID the
+   user JUST SELECTED in the dropdown at save time — i.e. it queries
+   Distribution Parties/Data Mart fresh at the moment of save, using the
+   currently-selected ID. It must NOT re-derive the match from whatever
+   name/ID is already sitting in the review record's stored fields (which
+   could be stale/legacy, as we saw with review 21592).
+
+   If it already works this way — confirm and move to step 2.
+   If it currently re-derives from stored data instead — fix it now to use
+   the freshly-selected ID from the dropdown at save time.
+
+2. Once #1 is confirmed correct, this feature (RM/PM/PML/ECO/SCO dropdowns +
+   search + Recipient_role removal + ID-based email resolution + normalized-
+   name warning tripwire) is done. Merge it.
+
+3. Remaining open item, separate from this merge: Portfolio Manager Lead email
+   column — still needs the INFORMATION_SCHEMA.COLUMNS check
+   (check-customer-info-people-columns.sql) run against CURRENT data to
+   confirm whether that column exists yet. This does not block today's merge
+   — Task 4 (Email Functionality) stays blocked on it, but everything else can
+   ship now.
+
+Don't wait on the Distribution Parties full-930-user repopulation to merge —
+the code is source-agnostic (it queries whatever's in the table at save time),
+so it'll pick up the refreshed data automatically once the DB team completes
+that load. We'll do QA once you confirm the DB team has finished the
+repopulation.

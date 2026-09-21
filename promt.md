@@ -1,58 +1,24 @@
-Hi Geoff,
+READ-ONLY — do not edit any files. I need a diagnosis, not a fix.
 
-Quick update on today's progress for the RM/PM/PML/Credit Drop-Downs item, plus a
-few things I need to confirm before we push to QA.
+Investigate two BCAT bugs for Athens Paper Company Inc (composite key: MonthKey=202510, CustomerName="ATHENS PAPER COMPANY INC"):
 
-WHAT WE COMPLETED TODAY:
-- Relationship Manager, Portfolio Manager, Portfolio Manager Lead, Executive
-  Credit Officer, and Senior Credit Officer dropdowns on the Review Form's
-  Customer Info page now point to the Distribution Parties table.
-- Removed the Recipient_role filter that was previously restricting the
-  PML/ECO/SCO dropdown results.
-- Added search-as-you-type to all 5 dropdowns (matching the existing Reporting
-  page filter search UX).
-- RM/PM email is now resolved by joining on Employee ID (Recipient_role),
-  since that column has been repurposed to store Employee ID per your
-  confirmation. Name, Employee ID, and Email are stored on the review record
-  when RM/PM are updated; Name and Email are stored for PML/ECO/SCO updates.
-  A safety net logs a warning (non-blocking) if a resolved record's name
-  doesn't match the selected name, so we can catch any future data anomalies.
-- Updated the Distribution Parties maintenance screen: the Add/Edit form's
-  Role dropdown (ECO/PML/RPML/SCO/CCE) has been replaced with an Employee ID
-  field, so records added or edited going forward stay consistent with the
-  new schema. This was tested against the 930-record reload and is working
-  correctly.
-- All of this is merged to develop (commit 799445c).
+Bug 1 — Edit save failure:
+Editing Min Tangible Net Worth on an EXISTING month (202510) throws:
+"Violation of PRIMARY KEY constraint 'tblMain$PrimaryKey'. Cannot insert duplicate key in object 'dbo.tblMain'. The duplicate key value is (202510, ATHENS PAPER COMPANY INC)."
 
-QUESTIONS FOR YOU:
+Trace the full call path for the "Black Book Edit" save/refresh action:
+- Which controller/endpoint handles the save
+- Which application service/command handler it calls
+- How (or whether) it loads the existing tblMain entity before saving
+- Whether the entity's EF Core tracking state is Added or Modified before SaveChangesAsync
+- Whether this save path is shared with "Add New Month," and where they diverge
 
-1. Portfolio Manager Lead email — does dbo.[02_CORE_02_Reviews] have an email
-   column for Portfolio Manager Lead? This is blocking the Email Functionality
-   task (item 4) from being completed. If it doesn't exist yet, we'll need it
-   added.
+Bug 2 — Missing fiscal months / bad downstream calcs:
+For Athens Paper (FY end 9/30), months 202601, 202602, 202603 never got created — the sequence jumps from 202512 to 202604. This corrupts dblAccountsReceivableTurnDays, curInventoryTurn, perCollateralAvailability and other ratios that depend on intElapsedFiscalDays (= intFiscalMonth * 30).
 
-2. Your original spec doc (items 6-7) describes the RM/PM dropdowns querying
-   Distribution Parties directly, with Employee Number and Email pulled
-   straight from that table. What we've implemented instead keeps RM/PM
-   sourced from the Data Mart Trial dropdown (as today) and resolves the
-   email separately via an Employee ID join to Distribution Parties. Is this
-   approach acceptable, or do you specifically want RM/PM to be sourced
-   directly from Distribution Parties going forward? Want to align on this
-   before QA so we're not doing rework later.
+Trace:
+- Where "Add New Month" determines the next MonthKey and intFiscalMonth
+- Whether intFiscalMonth is derived from true calendar offset from the customer's FY start, or from the position/count of existing rows
+- Whether this is the same code path as the known "Add New Month fiscal year" bug affecting all nine fiscal start months
 
-3. Distribution Parties maintenance screen — can you confirm the column
-   order/layout is fine as-is (EMAIL / NAME / EMPLOYEE ID), or would you
-   prefer Employee ID displayed before Name?
-
-FOR THE DBA TEAM:
-Can you confirm whether the Distribution Parties table repopulation (clearing
-and reloading with the 930-user file, Recipient_role repurposed to Employee
-ID) has been completed in the Dev and Test/QA environments? Our code changes
-are environment-agnostic and will pick up the refreshed data automatically,
-but we want to confirm the reload has landed before we push this to QA so
-testing reflects the correct data.
-
-Once we hear back on the above, we'll push this to QA.
-
-Thanks,
-Manikant
+Report back file paths, method names, and your best-supported root-cause hypothesis for each. Do not propose or write a fix yet.

@@ -1,5 +1,17 @@
-SELECT strMonthKey, strCustomerName, intFiscalYear, intFiscalMonth, datFiscalYearStart, *
+SELECT COLUMN_NAME, DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'tblMain'
+  AND (COLUMN_NAME LIKE '%Min%'
+   AND (COLUMN_NAME LIKE '%Tangible%' OR COLUMN_NAME LIKE '%TNW%' OR COLUMN_NAME LIKE '%NetWorth%'))
+ORDER BY COLUMN_NAME;
+
+SELECT strMonthKey, strCustomerName, <ColumnName>
 FROM tblMain
-WHERE strCustomerName = 'ATHENS PAPER COMPANY INC'
-  AND strMonthKey IN ('202507','202510')
-ORDER BY strMonthKey;
+WHERE strCustomerName = 'ATHENS PAPER COMPANY INC' AND strMonthKey = '202510';
+
+
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_NAME LIKE '%Covenant%'
+   OR TABLE_NAME LIKE '%Threshold%'
+   OR TABLE_NAME LIKE '%MinTNW%';

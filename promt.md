@@ -24,3 +24,11 @@ ORDER BY strMonthKey DESC;
 SELECT TOP 20 CustomerId, IndustryCode, MonthKey, CovenantName
 FROM v_ifu_covenants
 ORDER BY MonthKey DESC;
+
+
+SELECT strMonthKey, strCovenantName1, strCovenantName2, strCovenantName3,
+       strCovenantName4, strCovenantName5, strCovenantName6
+FROM tblMain
+WHERE strCustomerName = 'ATHENS PAPER COMPANY INC'
+  AND strMonthKey IN ('202507','202510')
+ORDER BY strMonthKey;

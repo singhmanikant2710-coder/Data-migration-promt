@@ -1,47 +1,34 @@
-Thanks for the detailed analysis on all 3 open questions. Here are the decisions —
-please proceed with all of this together as one piece of work:
+Important finding: querying [03_LIBRARY_10_Distribution Parties] for
+"WAGNER, JOHN C" returns a row where the "Recipient_role" column contains the
+value "17436" — which is exactly the same Employee ID used in the RM/PM
+dropdown (Data Mart Trial source). This suggests Recipient_role may actually
+store the employee ID for some/all rows, not a role-type string like
+"PML"/"ECO"/"SCO" as we previously assumed when removing the Recipient_role
+filter from the PML/ECO/SCO dropdowns (per the earlier "remove this condition"
+task).
 
-1. RM/PM EMAIL RESOLUTION:
-Go with matching the selected RM/PM name against
-[03_LIBRARY_10_Distribution Parties].Recipient_name to resolve Recipient_email
-(the Data Mart Trial dropdown source stays unchanged — do NOT switch RM/PM to
-Distribution Parties, and do NOT touch the existing RM/PM queries).
+Before changing the email-matching logic, investigate:
+1. Run: SELECT DISTINCT Recipient_role, COUNT(*) FROM
+   dbo.[03_LIBRARY_10_Distribution Parties] GROUP BY Recipient_role ORDER BY
+   COUNT(*) DESC — send me the result. I need to see whether Recipient_role
+   consistently holds numeric employee IDs across all rows, or whether it's a
+   mixed column (numeric IDs for some rows, role-type strings like "PML" for
+   others).
+2. Also confirm: for the PML/ECO/SCO dropdown fix we did earlier (removing the
+   Recipient_role filter condition), what was that filter actually comparing
+   Recipient_role against? Pull that code/query and tell me — I want to confirm
+   we didn't misinterpret a role-type filter as something else, or vice versa.
 
-This must NOT fail silently:
-- If no matching name is found in Distribution Parties, still persist the name +
-  employee ID as usual, leave the email field NULL, and log a server-side warning
-  noting the unmatched name — do not throw or block the save.
-- Add a code comment flagging that this is a name-based match and is fragile to
-  formatting differences (e.g. "LEO MUTCHLER" vs "MUTCHLER, LEO") — accepted
-  limitation for now, not a bug to swallow silently.
-- After implementing, test against real data and tell me which names (if any)
-  fail to match, so I can flag it to Geoff as a data-quality follow-up.
+Once we know what Recipient_role actually contains:
+- If it's consistently the employee ID (or numeric IDs make up the vast majority
+  of rows), switch the RM/PM email-resolution match to join on employee ID
+  (Recipient_role = the ID from the dropdown) instead of name-string matching.
+  This is far more reliable than any name-format normalization — drop the
+  name-based WHERE clause entirely for this lookup.
+- If it's a mixed/overloaded column, tell me what you find before I decide how
+  to proceed — don't guess and don't silently change the PML/ECO/SCO dropdown
+  behavior we already shipped based on this new information.
 
-2. PORTFOLIO MANAGER LEAD EMAIL COLUMN:
-Before concluding the column doesn't exist, check the C# entity model / EF
-migration files for dbo.[02_CORE_02_Reviews] in this codebase first — the
-existing Portfolio_mgr_lead_name field mapping should already be defined there,
-and a sibling email column (if it exists) is likely mapped nearby.
-
-If that's inconclusive, do NOT request live DB credentials or ask me to run
-az login. Instead, give me a single INFORMATION_SCHEMA.COLUMNS query (same
-approach we've used throughout this project) and I'll run it and paste you the
-result.
-
-If it turns out no such column exists: do not guess a name or add one yourself.
-Persist Portfolio Manager Lead name only, add a // DEVELOPER: comment noting the
-missing email column, and give me the exact ALTER TABLE statement I'd need to run
-to add it — I'll review and run it separately, same as we did with the Selections
-script.
-
-3. DROPDOWN VALUE FORMAT:
-Keep the display string as the value: RM/PM continue sending "ID - NAME" exactly
-as today (backend keeps using the existing SplitNumberName logic — do not touch
-it), and PML/ECO/SCO continue sending plain name. Add a hidden companion
-field/value alongside each of the 5 dropdown fields specifically to carry the
-resolved email through to save. This is the smallest diff and avoids touching any
-already-working parsing logic.
-
-Apply all three decisions together, then give me a summary of what changed and
-flag anything (like unmatched RM/PM names, or a missing PML email column) that
-needs my input before this is considered complete.
+Do not touch the already-completed PML/ECO/SCO dropdown/search/save work unless
+this investigation shows it's actually broken by a misunderstanding of
+Recipient_role — flag that to me explicitly rather than fixing it silently.

@@ -1,38 +1,59 @@
-Moving forward — enough SQL verification, let's finalize this feature.
+Context: .NET 8 Clean Architecture backend + Next.js/React/TypeScript frontend,
+CASRR project. Update the Distribution Parties maintenance screen (Library
+Maintenance section — the screen showing EMAIL (KEY) / NAME / ROLE columns with
+an "Add Distribution Party" button and Edit/Delete actions per row).
 
-Confirmed context: Recipient_role storing Employee ID in Distribution Parties
-is intentional per Geoff/DB team direction. The mismatches found during testing
-(format differences, and one stale legacy record in review 21592) are not
-logic bugs — they're expected data artifacts we've already accounted for with
-the NULL-fallback and normalized-name warning tripwire.
+IMPORTANT: Only touch this maintenance screen's Add/Edit form and its
+save/list logic. Do not touch the RM/PM/PML/ECO/SCO dropdown work, the email
+resolution logic, or any other screen already completed.
 
-Final requirement before this is merge-ready:
+Background: Recipient_role in dbo.[03_LIBRARY_10_Distribution Parties] has been
+repurposed (confirmed by Geoff and the DB team) to store Employee ID instead of
+a role-type string. The maintenance screen's Add/Edit form currently has a Role
+dropdown offering ECO / PML / RPML / SCO / CCE, which writes a role-type string
+into Recipient_role — this is now wrong and will corrupt the join key for any
+record added or edited going forward.
 
-1. Confirm (just point me to the exact line/method, one-line answer, no more
-   SQL needed) that the RM/PM email resolver runs against the employee ID the
-   user JUST SELECTED in the dropdown at save time — i.e. it queries
-   Distribution Parties/Data Mart fresh at the moment of save, using the
-   currently-selected ID. It must NOT re-derive the match from whatever
-   name/ID is already sitting in the review record's stored fields (which
-   could be stale/legacy, as we saw with review 21592).
+Tasks:
 
-   If it already works this way — confirm and move to step 2.
-   If it currently re-derives from stored data instead — fix it now to use
-   the freshly-selected ID from the dropdown at save time.
+1. Replace the Role dropdown in the Add/Edit Distribution Party form with an
+   Employee ID input field:
+   - Numeric input (validate it's a valid integer — match the format used in
+     Data Mart Trial's OfficerNumber / PM Number, e.g. no letters, no
+     decimals).
+   - Required field (same as Role currently is), since email resolution
+     depends on every row having a valid ID.
+   - Field label: "Employee ID" (or whatever this project's existing
+     convention is for similar ID fields — check how Employee ID is labeled
+     elsewhere in the app, e.g. the RM/PM dropdown's "48191 - LEO MUTCHLER"
+     format, for label/style consistency).
 
-2. Once #1 is confirmed correct, this feature (RM/PM/PML/ECO/SCO dropdowns +
-   search + Recipient_role removal + ID-based email resolution + normalized-
-   name warning tripwire) is done. Merge it.
+2. Update the list table's "ROLE" column:
+   - Rename the header to "EMPLOYEE ID" (or similar) and display the numeric
+     value instead of a role string.
+   - Keep search functionality working (the existing "Search email, name, or
+     role..." box) — update it to search by employee ID instead of role
+     string, or confirm it already does a generic text search that will work
+     unchanged.
 
-3. Remaining open item, separate from this merge: Portfolio Manager Lead email
-   column — still needs the INFORMATION_SCHEMA.COLUMNS check
-   (check-customer-info-people-columns.sql) run against CURRENT data to
-   confirm whether that column exists yet. This does not block today's merge
-   — Task 4 (Email Functionality) stays blocked on it, but everything else can
-   ship now.
+3. Validation on save:
+   - Employee ID must be a valid integer.
+   - Do not allow duplicate Employee IDs unless the existing behavior already
+     permits duplicate roles — check current duplicate-handling logic and keep
+     it consistent, just applied to the new field.
 
-Don't wait on the Distribution Parties full-930-user repopulation to merge —
-the code is source-agnostic (it queries whatever's in the table at save time),
-so it'll pick up the refreshed data automatically once the DB team completes
-that load. We'll do QA once you confirm the DB team has finished the
-repopulation.
+4. This is forward-looking only — do NOT attempt to migrate/backfill existing
+   records' Recipient_role values from role-strings to employee IDs. That's
+   covered separately by the DB team's full-table repopulation (clearing and
+   reloading with the 930-user file). Existing rows in this screen's list may
+   still show old role-string data until that repopulation lands — that's
+   expected and fine.
+
+Acceptance criteria:
+- Add Distribution Party form now captures Employee ID (numeric, required)
+  instead of Role.
+- Edit form for existing records shows the new Employee ID field (existing
+  role-string values, if edited, get overwritten with a real employee ID going
+  forward — don't try to auto-convert them).
+- List table displays/searches by Employee ID.
+- No other screen or the RM/PM/PML/ECO/SCO dropdown feature is affected.

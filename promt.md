@@ -1,31 +1,23 @@
-Approved. On point 3 (blast radius widening): accept it as-is, no
-conditional logic needed. We've independently confirmed delta-0 is
-legacy's own current convention (post-2020, in the actual Access system,
-not our invention) — so any old row flipping to delta-0 on edit is
-correctly aligning with legacy, not corrupting anything. Apply the diff
-now.
+READ-ONLY — do not propose or apply any fix.
 
-After applying: run `git status` and `git diff --stat`, confirm only
-SqlMainRepository.cs changed.
+We're scoping the threshold-vs-actual display bug for all 7 keys in
+thresholdKeys (MinTangibleNetWorth, MinProfitBeforeTaxes,
+MinFixedChargeCoverage, MaxDilutionPercent, MaxSeniorDebtTNW,
+MinInterestCoverage, MaxCARatio) — not just Min TNW.
 
-SELECT Over30DayPercent, per30DPD, per60DPD, perCashCollections, perIneligiblePercent,
-       perIneligiblesDividedByNetFundsEmployed, perNetChargeOff, perOver30DPD
-FROM tblMain WHERE strCustomerName='ATHENS PAPER COMPANY INC' AND strMonthKey='202510';
+For each of the 7 keys, list:
+1. Every backend location that decides threshold-vs-actual preference for
+   it (you previously found 4: two in SqlMainRepository, two in
+   AccessMainRepository) — confirm the preference (threshold-first or
+   actual-first) for each key in each location, and flag any
+   inconsistency between the 4 copies for the same key.
+2. Every frontend location (covNumeric in view/edit/report pages, plus
+   MonthSummaryTable's computed-quotient path) and its preference for
+   each key.
+3. Which customers currently have non-null data for each of these 7
+   covenant names, so we know the real-world blast radius per key
+   (a query I can run, since you have no DB access).
 
-SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart, intElapsedFiscalDays
-FROM tblMain WHERE strCustomerName='NATIONWIDE SPECIALTY FINANCE INC' AND strMonthKey='202601';
-
-
-BEGIN TRAN;
-UPDATE dbo.tblMain SET
-    per60DPD = 0,
-    perCashCollections = 0,
-    perIneligiblePercent = 0,
-    perIneligiblesDividedByNetFundsEmployed = 0,
-    perNetChargeOff = 0
-WHERE LTRIM(RTRIM(strCustomerName)) = 'ATHENS PAPER COMPANY INC'
-  AND LTRIM(RTRIM(strMonthKey)) = '202510';
-IF @@ROWCOUNT = 1 COMMIT; ELSE ROLLBACK TRAN;
-
-SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart
-FROM tblMain WHERE strCustomerName='NATIONWIDE SPECIALTY FINANCE INC' AND strMonthKey='202601';
+Report as a table: key x location x preference. Do not recommend a fix
+yet — I want the full map of what's currently inconsistent before we
+decide anything.

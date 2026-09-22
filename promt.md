@@ -14,3 +14,18 @@ FROM tblMain WHERE strCustomerName='ATHENS PAPER COMPANY INC' AND strMonthKey='2
 
 SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart, intElapsedFiscalDays
 FROM tblMain WHERE strCustomerName='NATIONWIDE SPECIALTY FINANCE INC' AND strMonthKey='202601';
+
+
+BEGIN TRAN;
+UPDATE dbo.tblMain SET
+    per60DPD = 0,
+    perCashCollections = 0,
+    perIneligiblePercent = 0,
+    perIneligiblesDividedByNetFundsEmployed = 0,
+    perNetChargeOff = 0
+WHERE LTRIM(RTRIM(strCustomerName)) = 'ATHENS PAPER COMPANY INC'
+  AND LTRIM(RTRIM(strMonthKey)) = '202510';
+IF @@ROWCOUNT = 1 COMMIT; ELSE ROLLBACK TRAN;
+
+SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart
+FROM tblMain WHERE strCustomerName='NATIONWIDE SPECIALTY FINANCE INC' AND strMonthKey='202601';

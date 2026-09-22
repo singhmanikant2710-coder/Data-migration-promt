@@ -1,4 +1,8 @@
-SELECT strCustomerName, strMonthKey, intFiscalYear, intFiscalMonth
-FROM tblMain
-WHERE strCustomerName = "NATIONWIDE SPECIALTY FINANCE INC"
-  AND strMonthKey = "202601";
+SELECT COLUMN_NAME, DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'tblCustomer'
+ORDER BY COLUMN_NAME;
+
+SELECT strCustomerName, intFiscalYearMonthStart, strFiscalYearMonthStart
+FROM tblCustomer
+WHERE strCustomerName IN ('ATHENS PAPER COMPANY INC','IMPERIAL TRADING CO LLC','NATIONWIDE SPECIALTY FINANCE INC');

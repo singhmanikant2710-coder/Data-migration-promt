@@ -16,3 +16,9 @@ WHERE strCustomerName = 'NATIONWIDE SPECIALTY FINANCE INC' AND strMonthKey = '20
 
 SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_NAME = 'tblMain' AND COLUMN_NAME LIKE '%tangible%';
+
+
+SELECT strCovenantActual, LEN(strCovenantActual) AS Len
+FROM tblMainCovenants
+WHERE strCustomerName='NATIONWIDE SPECIALTY FINANCE INC'
+  AND strMonthKey='202601' AND strCovenantName='Min Tangible Net Worth';

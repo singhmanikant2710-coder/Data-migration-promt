@@ -1,14 +1,9 @@
-SELECT strMonthKey, intFiscalMonth, intElapsedFiscalDays, dblAccountsReceivableTurnDays,
-       curInventoryTurn, perInterestCoverage, dblCovenantActual1
-FROM tblMain WHERE strCustomerName='ATHENS PAPER COMPANY INC' AND strMonthKey='202510';
-
-SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart, intElapsedFiscalDays
-FROM tblMain WHERE strCustomerName='ATHENS PAPER COMPANY INC' ORDER BY strMonthKey DESC;
-
-SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart, intElapsedFiscalDays
-FROM tblMain WHERE strCustomerName='CHARTER PIPE LLC'
-ORDER BY strMonthKey DESC;
-
-SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart, intElapsedFiscalDays
-FROM tblMain WHERE strCustomerName='IMPERIAL TRADING CO LLC'
-ORDER BY strMonthKey DESC;
+SELECT c.intFiscalYearMonthStart AS StartMonth,
+       c.strCustomerName,
+       MAX(m.strMonthKey) AS LatestMonth
+FROM tblCustomer c
+JOIN tblMain m ON LTRIM(RTRIM(m.strCustomerName)) = LTRIM(RTRIM(c.strCustomerName))
+WHERE c.intFiscalYearMonthStart IN (1, 6, 2, 4, 5, 7, 9, 11)
+GROUP BY c.intFiscalYearMonthStart, c.strCustomerName
+HAVING MAX(m.strMonthKey) >= '202601'   -- recent data = likely active
+ORDER BY StartMonth, LatestMonth DESC;

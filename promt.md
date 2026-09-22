@@ -1,4 +1,16 @@
-Approved. Please apply the full diff as last submitted (hunks a-j in
-SqlMainRepository.cs, both MainController.cs hunks), including the
-corrected hunk (f). Confirm once applied, and re-run the Athens Paper
-202510 PK-violation edit test to verify the fix resolves it end to end.
+SELECT * INTO tblMain_Backup_PreTest_20260922 FROM tblMain WHERE strCustomerName IN
+  ('ATHENS PAPER COMPANY INC','CHARTER PIPE LLC','ADIR INTERNATIONAL LLC',
+   'JOHN W STONE OIL DISTRIBUTORS LLC','ALAN WIRE COMPANY','ASBURY MANAGEMENT GROUP, INC',
+   'FREZ-N-STOR INC','B W I COMPANIES INC');
+
+
+SELECT strMonthKey, intFiscalYear, intFiscalMonth FROM tblMain
+WHERE strCustomerName='ATHENS PAPER COMPANY INC' AND strMonthKey IN ('202507','202510');
+
+
+SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart
+FROM tblMain WHERE strCustomerName='ATHENS PAPER COMPANY INC' AND strMonthKey='202609';
+
+SELECT strMonthKey, strCovenantActual FROM tblMainCovenants
+WHERE strCustomerName='ATHENS PAPER COMPANY INC' AND strCovenantName='Min Tangible Net Worth'
+ORDER BY strMonthKey DESC;

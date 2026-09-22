@@ -72,3 +72,17 @@ WHERE Classification = 'MIXED / PARTIAL (likely data corruption)'
 ORDER BY MismatchRows DESC;
 
 DROP TABLE #cust_count, #base, #chk, #per_cust, #classified;
+
+
+Ran it against the full population, not a sample. Here's the breakdown (521 total customers in tblCustomer; 212 have tblMain data to check — the rest are calendar-year customers or have no rows):
+
+- 179 customers: calendar-year (Jan start) — the starting-year/ending-year distinction doesn't apply, both are identical.
+- 23 customers: consistently follow the "ending-year" convention (Oct 2025–Sep 2026 = "FY2026") across their entire history, zero exceptions.
+- 6 customers: mixed/partial — this is a separate, already-identified bug (a prior version of the code derived the fiscal month from the previous row instead of the calendar, so a data gap caused drift mid-history). Not a convention question, a data-corruption question, and it's on our list to backfill.
+- 4 customers: consistently follow the OPPOSITE ("starting-year") convention across their ENTIRE history, zero exceptions — Bankers Healthcare Group LLC, Keystone Private Income Fund, Nationwide Specialty Finance Inc, Vermeer Mountain West Inc.
+
+So to answer directly: yes, those are the only 4 in the whole database. We checked every customer with fiscal-year data, not a sample.
+
+We tried to find what makes those 4 different — industry, single vs. syndicated lender, start month — none of it correlates. It looks like a genuine, deliberate per-customer setting from way back, not corruption (the pattern is 100% consistent for each of the 4, not partial like the drift issue above).
+
+Given your last note about wanting the programmatic approach to be consistent going forward — my read is: since it's only these 4, and it's stable, we could either (a) normalize all 4 to the standard convention going forward once we agree that's the source of truth, or (b) special-case just these 4 by name if there's a business reason they need to stay as-is. Let me know which way you want to go and I'll build accordingly.

@@ -4,3 +4,11 @@ FROM tblMain WHERE strCustomerName='ATHENS PAPER COMPANY INC' AND strMonthKey='2
 
 SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart, intElapsedFiscalDays
 FROM tblMain WHERE strCustomerName='ATHENS PAPER COMPANY INC' ORDER BY strMonthKey DESC;
+
+SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart, intElapsedFiscalDays
+FROM tblMain WHERE strCustomerName='CHARTER PIPE LLC'
+ORDER BY strMonthKey DESC;
+
+SELECT strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart, intElapsedFiscalDays
+FROM tblMain WHERE strCustomerName='IMPERIAL TRADING CO LLC'
+ORDER BY strMonthKey DESC;

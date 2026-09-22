@@ -21,3 +21,10 @@ For each of the 7 keys, list:
 Report as a table: key x location x preference. Do not recommend a fix
 yet — I want the full map of what's currently inconsistent before we
 decide anything.
+
+
+SELECT strCovenantName, strCovenantActual, strCovenantThreshold
+FROM tblMainCovenants
+WHERE strCustomerName='NATIONWIDE SPECIALTY FINANCE INC'
+  AND strMonthKey='202601'
+  AND (strCovenantName LIKE '%Adjusted Debt%' OR strCovenantName LIKE '%Max Adj%');

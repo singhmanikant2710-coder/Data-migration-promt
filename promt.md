@@ -1,30 +1,30 @@
 READ-ONLY — do not propose or apply any fix.
 
-We're scoping the threshold-vs-actual display bug for all 7 keys in
-thresholdKeys (MinTangibleNetWorth, MinProfitBeforeTaxes,
-MinFixedChargeCoverage, MaxDilutionPercent, MaxSeniorDebtTNW,
-MinInterestCoverage, MaxCARatio) — not just Min TNW.
+Your own report contradicts itself on F6/F7 (MonthSummaryTable.tsx /
+monthSummaryRegistry.ts computed quotient for MinTangibleNetWorth): the
+location table (section 2) says it "overrides canonical value," but the
+key×location table says "gap-fill only." These can't both be true.
 
-For each of the 7 keys, list:
-1. Every backend location that decides threshold-vs-actual preference for
-   it (you previously found 4: two in SqlMainRepository, two in
-   AccessMainRepository) — confirm the preference (threshold-first or
-   actual-first) for each key in each location, and flag any
-   inconsistency between the 4 copies for the same key.
-2. Every frontend location (covNumeric in view/edit/report pages, plus
-   MonthSummaryTable's computed-quotient path) and its preference for
-   each key.
-3. Which customers currently have non-null data for each of these 7
-   covenant names, so we know the real-world blast radius per key
-   (a query I can run, since you have no DB access).
+Quote the EXACT code at MonthSummaryTable.tsx:666-682 and the matching
+render/save logic verbatim. Specifically answer:
 
-Report as a table: key x location x preference. Do not recommend a fix
-yet — I want the full map of what's currently inconsistent before we
-decide anything.
+1. When a user EDITS this cell in the UI and hits save, what value is
+   actually included in the outgoing PUT payload — the literal value the
+   user typed, or a value recomputed via computeMinTnwForRowLocal
+   (TotAdjustedLiab ÷ MaxAdjustedDebtTNWLimit)? Trace the onChange/onBlur/
+   onSave handler for this specific editable column, not just the render
+   path.
 
+2. Confirmed observation to explain: Nationwide Specialty Finance Inc,
+   Min Tangible Net Worth, monthKey 202601. Before my edit, DB held
+   strCovenantActual = 26207.215706666666. I edited the UI field to
+   remove the decimal portion and saved. After refresh, the UI showed
+   26207.215706666666 again — unchanged from before my edit — and the DB
+   query confirms strCovenantActual is still 26207.215706666666 (not
+   whatever integer I typed). Does your traced code explain this as (a)
+   the payload never contained my typed value in the first place because
+   the input is bound to the computed quotient, or (b) the payload did
+   contain my typed value, but something recomputed and overwrote it
+   server-side after write?
 
-SELECT strCovenantName, strCovenantActual, strCovenantThreshold
-FROM tblMainCovenants
-WHERE strCustomerName='NATIONWIDE SPECIALTY FINANCE INC'
-  AND strMonthKey='202601'
-  AND (strCovenantName LIKE '%Adjusted Debt%' OR strCovenantName LIKE '%Max Adj%');
+Report only, with exact quotes. Do not propose a fix.

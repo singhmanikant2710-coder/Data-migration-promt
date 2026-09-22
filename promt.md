@@ -1,21 +1,9 @@
-SELECT COLUMN_NAME, DATA_TYPE
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = 'tblCustomer'
-ORDER BY COLUMN_NAME;
-
-SELECT strCustomerName, intFiscalYearMonthStart, strFiscalYearMonthStart
+SELECT strCustomerName, strIndustry
 FROM tblCustomer
 WHERE strCustomerName IN ('ATHENS PAPER COMPANY INC','IMPERIAL TRADING CO LLC','NATIONWIDE SPECIALTY FINANCE INC');
 
 
-SELECT COLUMN_NAME, DATA_TYPE
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = 'tblCustomer'
-  AND (
-    COLUMN_NAME LIKE '%Fiscal%'
-    OR COLUMN_NAME LIKE '%Year%'
-    OR COLUMN_NAME LIKE '%Start%'
-    OR COLUMN_NAME LIKE '%Convention%'
-    OR COLUMN_NAME LIKE '%Label%'
-  )
-ORDER BY COLUMN_NAME;
+SELECT c.strCustomerName, c.strIndustry, c.intFiscalYearMonthStart
+FROM tblCustomer c
+WHERE c.strIndustry = 'DirectAuto'
+ORDER BY c.strCustomerName;

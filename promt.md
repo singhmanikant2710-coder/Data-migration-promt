@@ -1,11 +1,66 @@
-Thanks John, that's helpful — good to know datFiscalYearStart is behaving correctly, and the quarterly-reporting note is useful context I hadn't accounted for.
+;WITH cust_count AS (
+    SELECT COUNT(DISTINCT strCustomerName) AS TotalCustomers FROM tblCustomer
+),
+base AS (
+    SELECT
+        LTRIM(RTRIM(m.strCustomerName)) AS CustomerName,
+        LTRIM(RTRIM(m.strMonthKey)) AS MonthKey,
+        TRY_CONVERT(int, c.intFiscalYearMonthStart) AS StartMonth,
+        TRY_CONVERT(int, LEFT(LTRIM(RTRIM(m.strMonthKey)), 4)) AS CalYear,
+        TRY_CONVERT(int, SUBSTRING(LTRIM(RTRIM(m.strMonthKey)), 5, 2)) AS CalMonth,
+        TRY_CONVERT(int, m.intFiscalYear) AS StoredFY,
+        TRY_CONVERT(int, m.intFiscalMonth) AS StoredFM
+    FROM dbo.tblMain m
+    LEFT JOIN dbo.tblCustomer c
+        ON LTRIM(RTRIM(c.strCustomerName)) = LTRIM(RTRIM(m.strCustomerName))
+),
+chk AS (
+    SELECT b.*,
+        ((CalMonth - StartMonth + 12) % 12) + 1 AS ExpFM,
+        CASE WHEN StartMonth = 1 THEN CalYear
+             WHEN CalMonth >= StartMonth THEN CalYear + 1
+             ELSE CalYear END AS ExpFY
+    FROM base b
+    WHERE StartMonth BETWEEN 1 AND 12 AND CalMonth BETWEEN 1 AND 12
+      AND LEN(MonthKey) = 6 AND StoredFY IS NOT NULL AND StoredFM IS NOT NULL
+),
+per_cust AS (
+    SELECT CustomerName, MIN(StartMonth) AS StartMonth,
+        COUNT(*) AS RowsChecked,
+        SUM(CASE WHEN StoredFY = ExpFY AND StoredFM = ExpFM THEN 1 ELSE 0 END) AS MatchingRows,
+        SUM(CASE WHEN StoredFY <> ExpFY OR StoredFM <> ExpFM THEN 1 ELSE 0 END) AS MismatchRows
+    FROM chk
+    GROUP BY CustomerName
+),
+classified AS (
+    SELECT *,
+        CASE WHEN StartMonth = 1 THEN 'CALENDAR YEAR (convention irrelevant)'
+             WHEN MismatchRows = 0 THEN 'MATCHES ENDING-YEAR FORMULA'
+             WHEN MatchingRows = 0 THEN 'OPPOSITE (STARTING-YEAR) CONVENTION'
+             ELSE 'MIXED / PARTIAL (likely data corruption)' END AS Classification
+    FROM per_cust
+)
 
-But I realize my question was about a different field, and I should've been more precise. Not datFiscalYearStart (the actual calendar date the fiscal year begins) — I'm asking about intFiscalYear, the numeric LABEL assigned to that fiscal cycle.
+SELECT '1. TOTAL CUSTOMERS IN tblCustomer' AS Report;
+SELECT TotalCustomers FROM cust_count;
 
-Concrete example from the row you screenshotted: strMonthKey 202010, datFiscalYearStart = 10/1/2020 (so this fiscal year runs Oct 2020 – Sep 2021). Should intFiscalYear for that row be:
-(a) 2020 — named for the year it STARTS in, or
-(b) 2021 — named for the year it ENDS in?
+SELECT '2. CUSTOMERS ACTUALLY CHECKED (have tblMain rows + valid start month)' AS Report;
+SELECT COUNT(*) AS CustomersChecked, SUM(RowsChecked) AS TotalRowsChecked FROM classified;
 
-For Athens Paper and 4+ other customers we've checked, it's (b) — e.g. their Oct-2025-to-Sep-2026 cycle is labeled "FY2026." But Bankers Healthcare's actual stored intFiscalYear for this same row is 2020, i.e. (a) — the opposite.
+SELECT '3. POPULATION BREAKDOWN' AS Report;
+SELECT Classification, COUNT(*) AS Customers, SUM(RowsChecked) AS TotalRows
+FROM classified
+GROUP BY Classification
+ORDER BY Classification;
 
-Is that intentional for Bankers Healthcare (and Keystone Private Income Fund, Vermeer Mountain West, Nationwide Specialty Finance — same pattern), or should it also be labeled 2021 like the others?
+SELECT '4. EVERY CUSTOMER IN "OPPOSITE (STARTING-YEAR) CONVENTION" — full, exhaustive list' AS Report;
+SELECT CustomerName, StartMonth, RowsChecked
+FROM classified
+WHERE Classification = 'OPPOSITE (STARTING-YEAR) CONVENTION'
+ORDER BY CustomerName;
+
+SELECT '5. EVERY CUSTOMER IN "MIXED/PARTIAL" — for reference, separate known corruption issue' AS Report;
+SELECT CustomerName, StartMonth, RowsChecked, MatchingRows, MismatchRows
+FROM classified
+WHERE Classification = 'MIXED / PARTIAL (likely data corruption)'
+ORDER BY MismatchRows DESC;

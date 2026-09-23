@@ -1,27 +1,25 @@
-Something went wrong — the changes from commit a5b4ff4 (RM/PM canonical name
-fix) appear to have been removed/reverted. Before redoing any work,
-investigate and report back:
+Context: .NET 8 Clean Architecture backend, CASRR project. Client's original
+spec (items 4-5 of their requirements doc) asks for a monthly/at-load-time
+batch process that populates Relationship_mgr_number/_name/_email and
+Portfolio_mgr_number/_name/_email on dbo.[02_CORE_02_Reviews] by matching
+against Distribution Parties (OfficerNumber = Employee ID for RM, PM Number =
+Employee ID for PM), defaulting all three fields to NULL if no match is found
+— for reviewers to assign manually via the front-end form in that case.
 
-1. Run `git log --oneline -10` on the develop branch — is commit a5b4ff4
-   still present in the history?
+This is separate from and in addition to the review form's manual RM/PM
+dropdown (already implemented) — this is about the existing "sample loading"
+ingestion process that runs when reviews/samples are first loaded into the
+system, similar to how the Data Mart Trial staging table gets ingested.
 
-2. Run `git show a5b4ff4 --stat` — confirm what file(s) that commit touched.
+Investigate first — don't implement yet:
+1. Find the existing "sample loading append queries/process" in this codebase
+   — the process that currently populates review records when a new
+   sample/review is loaded (likely already sets some fields from Data Mart
+   Trial or similar staging tables). Tell me what it's called, where it lives,
+   and what it currently does for RM/PM fields, if anything.
+2. Confirm whether this is a scheduled job, an on-demand script, or triggered
+   by some ingestion event — this affects how we'd add the Distribution
+   Parties lookup to it.
 
-3. Open the actual current content of SqlReviewRepository.cs around the
-   ResolveDistributionPartyByEmployeeIdAsync method and the
-   @RelationshipManager/@PortfolioManager parameter binding — does the
-   canonical-name logic from that commit currently exist in the file, or is
-   it gone?
-
-4. Run `git status` and `git diff` — is there an uncommitted change that
-   reverted the file back to its pre-a5b4ff4 state? If so, what does the diff
-   show, and do you have any idea what would have caused it (a git checkout,
-   a reset, a manual edit, a merge, a tool auto-reverting)?
-
-5. Run `git reflog -10` — this shows recent HEAD movements and can reveal if
-   a reset/checkout happened after the commit.
-
-Don't re-apply the fix yet — first tell me exactly what state the repo and
-file are actually in, and what likely caused the change to disappear, so we
-understand the cause before just redoing the work and risking the same thing
-happening again.
+Report back before writing any code, so we can confirm scope before
+implementing.

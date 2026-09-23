@@ -9,3 +9,18 @@ WHERE TABLE_NAME = '01_DATA_01_Data Mart Trial'
         OR COLUMN_NAME LIKE '%Bank%'
       )
 ORDER BY COLUMN_NAME;
+
+SELECT COLUMN_NAME, DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = '01_DATA_01_Data Mart Trial'
+  AND (
+        COLUMN_NAME LIKE '%Amt%'
+        OR COLUMN_NAME LIKE '%Amount%'
+        OR COLUMN_NAME LIKE '%Outstanding%'
+        OR COLUMN_NAME LIKE '%Balance%'
+        OR COLUMN_NAME LIKE '%Total%'
+        OR COLUMN_NAME LIKE '%Facility%'
+        OR COLUMN_NAME LIKE '%Loan%'
+        OR COLUMN_NAME LIKE '%Limit%'
+      )
+ORDER BY COLUMN_NAME;

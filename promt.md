@@ -16,7 +16,7 @@ pm_officers AS (
 SELECT * FROM (
     SELECT TOP (10)
         'Relationship Manager' AS [Field],
-        o.[EmployeeId],
+        o.[EmployeeId] AS [EmployeeId],
         o.[Name] AS [DataMartName]
     FROM rm_officers AS o
     WHERE NOT EXISTS (
@@ -30,9 +30,9 @@ UNION ALL
 
 SELECT * FROM (
     SELECT TOP (10)
-        'Portfolio Manager',
-        o.[EmployeeId],
-        o.[Name]
+        'Portfolio Manager' AS [Field],
+        o.[EmployeeId] AS [EmployeeId],
+        o.[Name] AS [DataMartName]
     FROM pm_officers AS o
     WHERE NOT EXISTS (
         SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)

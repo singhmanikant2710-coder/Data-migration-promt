@@ -1,80 +1,16 @@
-;WITH cust AS (
-    SELECT
-        LTRIM(RTRIM(d.[CUST_NUM])) AS [CustNum],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[OfficerNumber])))) AS [RmId],
-        MIN(LTRIM(RTRIM(d.[OfficerName]))) AS [RmName],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[PM Number])))) AS [PmId],
-        MIN(LTRIM(RTRIM(d.[PMName]))) AS [PmName],
-        SUM(TRY_CONVERT(decimal(38,10), NULLIF(d.[Commitment], ''))) AS [TotalCommitted]
-    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
-    WHERE NULLIF(LTRIM(RTRIM(d.[CUST_NUM])), '') IS NOT NULL
-      AND d.[SourceSystem] IN ('ACBS', 'MWS', 'IFL')
-    GROUP BY LTRIM(RTRIM(d.[CUST_NUM]))
-)
+Hi John, trying to close everything out since we need to deliver this tomorrow — quick recap of where things stand + a few things I need from you to finish up.
 
--- RM: unmatched, grouped, with count + exposure subtotal
-SELECT
-    'Relationship Manager' AS [Field],
-    cust.[RmId] AS [EmployeeId],
-    cust.[RmName] AS [DataMartName],
-    COUNT_BIG(*) AS [CustomerCount],
-    SUM(cust.[TotalCommitted]) AS [CommittedExposure]
-FROM cust
-WHERE cust.[RmId] IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-      WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
-  )
-GROUP BY cust.[RmId], cust.[RmName]
+Where we are:
+- The core save-path bugs (PK violation, fiscal month/year drift, covenant write-target, elapsed-days formula) are fixed, verified, and committed.
+- The fiscal-start-change cascade (Option b, full recompute, including intElapsedFiscalDays) is designed and mostly ready — held back only by the datFiscalYearStart question below, since the same calculation feeds both.
+- On datFiscalYearStart: we found the column disagrees with itself across ~30 fiscal years in the current data (same fiscal year, two different start dates among its own rows) — so this isn't just a labeling-convention question anymore, there's real inconsistency in what's stored today regardless of which definition is correct.
 
-UNION ALL
+Three things I need from you:
 
--- PM: unmatched, grouped, with count + exposure subtotal
-SELECT
-    'Portfolio Manager',
-    cust.[PmId],
-    cust.[PmName],
-    COUNT_BIG(*),
-    SUM(cust.[TotalCommitted])
-FROM cust
-WHERE cust.[PmId] IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-      WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
-  )
-GROUP BY cust.[PmId], cust.[PmName]
+1. Status on the legacy fix for the 4 exception customers (Bankers Healthcare, Keystone, Nationwide, Vermeer) — has that started, and do you have a rough timeline? Want to know if we should expect it before or after we ship our side.
 
-ORDER BY [Field], [CommittedExposure] DESC;
+2. Scope on that same fix — I'd asked earlier and want to make sure it didn't get missed: does "fix the data in legacy" mean the Access database only, or will your team also correct these 4 customers' rows in the SQL Server dev/prod database we've been working in? If it's Access-only, we'll need to run our own backfill there to match once yours lands.
 
+3. Still waiting on your read on the datFiscalYearStart question I sent — whether it should mean "first day of this row's fiscal year" (we fix + backfill) or something else legacy reporting depends on. This is the one blocking piece left on our side — once I have that, I can close out both the column fix and the cascade in the same pass.
 
-
-;WITH cust AS (
-    SELECT
-        LTRIM(RTRIM(d.[CUST_NUM])) AS [CustNum],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[OfficerNumber])))) AS [RmId],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[PM Number])))) AS [PmId],
-        SUM(TRY_CONVERT(decimal(38,10), NULLIF(d.[Commitment], ''))) AS [TotalCommitted]
-    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
-    WHERE NULLIF(LTRIM(RTRIM(d.[CUST_NUM])), '') IS NOT NULL
-      AND d.[SourceSystem] IN ('ACBS', 'MWS', 'IFL')
-    GROUP BY LTRIM(RTRIM(d.[CUST_NUM]))
-)
-SELECT
-    SUM(CASE WHEN cust.[RmId] IS NOT NULL AND NOT EXISTS (
-            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
-        ) THEN 1 ELSE 0 END) AS [Rm_UnmatchedCustomers],
-    SUM(CASE WHEN cust.[RmId] IS NOT NULL AND NOT EXISTS (
-            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
-        ) THEN cust.[TotalCommitted] ELSE 0 END) AS [Rm_GapExposure],
-
-    SUM(CASE WHEN cust.[PmId] IS NOT NULL AND NOT EXISTS (
-            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
-        ) THEN 1 ELSE 0 END) AS [Pm_UnmatchedCustomers],
-    SUM(CASE WHEN cust.[PmId] IS NOT NULL AND NOT EXISTS (
-            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
-        ) THEN cust.[TotalCommitted] ELSE 0 END) AS [Pm_GapExposure]
-FROM cust;
+Also — is there anything else on your end that could affect what we're shipping tomorrow? Want to make sure we're not missing a blocker before we finalize.

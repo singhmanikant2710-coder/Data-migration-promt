@@ -1,13 +1,36 @@
-Yes, please go ahead and check with Ashok and John on what's involved in
-changing Relationship_mgr_number and Portfolio_mgr_number from Number to Text.
+Query 3 came back empty — no duplicate Employee IDs currently in Distribution
+Parties. No live defect in the shipped resolver today. As a defensive measure
+(protects against a future duplicate being introduced), please still add a
+deterministic ORDER BY to the existing TOP(1) resolver — low priority, not
+blocking anything, just good practice given we now know duplicates are
+possible in principle.
 
-To be clear on our end: this change is purely for display/reporting fidelity
-(so IDs like 00030 don't lose their leading zeros) — it has zero impact on
-our RM/PM matching logic either way, since we already convert both sides to
-integers when joining. So there's no urgency from a functionality standpoint;
-happy to go with whatever's simplest for the DBA team. If it turns out to be
-non-trivial (e.g. requires re-validating downstream reports that depend on
-these being numeric), leaving it as-is is completely fine with us.
+Match-rate numbers (Query 1 & 2) are in — sharing with the client now to
+decide on the NULL-vs-fallback question. Will follow up once we have
+direction.
+
+Hi Geoff,
+
+Match-rate numbers on the post-repopulation data (the number that decides the
+NULL-on-miss question):
+
+Out of 23,743 distinct customers currently in Data Mart Trial:
+- Relationship Manager resolves via Distribution Parties for 51.1% (12,138) —
+  48.9% would have no match.
+- Portfolio Manager resolves for 64.1% (15,212) — 35.9% would have no match.
+
+So under your spec as written (default to NULL when there's no match), roughly
+half of newly loaded reviews would load with a blank RM, and about a third
+would load with a blank PM — versus today, where all of them get a Data Mart
+name/number (just not always a matching email).
+
+Given these numbers, do you want to proceed with NULL-on-miss as specified, or
+would you prefer we keep the Data Mart name/number as a fallback (leaving only
+the email blank) when there's no Distribution Parties match? Let us know and
+we'll move forward with implementation.
+
+Also flagging separately: no duplicate Employee IDs currently exist in
+Distribution Parties, so no immediate data-integrity concern there.
 
 Thanks,
 Manikant

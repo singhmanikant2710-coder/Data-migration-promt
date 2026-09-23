@@ -1,26 +1,80 @@
-Your 33-row investigation is useful for backfill scoping — thank you. But it
-does NOT answer my two direct questions from before, which were about a
-DIFFERENT customer (Athens, start=10), not the January-start customers you
-just covered.
+;WITH cust AS (
+    SELECT
+        LTRIM(RTRIM(d.[CUST_NUM])) AS [CustNum],
+        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[OfficerNumber])))) AS [RmId],
+        MIN(LTRIM(RTRIM(d.[OfficerName]))) AS [RmName],
+        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[PM Number])))) AS [PmId],
+        MIN(LTRIM(RTRIM(d.[PMName]))) AS [PmName],
+        SUM(TRY_CONVERT(decimal(38,10), NULLIF(d.[Commitment], ''))) AS [TotalCommitted]
+    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
+    WHERE NULLIF(LTRIM(RTRIM(d.[CUST_NUM])), '') IS NOT NULL
+      AND d.[SourceSystem] IN ('ACBS', 'MWS', 'IFL')
+    GROUP BY LTRIM(RTRIM(d.[CUST_NUM]))
+)
 
-Answer both, literally, no prose:
+-- RM: unmatched, grouped, with count + exposure subtotal
+SELECT
+    'Relationship Manager' AS [Field],
+    cust.[RmId] AS [EmployeeId],
+    cust.[RmName] AS [DataMartName],
+    COUNT_BIG(*) AS [CustomerCount],
+    SUM(cust.[TotalCommitted]) AS [CommittedExposure]
+FROM cust
+WHERE cust.[RmId] IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+      WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
+  )
+GROUP BY cust.[RmId], cust.[RmName]
 
-1. Does DeriveFiscalYearStartDate replace the computation in yesterday's
-   approved hunk (f) — new DateTime(fy, fiscalStartMonth, 1) — inside the
-   live UpsertRowWithConnectionAsync save path? YES or NO.
+UNION ALL
 
-2. If Athens Paper's 202510 row is saved again after this diff is applied,
-   what exact date does datFiscalYearStart get? State the date.
+-- PM: unmatched, grouped, with count + exposure subtotal
+SELECT
+    'Portfolio Manager',
+    cust.[PmId],
+    cust.[PmName],
+    COUNT_BIG(*),
+    SUM(cust.[TotalCommitted])
+FROM cust
+WHERE cust.[PmId] IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+      WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
+  )
+GROUP BY cust.[PmId], cust.[PmName]
 
-I already know the answer your formula's math gives (2025-10-01) and I
-already know the legacy-verified correct answer (2026-10-01, confirmed
-against Access, and consistent with John's own written description: "legacy
-has stored datFiscalYearStart as the first day of intFiscalYear" — i.e. fy-
-based, not calendar-year-based). If your function gives 2025-10-01 for this
-case, that is a regression against an already-approved, already-committed
-fix, full stop — not a stale-snapshot issue like the 33 rows.
+ORDER BY [Field], [CommittedExposure] DESC;
 
-Separately: John has not yet answered what this column should mean going
-forward (that question was just sent to him). Applying any change to its
-live-save computation before his answer comes back is premature regardless
-of what #1 and #2 turn out to be. Do not apply anything.
+
+
+;WITH cust AS (
+    SELECT
+        LTRIM(RTRIM(d.[CUST_NUM])) AS [CustNum],
+        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[OfficerNumber])))) AS [RmId],
+        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[PM Number])))) AS [PmId],
+        SUM(TRY_CONVERT(decimal(38,10), NULLIF(d.[Commitment], ''))) AS [TotalCommitted]
+    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
+    WHERE NULLIF(LTRIM(RTRIM(d.[CUST_NUM])), '') IS NOT NULL
+      AND d.[SourceSystem] IN ('ACBS', 'MWS', 'IFL')
+    GROUP BY LTRIM(RTRIM(d.[CUST_NUM]))
+)
+SELECT
+    SUM(CASE WHEN cust.[RmId] IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
+        ) THEN 1 ELSE 0 END) AS [Rm_UnmatchedCustomers],
+    SUM(CASE WHEN cust.[RmId] IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
+        ) THEN cust.[TotalCommitted] ELSE 0 END) AS [Rm_GapExposure],
+
+    SUM(CASE WHEN cust.[PmId] IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
+        ) THEN 1 ELSE 0 END) AS [Pm_UnmatchedCustomers],
+    SUM(CASE WHEN cust.[PmId] IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
+        ) THEN cust.[TotalCommitted] ELSE 0 END) AS [Pm_GapExposure]
+FROM cust;

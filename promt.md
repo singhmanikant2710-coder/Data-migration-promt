@@ -1,32 +1,32 @@
-WITH cust AS (
-    SELECT LTRIM(RTRIM(d.[CUST_NUM])) AS [CustNum],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[OfficerNumber])))) AS [RmId],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[PM Number])))) AS [PmId]
-    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
-    WHERE NULLIF(LTRIM(RTRIM(d.[CUST_NUM])), '') IS NOT NULL
-    GROUP BY LTRIM(RTRIM(d.[CUST_NUM]))
-)
-SELECT
-    COUNT_BIG(*) AS [DistinctCustomers],
+Hi Geoff,
 
-    SUM(CASE WHEN cust.[RmId] IS NULL THEN 1 ELSE 0 END) AS [Rm_NullOfficerNumber],
-    SUM(CASE WHEN cust.[RmId] IS NOT NULL AND rm.[Email] IS NULL THEN 1 ELSE 0 END) AS [Rm_HasNumber_NoDistributionMatch],
-    SUM(CASE WHEN rm.[Email] IS NOT NULL THEN 1 ELSE 0 END) AS [Rm_Matched],
+Confirmed — proceeding with NULL-on-miss as specified. Thanks for confirming
+the historical migration is on your team's side next week; we'll only handle
+newly loaded reviews going forward.
 
-    SUM(CASE WHEN cust.[PmId] IS NULL THEN 1 ELSE 0 END) AS [Pm_NullPmNumber],
-    SUM(CASE WHEN cust.[PmId] IS NOT NULL AND pm.[Email] IS NULL THEN 1 ELSE 0 END) AS [Pm_HasNumber_NoDistributionMatch],
-    SUM(CASE WHEN pm.[Email] IS NOT NULL THEN 1 ELSE 0 END) AS [Pm_Matched]
+Breakdown of the mismatches, split by cause, on the 23,743 distinct customers
+in current Data Mart Trial:
 
-FROM cust
-OUTER APPLY (
-    SELECT TOP (1) LTRIM(RTRIM(dp.[Recipient_email])) AS [Email]
-    FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-    WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
-      AND NULLIF(LTRIM(RTRIM(dp.[Recipient_email])), '') IS NOT NULL
-) AS rm
-OUTER APPLY (
-    SELECT TOP (1) LTRIM(RTRIM(dp.[Recipient_email])) AS [Email]
-    FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-    WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
-      AND NULLIF(LTRIM(RTRIM(dp.[Recipient_email])), '') IS NOT NULL
-) AS pm;
+Relationship Manager:
+- 2,136 (9.0%) have a NULL OfficerNumber in Data Mart Trial itself — no
+  officer assigned at the source, so no match was ever possible here.
+- 9,469 (39.9%) have a valid OfficerNumber, but it doesn't match any record in
+  Distribution Parties — this is the genuine data-quality gap.
+- 12,138 (51.1%) matched successfully.
+
+Portfolio Manager:
+- 4,172 (17.6%) have a NULL PM Number in Data Mart Trial itself.
+- 4,359 (18.4%) have a valid PM Number with no Distribution Parties match.
+- 15,212 (64.1%) matched successfully.
+
+So the "genuine gap" (valid number, no match) is the larger driver for RM
+(39.9%) and roughly equal to the NULL-source gap for PM. If closing that gap
+matters, it would mean adding the missing officers to Distribution Parties —
+happy to pull a list of the specific unmatched OfficerNumbers/PM Numbers if
+useful for reconciliation.
+
+We'll move forward with implementing NULL-on-miss for the sample-loading
+process now.
+
+Thanks,
+Manikant

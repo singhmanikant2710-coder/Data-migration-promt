@@ -1,11 +1,33 @@
-Investigated the fiscal-year-change scenario you flagged. Two things worth knowing:
+Context: .NET 8 Clean Architecture backend + Next.js/React/TypeScript frontend,
+CASRR project. Client flagged a potential data issue: Employee IDs with
+leading zeros (e.g., "00030" for GREER, ANDREW T) are displaying as "30" on
+the Distribution Parties maintenance screen.
 
-1. Currently, changing a customer's fiscal start month in the edit screen updates only the customer record — it does NOT cascade to that customer's existing historical rows. Those keep their old fiscal year/month/dates until each one is individually re-saved.
+Investigate — do NOT change anything yet, just report back:
 
-2. We found something interesting in the legacy code: Access had this field LOCKED once initially set ("Disable selection once initially setup") — so in legacy, this scenario could never actually happen. That lock appears to have been dropped during migration.
+1. Query the raw stored value in dbo.[03_LIBRARY_10_Distribution Parties] for
+   this specific record:
+   SELECT Recipient_name, Recipient_role, DATALENGTH(Recipient_role) AS
+   [RawByteLength] FROM dbo.[03_LIBRARY_10_Distribution Parties] WITH (NOLOCK)
+   WHERE Recipient_name = 'GREER, ANDREW T';
+   Tell me whether Recipient_role is stored as "00030" (zeros preserved in the
+   actual column) or "30" (zeros already stripped at the data level).
 
-Given that, there are two ways to make this "consistent" per your ask:
-(a) Restore the legacy behavior — lock the field after it's first set, so it simply can't be changed once a customer has history. Matches original design, low effort/risk.
-(b) Build a full cascade — when fiscal start month changes, automatically recompute fiscal year/month/dates and downstream metrics (AR turn days, inventory turn, YTD aggregates) for every existing month for that customer. This is a meaningfully bigger build — need to think through transaction scope and performance for customers with 100+ months of history.
+2. Check the maintenance screen's Add/Edit form and list-display code: is it
+   parsing Recipient_role as a number anywhere (int/number type) before
+   displaying or storing it? If so, that's what's stripping the leading
+   zeros — it should be treated as a fixed-width text/string field throughout
+   the UI, not converted to a number.
 
-Which direction do you want? Also still waiting on your read on the scope question from earlier (legacy-only fix vs. also SQL Server dev/prod) whenever you get a chance.
+3. Note for context (not urgent, just background): our RM/PM email-resolution
+   join already does TRY_CONVERT(int, ...) on both sides when matching, so
+   numeric join correctness (30 = 030 = 00030) is not affected by this issue
+   regardless of what you find. This is purely a display/storage-fidelity
+   concern, not a join-correctness bug.
+
+Report back: (a) is the DB value itself missing the zeros, or only the
+display, and (b) if it's a UI/parsing issue, what needs to change to preserve
+and display leading zeros consistently (e.g., always treat as a
+zero-padded-5-digit string, or whatever width the source data actually uses —
+check a sample of IDs to confirm they're consistently 5 digits before
+assuming a fixed width).

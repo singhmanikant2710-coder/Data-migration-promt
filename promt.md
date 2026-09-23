@@ -1,35 +1,27 @@
-Context: .NET 8 Clean Architecture backend + Next.js/React/TypeScript frontend,
-CASRR project. Client has clarified a requirement: RM/PM names stored in
-review records must be consistent across all reviews (currently a name might
-be stored as "JOHN DOE" on one review and "DOE, JOHN" on another, depending on
-source), because this breaks downstream reporting filters by RM/PM name.
+Something went wrong — the changes from commit a5b4ff4 (RM/PM canonical name
+fix) appear to have been removed/reverted. Before redoing any work,
+investigate and report back:
 
-IMPORTANT: Only touch RM/PM name-storage logic on save. Do not change the
-dropdown's search/selection UX, the employee-ID-based email resolution, or
-PML/ECO/SCO logic already completed.
+1. Run `git log --oneline -10` on the develop branch — is commit a5b4ff4
+   still present in the history?
 
-Current behavior (confirm by inspecting the code first): when a user selects
-an RM/PM from the Customer Info dropdown (sourced from Data Mart Trial) and
-saves, the review record stores the Data Mart Trial display name format
-(FIRST MIDDLE LAST), while Distribution Parties stores the canonical format
-(LAST, FIRST MIDDLE). This is what's causing the inconsistency the client
-flagged.
+2. Run `git show a5b4ff4 --stat` — confirm what file(s) that commit touched.
 
-Task: When saving Relationship_mgr_name / Portfolio_mgr_name, after resolving
-the employee ID's matching row in Distribution Parties (which we already do
-for email), also use THAT row's Recipient_name as the name to store — not the
-Data Mart Trial dropdown's display label. This makes every review's stored RM/PM
-name consistent with the Distribution Parties canonical format, regardless of
-which screen/process wrote it.
+3. Open the actual current content of SqlReviewRepository.cs around the
+   ResolveDistributionPartyByEmployeeIdAsync method and the
+   @RelationshipManager/@PortfolioManager parameter binding — does the
+   canonical-name logic from that commit currently exist in the file, or is
+   it gone?
 
-Fallback: if no matching Distribution Parties row is found for the selected
-employee ID (as we've seen happens for ~79% of RM records), fall back to
-storing the Data Mart Trial display name as before — don't leave the name
-blank just because the email/canonical-name lookup failed.
+4. Run `git status` and `git diff` — is there an uncommitted change that
+   reverted the file back to its pre-a5b4ff4 state? If so, what does the diff
+   show, and do you have any idea what would have caused it (a git checkout,
+   a reset, a manual edit, a merge, a tool auto-reverting)?
 
-Acceptance criteria:
-- Saving an RM/PM whose employee ID has a Distribution Parties match stores
-  the Distribution Parties canonical name (LAST, FIRST format).
-- Saving an RM/PM with no Distribution Parties match still stores the
-  dropdown's name as a fallback (no blank names introduced).
-- Email and employee ID storage logic already implemented is unchanged.
+5. Run `git reflog -10` — this shows recent HEAD movements and can reveal if
+   a reset/checkout happened after the commit.
+
+Don't re-apply the fix yet — first tell me exactly what state the repo and
+file are actually in, and what likely caused the change to disappear, so we
+understand the cause before just redoing the work and risking the same thing
+happening again.

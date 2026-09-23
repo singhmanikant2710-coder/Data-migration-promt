@@ -1,63 +1,16 @@
-;WITH cust AS (
-    SELECT
-        LTRIM(RTRIM(d.[CUST_NUM])) AS [CustNum],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[OfficerNumber])))) AS [RmId],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[PM Number])))) AS [PmId],
-        SUM(TRY_CONVERT(decimal(38,10), NULLIF(d.[Commitment], ''))) AS [TotalCommitted]
-    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
-    WHERE NULLIF(LTRIM(RTRIM(d.[CUST_NUM])), '') IS NOT NULL
-      AND d.[SourceSystem] IN ('ACBS', 'MWS', 'IFL')
-    GROUP BY LTRIM(RTRIM(d.[CUST_NUM]))
-),
-flagged AS (
-    SELECT
-        cust.[CustNum],
-        cust.[TotalCommitted],
-        CASE WHEN cust.[RmId] IS NOT NULL AND NOT EXISTS (
-            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
-        ) THEN 1 ELSE 0 END AS [RmUnmatched],
-        CASE WHEN cust.[PmId] IS NOT NULL AND NOT EXISTS (
-            SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-            WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
-        ) THEN 1 ELSE 0 END AS [PmUnmatched]
-    FROM cust
-)
-SELECT
-    SUM(f.[RmUnmatched]) AS [Rm_UnmatchedCustomers],
-    SUM(CASE WHEN f.[RmUnmatched] = 1 THEN f.[TotalCommitted] ELSE 0 END) AS [Rm_GapExposure],
-    SUM(f.[PmUnmatched]) AS [Pm_UnmatchedCustomers],
-    SUM(CASE WHEN f.[PmUnmatched] = 1 THEN f.[TotalCommitted] ELSE 0 END) AS [Pm_GapExposure]
-FROM flagged AS f;
+Got it, thanks — that timing makes sense (fix before final cutover, not before).
+
+On re-deploying to DEV/QA: not needed on our end for now. We've already tested and verified the code fixes against the current dev data, and honestly the 4 customers' existing data (with the old convention) has been useful for that — it's what let us catch this in the first place. No need to refresh it in the interim; we're good testing against what's there now.
+
+One important flag before this goes to QA, though: please make sure testers do NOT edit/save any months for those same 4 customers (Bankers Healthcare Group LLC, Keystone Private Income Fund, Nationwide Specialty Finance Inc, Vermeer Mountain West Inc) until the fiscal-year question is resolved. Here's why — our fix applies the standard convention on save, but only to the row being saved, not the customer's whole history (that full-history cascade isn't built yet). So if someone edits even one month for these customers right now, that one row flips to the new convention while the rest of that customer's history stays on the old one — which will look exactly like a data inconsistency bug to anyone testing it, even though it's expected and temporary. Wanted to flag it now so it doesn't get raised as a new defect by mistake. Happy to have this communicated to QA however works best on your side.
+
+That closes out the legacy-fix side for us. Still just waiting on your read on the datFiscalYearStart question whenever you get a chance — that's the one piece left blocking our fix.
 
 
-Attached is the output of a SQL query showing, for Data Mart Trial customers
-filtered to SourceSystem IN ('ACBS','MWS','IFL'), the Relationship Managers
-and Portfolio Managers whose Employee ID has no matching row in
-[03_LIBRARY_10_Distribution Parties]. Columns: Field (RM/PM), EmployeeId,
-DataMartName, CustomerCount, CommittedExposure.
+Good question — splitting this into what's solid vs. what's still open, rather than giving a blanket yes.
 
-Please analyze this data and produce a summary for the client (Geoff), who
-asked: "I want to get a feel for how many and how much exposure may fall
-within the data gap when cleaned up for relevant universe bank systems."
+The fiscal year/month numbering itself — rolling from the last month of one fiscal year into the first month of the next, year incrementing correctly, elapsed-days resetting — that's core to today's fix and we've tested it across real year-end transitions for several customers, cross-checked against legacy. That part is solid.
 
-Specifically:
-1. Total unmatched RM count and total unmatched PM count (distinct officers).
-2. Total CommittedExposure summed across all unmatched RMs, and separately
-   across all unmatched PMs (careful not to double-count if the same customer
-   appears under both an unmatched RM and unmatched PM row).
-3. Top 10 unmatched RMs and top 10 unmatched PMs by CommittedExposure —
-   these represent the biggest-dollar gaps and are most worth the client's
-   attention first.
-4. Any officers with a very high CustomerCount but negligible
-   CommittedExposure (Geoff mentioned some of the original 10 RM examples
-   were commercial credit card account managers with "negligible counts and
-   dollars, many from non-universe bank systems" — flag anything that looks
-   similar, i.e. many customers but very low total exposure, since these are
-   likely NOT genuine gaps worth chasing).
-5. A short plain-English summary paragraph suitable for pasting into a Teams
-   message to a client, covering the overall scale of the gap (customer count
-   and dollar exposure) for RM and PM separately.
+One related thing that's still open, though: we flagged during testing that the TTM (trailing-twelve-month) calculations look like they may not roll smoothly across a fiscal-year boundary — the aggregate appears scoped to a single fiscal year rather than rolling the trailing 12 months across the boundary the way TTM is supposed to. We haven't confirmed or fixed that yet; it's a separate, not-yet-resolved item.
 
-Don't modify any code — this is a data-analysis task only. Present the
-findings as a summary I can share directly with the client.
+One clarifying question back: is there also a scheduled/batch "year-end close" process in legacy that runs when a fiscal year finishes — something beyond just the month-to-month save logic? We haven't seen evidence of one in what we've reviewed so far, but want to make sure we're not missing a requirement if that's what you meant.

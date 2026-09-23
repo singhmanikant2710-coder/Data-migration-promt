@@ -1,22 +1,15 @@
-Context: .NET 8 Clean Architecture backend, CASRR project. I need to find the
-exact table and column that backs the "COMMITTED" dollar figure shown on the
-"Review Summary for Management" report (e.g. "COMMITTED: $60,094,601" in the
-info grid, alongside OUTSTANDING, BANK PD, CAS PD).
+Two things before I approve anything:
 
-Investigate — read-only, don't change anything:
-1. Search the codebase for where this report's data is assembled (likely
-   SqlCrmSummaryReportRepository, SqlCrmSummaryForManagementRepository, or
-   similar — wherever "Committed" / "COMMITTED" appears as a field label or
-   property name in the CRM Summary / Review Summary for Management pipeline).
-2. Trace it back to the actual SQL SELECT — which table and column name does
-   the "Committed" value come from? Is it sourced from
-   [01_DATA_01_Data Mart Trial], [02_CORE_02_Reviews], or some other table?
-3. Also check if this same value (or a very similarly-named one) is used
-   anywhere for "Committed Exposure" specifically — the client wants to
-   sub-total this by RM/PM for a data-gap analysis on Data Mart Trial records
-   filtered to SourceSystem IN ('ACBS','MWS','IFL').
+1. Bug: SqlCustomerRepository's new prior-fiscal-start read casts
+   ExecuteScalarAsync's result directly to (long?) — intFiscalYearMonthStart
+   is smallint, so this will throw InvalidCastException at runtime. Use the
+   existing ToInt() helper (already used elsewhere in this class) instead
+   of the raw cast. Fix this and resubmit just that hunk.
 
-Report back: the exact table name and exact column name (with correct
-spelling/spacing, since this project has spaced column names like "PM Number"
-in brackets) that holds this value. Don't write any SQL for me — just tell me
-where it comes from so I can query it directly.
+2. Proceeding with: include both extra helpers (item 1 = yes), transaction
+   option 1 + batched Phase A (option 3), idempotent cascade + separate
+   admin recompute endpoint (item 3b), ship the frontend cache-invalidator
+   now (item 4 = yes), accept the interface signature change (item 5 = yes).
+
+Regenerate the diff with the bug fixed and the batched Phase A. Show diff
+only, don't apply.

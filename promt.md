@@ -1,14 +1,1 @@
-READ-ONLY — do not propose or apply any fix.
-
-Is there a UI flow (Customer Edit screen or similar) that allows changing
-a customer's intFiscalYearMonthStart (fiscal year start month) after the
-customer already has tblMain history?
-
-If yes:
-1. What endpoint/handler does this update go through?
-2. Does anything currently cascade to existing tblMain rows for that
-   customer (recomputing intFiscalYear/intFiscalMonth/datFiscalYearStart/
-   intElapsedFiscalDays for all historical rows), or does it only affect
-   the customer record itself, leaving existing tblMain rows stale?
-
-Report findings only. This is scoping for a new requirement — no fix yet.
+Quick clarification before we proceed — when you say "fix the data in legacy," does that cover just the legacy MS Access database, or will your team also correct these 4 customers' historical rows in the SQL Server dev/prod database we've been working in? If it's Access-only, we'll need to run our own backfill on the SQL side to match once your fix lands — want to make sure we're not duplicating effort or missing a step.

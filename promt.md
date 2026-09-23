@@ -1,42 +1,33 @@
-;WITH rm_officers AS (
-    SELECT DISTINCT
-        TRY_CONVERT(int, LTRIM(RTRIM(d.[OfficerNumber]))) AS [EmployeeId],
-        LTRIM(RTRIM(d.[OfficerName])) AS [Name]
-    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
-    WHERE TRY_CONVERT(int, LTRIM(RTRIM(d.[OfficerNumber]))) IS NOT NULL
-),
-pm_officers AS (
-    SELECT DISTINCT
-        TRY_CONVERT(int, LTRIM(RTRIM(d.[PM Number]))) AS [EmployeeId],
-        LTRIM(RTRIM(d.[PMName])) AS [Name]
-    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
-    WHERE TRY_CONVERT(int, LTRIM(RTRIM(d.[PM Number]))) IS NOT NULL
-)
-
-SELECT * FROM (
-    SELECT TOP (10)
-        'Relationship Manager' AS [Field],
-        o.[EmployeeId] AS [EmployeeId],
-        o.[Name] AS [DataMartName]
-    FROM rm_officers AS o
-    WHERE NOT EXISTS (
-        SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-        WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = o.[EmployeeId]
-    )
-    ORDER BY o.[EmployeeId]
-) AS RmMismatches
+SELECT
+    'RM' AS [Field],
+    17436 AS [EmployeeId],
+    dp.Recipient_name,
+    dp.Recipient_email
+FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.Recipient_role))) = 17436
 
 UNION ALL
 
-SELECT * FROM (
-    SELECT TOP (10)
-        'Portfolio Manager' AS [Field],
-        o.[EmployeeId] AS [EmployeeId],
-        o.[Name] AS [DataMartName]
-    FROM pm_officers AS o
-    WHERE NOT EXISTS (
-        SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-        WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = o.[EmployeeId]
-    )
-    ORDER BY o.[EmployeeId]
-) AS PmMismatches;
+SELECT
+    'PM',
+    41249,
+    dp.Recipient_name,
+    dp.Recipient_email
+FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.Recipient_role))) = 41249;
+
+
+SELECT TOP 5
+    'Matched RM example' AS [Type],
+    d.OfficerNumber AS [EmployeeId],
+    d.OfficerName AS [DataMartName],
+    dp.Recipient_name AS [DistributionPartiesName]
+FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
+INNER JOIN dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
+    ON TRY_CONVERT(int, LTRIM(RTRIM(dp.Recipient_role))) = TRY_CONVERT(int, LTRIM(RTRIM(d.OfficerNumber)))
+WHERE TRY_CONVERT(int, LTRIM(RTRIM(d.OfficerNumber))) IS NOT NULL;
+
+SELECT Review_id, Relationship_mgr_number, Relationship_mgr_name, Relationship_mgr_email,
+       Portfolio_mgr_number, Portfolio_mgr_name, Portfolio_mgr_email
+FROM dbo.[02_CORE_02_Reviews]
+WHERE Review_id = 21592;

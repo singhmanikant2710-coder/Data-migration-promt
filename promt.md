@@ -1,1 +1,4 @@
-Quick clarification before we proceed — when you say "fix the data in legacy," does that cover just the legacy MS Access database, or will your team also correct these 4 customers' historical rows in the SQL Server dev/prod database we've been working in? If it's Access-only, we'll need to run our own backfill on the SQL side to match once your fix lands — want to make sure we're not duplicating effort or missing a step.
+SELECT strMonthKey, intFiscalYear, intFiscalMonth
+FROM tblMain
+WHERE strCustomerName = "BANKERS HEALTHCARE GROUP LLC"
+  AND strMonthKey = "202010"

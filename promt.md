@@ -1,85 +1,50 @@
+Hi John, Jacob — update on the calculated-field review and your earlier questions.
 
-Option Compare Database
+Calculated fields
+We pulled all 35 calculated-field expressions directly from tblMain and compared each one against the new application. Most match exactly, including curEBIT and curEBITTTM (stored values equal Profit Before Taxes + Interest Expense on all 13,835 rows) and elapsed fiscal days. We found a few differences, which we'll correct to match Access:
+• Fixed charge coverage (monthly and TTM): one calculation path adds distributions to fixed charges. Access uses CPLTD + Interest Expense only.
+• Interest coverage and debt / tangible net worth: one path divides by the absolute value, so a negative denominator (for example, negative tangible net worth) shows a positive ratio. Access keeps the sign.
+• perNetIncomeYTDDividedByRevenueYTD: Access uses Profit Before Taxes YTD as the numerator; the new application uses Net Income YTD.
+• Minor rounding/truncation differences in AR turn days and inventory turn.
+We'll share the final list with before/after examples once fixed.
 
-Sub CheckBCAT()
+TTM
+We found the legacy recalculation routine (funSave in the industry forms). It confirms what you described: TTM is a calendar 12-month window independent of fiscal year, it is recalculated for the following months after a save, and the TTM components are calculated before the ratios that use them. The new application currently limits TTM to the fiscal year and only recalculates the edited month. We're fixing both. For customers with fewer than 12 months of history, legacy sums the months available; we'll confirm this against an early customer's data as you suggested.
 
-    Dim db As DAO.Database
-    Dim f As DAO.Field
-    Dim e As String
-    Dim q As DAO.QueryDef
+datFiscalYearStart (your question on legacy cleanup)
+No cleanup is needed. The new application matches how Access has stored this field since 2020 (36 of 36 rows identical in Access and SQL Server). Older pre-2020 rows follow an earlier convention, and nothing reads this field, so we recommend leaving them as they are.
 
-    Set db = CurrentDb
+Two questions
+1. John — Keystone Private Income Fund: tblCustomer shows an October fiscal start, but none of its 62 rows match either fiscal-year labelling pattern, while the other three exception customers consistently use the starting-year pattern. Could you check how Keystone's fiscal years were set up before it's included in the cleanup?
+2. Jacob — perNetIncomeYTDDividedByRevenueYTD uses Profit Before Taxes YTD in Access, despite the name. We plan to match Access unless it should use Net Income YTD.
 
-    Debug.Print "=== Calculated fields ==="
-
-    For Each f In db.TableDefs("tblMain").Fields
-        e = ""
-
-        On Error Resume Next
-        e = f.Properties("Expression")
-        On Error GoTo 0
-
-        If e <> "" Then
-            Debug.Print f.Name & " := " & e
-        End If
-    Next
-
-    Debug.Print "curEBIT type: " & db.TableDefs("tblMain").Fields("curEBIT").Type
-
-    Debug.Print "=== Queries using curEBIT ==="
-
-    For Each q In db.QueryDefs
-        If InStr(q.SQL, "curEBIT") > 0 Then
-            Debug.Print q.Name
-        End If
-    Next
-
-    Set q = Nothing
-    Set f = Nothing
-    Set db = Nothing
-
-End Sub
+Neither question blocks our current fixes.
 
 
+SELECT TOP 24 strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart
+FROM tblMain WHERE strCustomerName = 'KEYSTONE PRIVATE INCOME FUND'
+ORDER BY strMonthKey;
 
-
-SELECT COUNT(*) AS total,
-  SUM(IIf(Abs(curEBIT - (Nz(curProfitBeforeTaxes,0)+Nz(curInterestExpense,0)))<0.01,1,0)) AS ebit_eq_pbt_plus_int,
-  SUM(IIf(curInterestExpense Is Null,1,0)) AS null_int,
-  SUM(IIf(curDepreciation Is Null,1,0)) AS null_dep,
-  SUM(IIf(curAmortization Is Null,1,0)) AS null_amort,
-  SUM(IIf(curDistributions Is Null,1,0)) AS null_dist
-FROM tblMain WHERE curEBIT Is Not Null;
-
-SELECT m.strCustomerName, c.intFiscalYearMonthStart AS st, COUNT(*) AS rows_,
-  SUM(CASE WHEN m.intFiscalYear = CASE WHEN c.intFiscalYearMonthStart = 1 THEN x.y
-       WHEN x.mo >= c.intFiscalYearMonthStart THEN x.y + 1 ELSE x.y END THEN 1 ELSE 0 END) AS ending_year,
-  SUM(CASE WHEN m.intFiscalYear = CASE WHEN x.mo >= c.intFiscalYearMonthStart THEN x.y
-       ELSE x.y - 1 END THEN 1 ELSE 0 END) AS starting_year
+SELECT m.strCustomerName, m.strMonthKey, m.intFiscalYear, m.intFiscalMonth
 FROM tblMain m
 JOIN tblCustomer c ON c.strCustomerName = m.strCustomerName
 CROSS APPLY (SELECT CAST(LEFT(m.strMonthKey,4) AS int) AS y,
                     CAST(RIGHT(m.strMonthKey,2) AS int) AS mo) x
-WHERE m.strCustomerName IN ('Keystone Private Income Fund','Nationwide Specialty Finance Inc',
-  'Bankers Healthcare Group LLC','Vermeer Mountain West Inc')
-GROUP BY m.strCustomerName, c.intFiscalYearMonthStart;
+WHERE m.strCustomerName IN ('BANKERS HEALTHCARE GROUP LLC','NATIONWIDE SPECIALTY FINANCE INC')
+  AND m.intFiscalYear = CASE WHEN x.mo >= c.intFiscalYearMonthStart THEN x.y + 1 ELSE x.y END;
 
-READ-ONLY — do not propose or apply any fix.
 
-Your last report had garbled/duplicated passages, so I need verbatim
-proof before anything goes to the client. For each, quote the exact code
-with file:line — no paraphrase:
+  READ-ONLY. Your last report mixed items 2-4: the code under
+"perReserveCoverage" is perInterestCoverageTTM, and the table columns
+are shifted (Math.Abs is L3, +Distributions is L4). Re-quote verbatim,
+one item per heading, file:line:
 
-1. dblFixedChargeCoverage SQL UPDATE (~4480-4484): does fixed charges
-   include curDistributions?
-2. perReserveCoverage SQL UPDATE (~4694-4700): exact formula.
-3. perIneligiblePercent SQL UPDATE (~4724-4727): exact denominator.
-4. Math.Abs on divisors (~1731-1737, 1753, 1805, 1867): quote each.
-5. Does ANY code write to the Access database? Check
-   AccessMainRepository and any OleDb/ODBC INSERT/UPDATE/DELETE.
-   Quote each write, or state none exist.
-6. In the extracted legacy VBA (Discovery/extraction_output), find
-   procedures that loop over months to recalculate TTM or YTD, and any
-   code that writes curEBIT or curEBITTTM. Quote names and lines.
+1. perReserveCoverage — every computation site, all layers.
+2. perIneligiblePercent — every computation site, all layers.
+3. Rebuild the MISMATCH rows only. Each cell must cite file:line.
+4. Is AccessMainRepository registered in DI for any environment?
+   Quote Program.cs / DI setup and appsettings*.json that select it.
+5. Quote the SQL of legacy query qryMainYTDCalculations_008perInventoryTurn
+   and compare with the app's perInventoryTurn.
 
 Report only.

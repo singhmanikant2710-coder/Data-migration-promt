@@ -1,29 +1,30 @@
-Start development on this item — investigate first, then propose a fix.
-Show diff only, do not apply.
+SELECT z.strCustomerName, z.strMonthKey, z.intFiscalYear, z.intFiscalMonth,
+       z.curProfitBeforeTaxesYTD,
+       (SELECT SUM(m.curProfitBeforeTaxes) FROM tblMain m
+         WHERE m.strCustomerName = z.strCustomerName
+           AND m.intFiscalYear = z.intFiscalYear
+           AND m.intFiscalMonth <= z.intFiscalMonth) AS SumMonthlyPBT,
+       (SELECT COUNT(*) FROM tblMain m
+         WHERE m.strCustomerName = z.strCustomerName
+           AND m.intFiscalYear = z.intFiscalYear
+           AND m.intFiscalMonth <= z.intFiscalMonth
+           AND m.curProfitBeforeTaxes IS NOT NULL) AS MonthsWithPBT
+FROM tblMain z
+WHERE z.curProfitBeforeTaxesYTD = 0
+ORDER BY z.strCustomerName, z.strMonthKey;
 
-Item: YTD overwritten by TTM (Part 4-I, lines ~2130-2144)
 
-Investigate:
-1. Quote verbatim the exact code where curProfitBeforeTaxesYTD is checked
-   for missing/zero and replaced with the TTM value, including the four
-   alias keys it mirrors into.
-2. Is this substitution intentional (any comment/rationale in the code),
-   or does it look like an unintended bug?
-3. Check legacy MS Access — does any VBA/query there ever substitute a
-   zero/missing YTD with a TTM value? Quote what you find, or confirm you
-   found nothing.
-
-Propose a fix:
-- Stop treating "YTD is exactly zero" as equivalent to "YTD is missing."
-  A legitimately zero YTD (e.g. a break-even month) should display as
-  zero, not get silently replaced with a twelve-month figure.
-- Do NOT assume the NULL/missing-YTD fallback (if one exists) should also
-  change — investigate what that does first, and preserve it if it's
-  correct behavior.
-- Show the diff only. Do not apply.
-
-Before proposing the diff, confirm explicitly: does this fix have ANY
-dependency on the TTM redesign (P1) — i.e. does it read or write anything
-that P1 will also change? I believe it doesn't (this is a "never conflate
-YTD with TTM" bug, independent of whether TTM's own numbers are later
-fixed) — but confirm or refute that with evidence rather than assuming.
+Read-only, do not apply.
+1. manufacturing.ts: show the FULL function block lines ~200-235 BEFORE
+   and AFTER Hunk B, complete, with all braces. Include the
+   "computed YTD sum" branch. Fix the hunk header counts.
+   Simplify to `if (yNum === null)`; drop hasNonZeroYtd if unused.
+2. Grep ALL files in frontend/src/blackbook/mappings/*.ts (and any
+   other industry mapping) for the same pattern: YTD checked with
+   Math.abs(...) > 0 or "missing/zero", then replaced by TTM. List
+   file:line verbatim for each hit.
+3. BlackbookSummaryService: list all 7 ytdPbt field definitions with
+   line numbers (you listed 6 + "one more"). Confirm none uses PBT YTD
+   as a DENOMINATOR or hides/skips on zero.
+4. Also grep for any other YTD metric (revenue, sales, etc.) that is
+   backfilled from TTM on zero. Report only; no fix.

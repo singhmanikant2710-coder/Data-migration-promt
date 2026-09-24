@@ -1,50 +1,68 @@
-Hi John, Jacob — update on the calculated-field review and your earlier questions.
+John — Keystone Private Income Fund: every row is labelled one fiscal year later than the standard convention (e.g. April 2021 is stored as FY2022; standard would be FY2021). The other three exception customers use the starting-year pattern instead. Could you confirm how Keystone should be corrected before the cleanup?
+Aur ye question add karo:
+John — the save routine calls a query named qryMainYTDCaculations_008perInventoryTurn, which isn't in our copy of the database. Could you check whether it exists in the live Access database, and if so share its SQL? Until then we're leaving perInventoryTurn unchanged.
 
-Calculated fields
-We pulled all 35 calculated-field expressions directly from tblMain and compared each one against the new application. Most match exactly, including curEBIT and curEBITTTM (stored values equal Profit Before Taxes + Interest Expense on all 13,835 rows) and elapsed fiscal days. We found a few differences, which we'll correct to match Access:
-• Fixed charge coverage (monthly and TTM): one calculation path adds distributions to fixed charges. Access uses CPLTD + Interest Expense only.
-• Interest coverage and debt / tangible net worth: one path divides by the absolute value, so a negative denominator (for example, negative tangible net worth) shows a positive ratio. Access keeps the sign.
-• perNetIncomeYTDDividedByRevenueYTD: Access uses Profit Before Taxes YTD as the numerator; the new application uses Net Income YTD.
-• Minor rounding/truncation differences in AR turn days and inventory turn.
-We'll share the final list with before/after examples once fixed.
+IMPLEMENTATION. Goal: make every calculation match the legacy Access
+expressions I gave you, without changing anything else.
 
-TTM
-We found the legacy recalculation routine (funSave in the industry forms). It confirms what you described: TTM is a calendar 12-month window independent of fiscal year, it is recalculated for the following months after a save, and the TTM components are calculated before the ratios that use them. The new application currently limits TTM to the fiscal year and only recalculates the edited month. We're fixing both. For customers with fewer than 12 months of history, legacy sums the months available; we'll confirm this against an early customer's data as you suggested.
+RULES (all batches):
+- Change only the lines listed. No refactors, no signature changes,
+  no renames, keep all alias lookups.
+- Legacy expression is the spec. Zero denominator -> 0 (not NULL).
+- After EACH batch: build backend + frontend. If build fails or you find
+  anything not matching what I describe, STOP and report. Otherwise
+  apply and continue to the next batch.
+- Do not commit. Leave changes in the working tree.
 
-datFiscalYearStart (your question on legacy cleanup)
-No cleanup is needed. The new application matches how Access has stored this field since 2020 (36 of 36 rows identical in Access and SQL Server). Older pre-2020 rows follow an earlier convention, and nothing reads this field, so we recommend leaving them as they are.
+BATCH 1 — SqlMainRepository.cs T-SQL persist (L4):
+a. dblFixedChargeCoverage / TTM (4480-4497): fixed charges =
+   CPLTD + InterestExpense only. Remove curDistributions(TTM) from the
+   denominator. Keep it in the numerator (cash available).
+b. perReserveCoverage (4694-4701): perDiscountDividedByReserve /
+   perNetChargeOffTTM; perNetChargeOffTTM = 0 -> 0.
+c. perIneligiblePercent (4721-4728): denominator and guard use
+   curPrincipalNR, not curGrossNRorAR.
+d. perNetIncomeYTDDividedByRevenueYTD (4731-4735): numerator
+   curProfitBeforeTaxesYTD.
+e. For fields whose legacy expression is IIf(x=0,0,...), change the
+   zero branch THEN NULL -> THEN 0 (incl. perDebtDivTangibleNetWorth
+   4466-4469). List every field you change.
+f. curTotalAdjustedLiabilities (4434-4441): if curOtherB exists in the
+   dev schema, remove the Related Party fallback. If not, don't touch;
+   report.
 
-Two questions
-1. John — Keystone Private Income Fund: tblCustomer shows an October fiscal start, but none of its 62 rows match either fiscal-year labelling pattern, while the other three exception customers consistently use the starting-year pattern. Could you check how Keystone's fiscal years were set up before it's included in the cleanup?
-2. Jacob — perNetIncomeYTDDividedByRevenueYTD uses Profit Before Taxes YTD in Access, despite the name. We plan to match Access unless it should use Net Income YTD.
+BATCH 2 — SqlMainRepository.cs read backfill (L3):
+a. Divide by the SIGNED value, keep the Math.Abs > 0 guard only:
+   lines 1733, 1737, 1753, 1801, 1805, 1867.
+b. dblAccountsReceivableTurnDays (1759-1760): remove Math.Round;
+   use Math.Floor (VBA Int).
 
-Neither question blocks our current fixes.
+BATCH 3 — TblMainCalcs.cs (L2) + tblMainCalcs.ts (L1):
+a. accessInt: Math.Floor / Math.floor. Fix the TS comment.
+b. perNetIncomeYTDDividedByRevenueYTD numerator: curProfitBeforeTaxesYTD
+   (cs:370, ts:343).
+c. perNetChargeOffTTM in TS (280-281): banker's rounding via the
+   existing intRound helper.
+d. Keep the extra zero guards and extra "Principal N/R" string
+   variants as they are.
 
+BATCH 4 — StartupExtensions.cs:271: default ?? "Access" -> ?? "Sql".
 
-SELECT TOP 24 strMonthKey, intFiscalYear, intFiscalMonth, datFiscalYearStart
-FROM tblMain WHERE strCustomerName = 'KEYSTONE PRIVATE INCOME FUND'
-ORDER BY strMonthKey;
+BATCH 5 — TTM (P1). DIFF ONLY, DO NOT APPLY — I review first.
+- Window: calendar trailing 12 months by strMonthKey order, customer-
+  scoped, NO intFiscalYear filter (remove line ~3673 filter).
+- Fewer than 12 months: sum available months; the two average fields
+  average present rows (legacy Avg).
+- Compute all TTM components first, then ratios that use them.
+- On save of month X: recompute TTM and calculated columns for X
+  through X+11.
+- Write all 9 TTM components to tblMain AND keep writing
+  tblMainTTMCalculations as today, so no existing read path breaks.
+  Do not remove TryMergeTtmIntoSeries.
 
-SELECT m.strCustomerName, m.strMonthKey, m.intFiscalYear, m.intFiscalMonth
-FROM tblMain m
-JOIN tblCustomer c ON c.strCustomerName = m.strCustomerName
-CROSS APPLY (SELECT CAST(LEFT(m.strMonthKey,4) AS int) AS y,
-                    CAST(RIGHT(m.strMonthKey,2) AS int) AS mo) x
-WHERE m.strCustomerName IN ('BANKERS HEALTHCARE GROUP LLC','NATIONWIDE SPECIALTY FINANCE INC')
-  AND m.intFiscalYear = CASE WHEN x.mo >= c.intFiscalYearMonthStart THEN x.y + 1 ELSE x.y END;
+DO NOT TOUCH: perInventoryTurn (legacy formula unknown), SQL ROUND
+half-away vs banker's in L4, intElapsedFiscalDays guard.
 
-
-  READ-ONLY. Your last report mixed items 2-4: the code under
-"perReserveCoverage" is perInterestCoverageTTM, and the table columns
-are shifted (Math.Abs is L3, +Distributions is L4). Re-quote verbatim,
-one item per heading, file:line:
-
-1. perReserveCoverage — every computation site, all layers.
-2. perIneligiblePercent — every computation site, all layers.
-3. Rebuild the MISMATCH rows only. Each cell must cite file:line.
-4. Is AccessMainRepository registered in DI for any environment?
-   Quote Program.cs / DI setup and appsettings*.json that select it.
-5. Quote the SQL of legacy query qryMainYTDCalculations_008perInventoryTurn
-   and compare with the app's perInventoryTurn.
-
-Report only.
+Final report: per batch, files + line ranges changed, build result,
+and a SQL query I can run to compare stored values vs the legacy
+expression for Batch 1 fields.

@@ -1,24 +1,14 @@
-READ-ONLY — do not propose or apply any fix.
+Option 2. Hunk B is APPROVED — apply it now, exactly as you diffed it:
+comment on 207, remove the hasNonZeroYtd line, if (yNum === null),
+comment on 212. Lines 213-223, alias lists, TTM-then-sum ordering and
+braces byte-for-byte unchanged. Preserve line endings/indentation,
+no auto-format, prettier, or eslint --fix.
 
-Below are the EXACT calculated-field expressions from legacy tblMain
-(Access table design, Field.Expression). This is ground truth and
-supersedes BCAT_Formula.md and any earlier extraction.
+Do NOT commit, stage, or push. Check-in stays manual.
 
-[paste full list here — use exact VBA output for curTotalAdjustedLiabilities,
-curInventoryTurno, dblGrossAccountsReceivableTurno]
-
-For EACH field, report in one table:
-1. Where the new app computes it (file:line verbatim), or "not computed".
-2. MATCH / MISMATCH / NOT IMPLEMENTED — compare exactly:
-   a. Formula and operand order
-   b. Zero-denominator branch (legacy returns 0)
-   c. NULL inputs: Access propagates Null (Null + x = Null; Null
-      denominator → Null, not 0). Does our code COALESCE to 0?
-   d. Int(): VBA Int is FLOOR (Int(-2.5) = -3). Does our code truncate?
-   e. Round(): VBA is banker's rounding. If computed in SQL, ROUND is
-      half-away-from-zero — flag it.
-3. curEBIT and curEBITTTM are NOT calculated fields. Does our app
-   compute them anyway? Quote where.
-4. Any field our app computes that is NOT in this list — list them.
-
-Report only. Do not propose or apply a fix.
+Report (raw terminal output, copied not retyped):
+1. git diff -- frontend/src/blackbook/mappings/manufacturing.ts
+2. git status   (expect exactly 2 modified files)
+3. npx tsc --noEmit and lint on manufacturing.ts: error counts before
+   vs after. Must not increase.
+4. Frontend build pass/fail.

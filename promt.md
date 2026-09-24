@@ -39,3 +39,15 @@ WHERE strCustomerName = '<CUSTOMER>' AND strMonthKey = '<YYYYMM>';
 SELECT strMonthKey, curProfitBeforeTaxesTTM
 FROM tblMain WHERE strCustomerName = 'Athens Paper'
   AND strMonthKey BETWEEN '202410' AND '202605' ORDER BY strMonthKey;
+
+
+  SELECT TOP 10 strCustomerName, strMonthKey,
+  curInterestExpense, curCPLTD, curDistributions, curPrincipalNR,
+  curIneligibles, curRevenueOrSalesYTD, perNetChargeOffTTM
+FROM tblMain
+WHERE ISNULL(curInterestExpense,0) <> 0
+  AND ISNULL(curCPLTD,0) <> 0
+  AND ISNULL(curDistributions,0) <> 0
+  AND ISNULL(curRevenueOrSalesYTD,0) <> 0
+  AND strMonthKey >= '202501'
+ORDER BY strMonthKey DESC;

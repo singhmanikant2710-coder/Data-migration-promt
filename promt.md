@@ -1,50 +1,57 @@
-On the leading-zero question — yes, we can absolutely do this without changing
-the column type at all. Padding for display can be done at fetch time:
+Sub CheckBCAT()
+  Dim f As DAO.Field, e As String, q As DAO.QueryDef
+  Debug.Print "=== Calculated fields ==="
+  For Each f In CurrentDb.TableDefs("tblMain").Fields
+    e = ""
+    On Error Resume Next
+    e = f.Properties("Expression")
+    On Error GoTo 0
+    If e <> "" Then Debug.Print f.Name & " := " & e
+  Next
+  Debug.Print "curEBIT type: " & CurrentDb.TableDefs("tblMain").Fields("curEBIT").Type
+  Debug.Print "=== Queries using curEBIT ==="
+  For Each q In CurrentDb.QueryDefs
+    If InStr(q.SQL, "curEBIT") > 0 Then Debug.Print q.Name
+  Next
+End Sub
 
-- In SQL: RIGHT('00000' + CAST(Relationship_mgr_number AS varchar(10)), 5)
-  or FORMAT(Relationship_mgr_number, '00000')
-- In .NET: value.ToString("D5") or value.ToString().PadLeft(5, '0')
+SELECT COUNT(*) AS total,
+  SUM(IIf(Abs(curEBIT - (Nz(curProfitBeforeTaxes,0)+Nz(curInterestExpense,0)))<0.01,1,0)) AS ebit_eq_pbt_plus_int,
+  SUM(IIf(curInterestExpense Is Null,1,0)) AS null_int,
+  SUM(IIf(curDepreciation Is Null,1,0)) AS null_dep,
+  SUM(IIf(curAmortization Is Null,1,0)) AS null_amort,
+  SUM(IIf(curDistributions Is Null,1,0)) AS null_dist
+FROM tblMain WHERE curEBIT Is Not Null;
 
-This avoids touching the schema entirely, so no ALTER TABLE needed, no
-dependent-constraint issue, and no reload risk.
+SELECT m.strCustomerName, c.intFiscalYearMonthStart AS st, COUNT(*) AS rows_,
+  SUM(CASE WHEN m.intFiscalYear = CASE WHEN c.intFiscalYearMonthStart = 1 THEN x.y
+       WHEN x.mo >= c.intFiscalYearMonthStart THEN x.y + 1 ELSE x.y END THEN 1 ELSE 0 END) AS ending_year,
+  SUM(CASE WHEN m.intFiscalYear = CASE WHEN x.mo >= c.intFiscalYearMonthStart THEN x.y
+       ELSE x.y - 1 END THEN 1 ELSE 0 END) AS starting_year
+FROM tblMain m
+JOIN tblCustomer c ON c.strCustomerName = m.strCustomerName
+CROSS APPLY (SELECT CAST(LEFT(m.strMonthKey,4) AS int) AS y,
+                    CAST(RIGHT(m.strMonthKey,2) AS int) AS mo) x
+WHERE m.strCustomerName IN ('Keystone Private Income Fund','Nationwide Specialty Finance Inc',
+  'Bankers Healthcare Group LLC','Vermeer Mountain West Inc')
+GROUP BY m.strCustomerName, c.intFiscalYearMonthStart;
 
-One thing we need confirmed before doing this: is the Employee ID ALWAYS a
-fixed width (e.g. always 5 digits in the source HR system, with shorter IDs
-padded with leading zeros)? If yes, padding to 5 digits on fetch will exactly
-recreate the correct value. If the width varies by employee, padding blindly
-could produce an incorrect-looking ID. Can you confirm the fixed width from
-the source system?
+READ-ONLY — do not propose or apply any fix.
 
-Given this works without a schema change, our suggestion is to hold off on
-the ALTER TABLE for now — no need to fight the constraint error below unless
-there's another reason to actually change the column type.
+Your last report had garbled/duplicated passages, so I need verbatim
+proof before anything goes to the client. For each, quote the exact code
+with file:line — no paraphrase:
 
----
+1. dblFixedChargeCoverage SQL UPDATE (~4480-4484): does fixed charges
+   include curDistributions?
+2. perReserveCoverage SQL UPDATE (~4694-4700): exact formula.
+3. perIneligiblePercent SQL UPDATE (~4724-4727): exact denominator.
+4. Math.Abs on divisors (~1731-1737, 1753, 1805, 1867): quote each.
+5. Does ANY code write to the Access database? Check
+   AccessMainRepository and any OleDb/ODBC INSERT/UPDATE/DELETE.
+   Quote each write, or state none exist.
+6. In the extracted legacy VBA (Discovery/extraction_output), find
+   procedures that loop over months to recalculate TTM or YTD, and any
+   code that writes curEBIT or curEBITTTM. Quote names and lines.
 
-On the ALTER TABLE error — this is happening because a default constraint
-(DF__02_CORE__0__Relat__7795AESF) is bound to Relationship_mgr_number. SQL
-Server won't let you change a column's type while a constraint depends on
-it. You'd need to drop the constraint first, alter the column, then
-re-add the constraint if still needed:
-
--- 1. Confirm the exact constraint name (in case it's different per
---    environment)
-SELECT dc.name AS ConstraintName, c.name AS ColumnName
-FROM sys.default_constraints dc
-INNER JOIN sys.columns c
-    ON dc.parent_object_id = c.object_id
-    AND dc.parent_column_id = c.column_id
-WHERE dc.parent_object_id = OBJECT_ID('dbo.[02_CORE_02_Reviews]')
-  AND c.name = 'Relationship_mgr_number';
-
--- 2. Drop the default constraint
-ALTER TABLE dbo.[02_CORE_02_Reviews]
-DROP CONSTRAINT [DF__02_CORE__0__Relat__7795AESF];
-
--- 3. Then alter the column
-ALTER TABLE dbo.[02_CORE_02_Reviews]
-ALTER COLUMN Relationship_mgr_number varchar(10) NULL;
-
-But again — given the fetch-time formatting approach above works without any
-of this, we'd suggest confirming with Geoff first whether the schema change
-is even necessary before running it.
+Report only.

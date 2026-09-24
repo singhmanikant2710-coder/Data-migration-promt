@@ -1,19 +1,47 @@
+
+Option Compare Database
+
 Sub CheckBCAT()
-  Dim f As DAO.Field, e As String, q As DAO.QueryDef
-  Debug.Print "=== Calculated fields ==="
-  For Each f In CurrentDb.TableDefs("tblMain").Fields
-    e = ""
-    On Error Resume Next
-    e = f.Properties("Expression")
-    On Error GoTo 0
-    If e <> "" Then Debug.Print f.Name & " := " & e
-  Next
-  Debug.Print "curEBIT type: " & CurrentDb.TableDefs("tblMain").Fields("curEBIT").Type
-  Debug.Print "=== Queries using curEBIT ==="
-  For Each q In CurrentDb.QueryDefs
-    If InStr(q.SQL, "curEBIT") > 0 Then Debug.Print q.Name
-  Next
+
+    Dim db As DAO.Database
+    Dim f As DAO.Field
+    Dim e As String
+    Dim q As DAO.QueryDef
+
+    Set db = CurrentDb
+
+    Debug.Print "=== Calculated fields ==="
+
+    For Each f In db.TableDefs("tblMain").Fields
+        e = ""
+
+        On Error Resume Next
+        e = f.Properties("Expression")
+        On Error GoTo 0
+
+        If e <> "" Then
+            Debug.Print f.Name & " := " & e
+        End If
+    Next
+
+    Debug.Print "curEBIT type: " & db.TableDefs("tblMain").Fields("curEBIT").Type
+
+    Debug.Print "=== Queries using curEBIT ==="
+
+    For Each q In db.QueryDefs
+        If InStr(q.SQL, "curEBIT") > 0 Then
+            Debug.Print q.Name
+        End If
+    Next
+
+    Set q = Nothing
+    Set f = Nothing
+    Set db = Nothing
+
 End Sub
+
+
+
 
 SELECT COUNT(*) AS total,
   SUM(IIf(Abs(curEBIT - (Nz(curProfitBeforeTaxes,0)+Nz(curInterestExpense,0)))<0.01,1,0)) AS ebit_eq_pbt_plus_int,

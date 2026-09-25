@@ -13,3 +13,13 @@ curProfitBeforeTaxesTTM fiscal-year-scoped: 202510 = 452, 202511 = 725
    build (which project/port to restart).
 
 Apply only the logging. No logic changes.
+
+
+SELECT * FROM (
+  SELECT strMonthKey, curProfitBeforeTaxesTTM,
+    SUM(curProfitBeforeTaxes) OVER (ORDER BY strMonthKey
+      ROWS BETWEEN 11 PRECEDING AND CURRENT ROW) AS expTTM
+  FROM tblMain WHERE strCustomerName = 'MARTIN INCORPORATED'
+) x
+WHERE strMonthKey BETWEEN '201907' AND '202006'
+ORDER BY strMonthKey;

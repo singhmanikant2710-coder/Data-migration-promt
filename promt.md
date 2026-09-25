@@ -14,3 +14,14 @@ and Access both show 5306). Something skips or silently fails.
 
 Apply 1-2, build, tell me exactly what to look for in the console.
 Do not change any logic.
+
+
+SELECT strMonthKey, curProfitBeforeTaxesTTM FROM (
+  SELECT LTRIM(RTRIM(strMonthKey)) AS strMonthKey,
+    SUM(curProfitBeforeTaxes) OVER (PARTITION BY LTRIM(RTRIM(strCustomerName))
+      ORDER BY LTRIM(RTRIM(strMonthKey))
+      ROWS BETWEEN 11 PRECEDING AND CURRENT ROW) AS curProfitBeforeTaxesTTM
+  FROM tblMain
+  WHERE LTRIM(RTRIM(strCustomerName)) = 'ATHENS PAPER'
+) x
+WHERE strMonthKey = '202510';

@@ -1,167 +1,23 @@
-SELECT
-    m.strMonthKey,
-    1 AS slot,
-    m.strCovenantName1 AS tblMain_SlotName,
-    m.dblCovenantActual1 AS tblMain_Actual,
-    m.dblCovenantActual1Formatted AS tblMain_Formatted,
-    c.strCovenantActual AS tblMainCovenants_Actual,
-    IIf(
-        Nz(m.dblCovenantActual1,-1) <>
-        IIf(
-            Nz(c.strCovenantActual,"")="",
-            -1,
-            Val(Replace(Replace(c.strCovenantActual,"$",""),",",""))
-        ),
-        "MISMATCH",
-        ""
-    ) AS [Check]
-FROM tblMain AS m
-LEFT JOIN tblMainCovenants AS c
-    ON c.strCustomerName = m.strCustomerName
-    AND c.strMonthKey = m.strMonthKey
-    AND c.strCovenantName = m.strCovenantName1
-WHERE Trim(m.strCustomerName) = "ATHENS PAPER COMPANY INC"
-AND m.strMonthKey BETWEEN "202501" AND "202612"
-AND m.strCovenantName1 = "Min Tangible Net Worth"
+Correction to the previous analysis, confirmed against Access:
+Access has the SAME stale values in tblMain.dblCovenantActual{N}
+(ATHENS 202510 = 44469197, 202604/202605 = 62297) while
+tblMainCovenants.strCovenantActual is NULL for those months. Legacy
+still shows blank because its form displays dblCovenantActual{N}Formatted,
+which is built from tblMainCovenants on save.
 
-UNION ALL
+RULE: tblMainCovenants.strCovenantActual is the source of truth for
+covenant values. tblMain.dblCovenantActual{N} must never override it.
 
-SELECT
-    m.strMonthKey,
-    2 AS slot,
-    m.strCovenantName2 AS tblMain_SlotName,
-    m.dblCovenantActual2 AS tblMain_Actual,
-    m.dblCovenantActual2Formatted AS tblMain_Formatted,
-    c.strCovenantActual AS tblMainCovenants_Actual,
-    IIf(
-        Nz(m.dblCovenantActual2,-1) <>
-        IIf(
-            Nz(c.strCovenantActual,"")="",
-            -1,
-            Val(Replace(Replace(c.strCovenantActual,"$",""),",",""))
-        ),
-        "MISMATCH",
-        ""
-    ) AS [Check]
-FROM tblMain AS m
-LEFT JOIN tblMainCovenants AS c
-    ON c.strCustomerName = m.strCustomerName
-    AND c.strMonthKey = m.strMonthKey
-    AND c.strCovenantName = m.strCovenantName2
-WHERE Trim(m.strCustomerName) = "ATHENS PAPER COMPANY INC"
-AND m.strMonthKey BETWEEN "202501" AND "202612"
-AND m.strCovenantName2 = "Min Tangible Net Worth"
-
-UNION ALL
-
-SELECT
-    m.strMonthKey,
-    3 AS slot,
-    m.strCovenantName3 AS tblMain_SlotName,
-    m.dblCovenantActual3 AS tblMain_Actual,
-    m.dblCovenantActual3Formatted AS tblMain_Formatted,
-    c.strCovenantActual AS tblMainCovenants_Actual,
-    IIf(
-        Nz(m.dblCovenantActual3,-1) <>
-        IIf(
-            Nz(c.strCovenantActual,"")="",
-            -1,
-            Val(Replace(Replace(c.strCovenantActual,"$",""),",",""))
-        ),
-        "MISMATCH",
-        ""
-    ) AS [Check]
-FROM tblMain AS m
-LEFT JOIN tblMainCovenants AS c
-    ON c.strCustomerName = m.strCustomerName
-    AND c.strMonthKey = m.strMonthKey
-    AND c.strCovenantName = m.strCovenantName3
-WHERE Trim(m.strCustomerName) = "ATHENS PAPER COMPANY INC"
-AND m.strMonthKey BETWEEN "202501" AND "202612"
-AND m.strCovenantName3 = "Min Tangible Net Worth"
-
-UNION ALL
-
-SELECT
-    m.strMonthKey,
-    4 AS slot,
-    m.strCovenantName4 AS tblMain_SlotName,
-    m.dblCovenantActual4 AS tblMain_Actual,
-    m.dblCovenantActual4Formatted AS tblMain_Formatted,
-    c.strCovenantActual AS tblMainCovenants_Actual,
-    IIf(
-        Nz(m.dblCovenantActual4,-1) <>
-        IIf(
-            Nz(c.strCovenantActual,"")="",
-            -1,
-            Val(Replace(Replace(c.strCovenantActual,"$",""),",",""))
-        ),
-        "MISMATCH",
-        ""
-    ) AS [Check]
-FROM tblMain AS m
-LEFT JOIN tblMainCovenants AS c
-    ON c.strCustomerName = m.strCustomerName
-    AND c.strMonthKey = m.strMonthKey
-    AND c.strCovenantName = m.strCovenantName4
-WHERE Trim(m.strCustomerName) = "ATHENS PAPER COMPANY INC"
-AND m.strMonthKey BETWEEN "202501" AND "202612"
-AND m.strCovenantName4 = "Min Tangible Net Worth"
-
-UNION ALL
-
-SELECT
-    m.strMonthKey,
-    5 AS slot,
-    m.strCovenantName5 AS tblMain_SlotName,
-    m.dblCovenantActual5 AS tblMain_Actual,
-    m.dblCovenantActual5Formatted AS tblMain_Formatted,
-    c.strCovenantActual AS tblMainCovenants_Actual,
-    IIf(
-        Nz(m.dblCovenantActual5,-1) <>
-        IIf(
-            Nz(c.strCovenantActual,"")="",
-            -1,
-            Val(Replace(Replace(c.strCovenantActual,"$",""),",",""))
-        ),
-        "MISMATCH",
-        ""
-    ) AS [Check]
-FROM tblMain AS m
-LEFT JOIN tblMainCovenants AS c
-    ON c.strCustomerName = m.strCustomerName
-    AND c.strMonthKey = m.strMonthKey
-    AND c.strCovenantName = m.strCovenantName5
-WHERE Trim(m.strCustomerName) = "ATHENS PAPER COMPANY INC"
-AND m.strMonthKey BETWEEN "202501" AND "202612"
-AND m.strCovenantName5 = "Min Tangible Net Worth"
-
-UNION ALL
-
-SELECT
-    m.strMonthKey,
-    6 AS slot,
-    m.strCovenantName6 AS tblMain_SlotName,
-    m.dblCovenantActual6 AS tblMain_Actual,
-    m.dblCovenantActual6Formatted AS tblMain_Formatted,
-    c.strCovenantActual AS tblMainCovenants_Actual,
-    IIf(
-        Nz(m.dblCovenantActual6,-1) <>
-        IIf(
-            Nz(c.strCovenantActual,"")="",
-            -1,
-            Val(Replace(Replace(c.strCovenantActual,"$",""),",",""))
-        ),
-        "MISMATCH",
-        ""
-    ) AS [Check]
-FROM tblMain AS m
-LEFT JOIN tblMainCovenants AS c
-    ON c.strCustomerName = m.strCustomerName
-    AND c.strMonthKey = m.strMonthKey
-    AND c.strCovenantName = m.strCovenantName6
-WHERE Trim(m.strCustomerName) = "ATHENS PAPER COMPANY INC"
-AND m.strMonthKey BETWEEN "202501" AND "202612"
-AND m.strCovenantName6 = "Min Tangible Net Worth"
-
-ORDER BY strMonthKey, slot;
+1. SqlMainRepository: when a tblMainCovenants row exists for
+   customer + month + covenant name, use its actual for the canonical
+   key (MinTangibleNetWorth etc.) AND for that slot's
+   dblCovenantActual{N} / dblCovenantActual{N}Formatted in Values —
+   including NULL. Fall back to tblMain slot values only when no
+   tblMainCovenants row exists. Change TryMergeCovenantsIntoSeries
+   (:2043) from "fill only missing/zero" to authoritative.
+2. BlackbookSummaryService (:293, SummaryPayload / Top Strip): same
+   rule — read actual from tblMainCovenants, not dblCovenantActual{slot}.
+3. SqlMainRepository.SeedCovenantsFromPreviousMonthAsync (3167-3259):
+   do not copy dblCovenantActual{i} / Formatted into a new month.
+Do NOT modify data. Leave AccessMainRepository as-is.
+Build, tests, do not commit. Report files + lines.

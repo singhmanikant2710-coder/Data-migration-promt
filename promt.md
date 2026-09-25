@@ -1,4 +1,5 @@
-Thanks John, that closes all three:
-1. Keystone — noted, it will be corrected before migration.
-2. perInventoryTurn — we'll ignore that query and leave the field as is.
-3. perNetIncomeYTDDividedByRevenueYTD — already updated to match Access (Profit Before Taxes YTD / Revenue YTD) and verified. We'll change it only if Jacob says otherwise.
+Remove all [PERF] logging from SqlMainRepository.cs: the _perfSw /
+_perfTotal stopwatches, _perfStep, and every [PERF] Console.WriteLine.
+Keep all logic and the schema-cache changes exactly as they are.
+Confirm grep for "[PERF]", "[TTM DIAG]", and "Console.WriteLine" in
+files changed in this session returns 0 matches. Build, run unit tests.

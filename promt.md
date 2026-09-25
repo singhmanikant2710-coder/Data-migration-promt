@@ -21,3 +21,16 @@ SET strCovenantActual = NULL
 WHERE strCustomerName LIKE 'ATHENS PAPER%'
   AND strMonthKey = '202510'
   AND strCovenantName = 'Min Tangible Net Worth';
+
+
+  SELECT c.strCustomerName,
+  Count(*) AS months_with_value,
+  Sum(IIf(m.intFiscalMonth Mod 3 = 0, 1, 0)) AS on_quarter_end,
+  IIf(Count(*) = Sum(IIf(m.intFiscalMonth Mod 3 = 0, 1, 0)), "TRUE", "FALSE") AS AllQuarterly
+FROM tblMainCovenants AS c
+INNER JOIN tblMain AS m
+  ON (c.strCustomerName = m.strCustomerName) AND (c.strMonthKey = m.strMonthKey)
+WHERE c.strCovenantName Like "*Tangible Net Worth*"
+  AND c.strCovenantActual Is Not Null AND c.strCovenantActual <> ""
+GROUP BY c.strCustomerName
+ORDER BY 4, c.strCustomerName;

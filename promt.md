@@ -1,23 +1,24 @@
-Correction to the previous analysis, confirmed against Access:
-Access has the SAME stale values in tblMain.dblCovenantActual{N}
-(ATHENS 202510 = 44469197, 202604/202605 = 62297) while
-tblMainCovenants.strCovenantActual is NULL for those months. Legacy
-still shows blank because its form displays dblCovenantActual{N}Formatted,
-which is built from tblMainCovenants on save.
+Follow-up, same rules (build, tests, do not commit):
 
-RULE: tblMainCovenants.strCovenantActual is the source of truth for
-covenant values. tblMain.dblCovenantActual{N} must never override it.
+1. Slot override in TryMergeCovenantsIntoSeries: find the slot by
+   matching tblMain.strCovenantName{N} to the covenant name first
+   (trimmed, case-insensitive). Use intCovenantOrder only if no name
+   matches. Reason: for ATHENS 202604/202605 in SQL Server, Min TNW is
+   in slot 2 while slot 1 is "Other 1".
+2. Bump payloadVersion "v20" -> "v21" (BlackbookSummaryService.cs:58).
+3. SqlMainRepository 3178-3186 seeding probe: decide "anyActual" from
+   dblCovenantActual{N} only, never from Formatted.
+4. SqlCovenantRepository 420-437: when writing dblCovenantActual{N},
+   also write dblCovenantActual{N}Formatted in the same statement
+   (legacy: "$" -> "$" + #,##0, otherwise FormatNumber(x,2) + format),
+   and NULL both when the actual is NULL.
 
-1. SqlMainRepository: when a tblMainCovenants row exists for
-   customer + month + covenant name, use its actual for the canonical
-   key (MinTangibleNetWorth etc.) AND for that slot's
-   dblCovenantActual{N} / dblCovenantActual{N}Formatted in Values —
-   including NULL. Fall back to tblMain slot values only when no
-   tblMainCovenants row exists. Change TryMergeCovenantsIntoSeries
-   (:2043) from "fill only missing/zero" to authoritative.
-2. BlackbookSummaryService (:293, SummaryPayload / Top Strip): same
-   rule — read actual from tblMainCovenants, not dblCovenantActual{slot}.
-3. SqlMainRepository.SeedCovenantsFromPreviousMonthAsync (3167-3259):
-   do not copy dblCovenantActual{i} / Formatted into a new month.
-Do NOT modify data. Leave AccessMainRepository as-is.
-Build, tests, do not commit. Report files + lines.
+
+   SELECT m.strMonthKey
+FROM tblMain m
+WHERE m.strCustomerName LIKE 'ATHENS PAPER%'
+  AND m.strMonthKey BETWEEN '202501' AND '202612'
+  AND NOT EXISTS (SELECT 1 FROM tblMainCovenants c
+                  WHERE c.strCustomerName = m.strCustomerName
+                    AND c.strMonthKey = m.strMonthKey)
+ORDER BY m.strMonthKey;

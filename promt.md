@@ -1,5 +1,9 @@
-Remove all [PERF] logging from SqlMainRepository.cs: the _perfSw /
-_perfTotal stopwatches, _perfStep, and every [PERF] Console.WriteLine.
-Keep all logic and the schema-cache changes exactly as they are.
-Confirm grep for "[PERF]", "[TTM DIAG]", and "Console.WriteLine" in
-files changed in this session returns 0 matches. Build, run unit tests.
+SELECT TOP 10 m.strCustomerName, m.strIndustry, m.strMonthKey,
+  m.curProfitBeforeTaxesYTD, t.curProfitBeforeTaxesTTM
+FROM tblMain m
+JOIN tblMainTTMCalculations t
+  ON t.strCustomerName = m.strCustomerName AND t.strMonthKey = m.strMonthKey
+WHERE m.curProfitBeforeTaxesYTD = 0
+  AND ISNULL(t.curProfitBeforeTaxesTTM, 0) <> 0
+ORDER BY CASE WHEN m.strIndustry LIKE 'Manuf%' THEN 0 ELSE 1 END,
+         m.strMonthKey DESC;

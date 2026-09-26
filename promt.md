@@ -1,14 +1,9 @@
-SELECT strMonthKey, strCovenantActual
-FROM tblMainCovenants
-WHERE strCustomerName LIKE 'ATHENS PAPER%'
-  AND strCovenantName = 'Min Net Income'
-  AND strMonthKey BETWEEN '202510' AND '202605'
-ORDER BY strMonthKey;
+SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS
+WHERE COLUMN_NAME = 'strMonthKey' ORDER BY TABLE_NAME;
 
 
-SELECT strMonthKey, strCovenantActual
-FROM tblMainCovenants
-WHERE strCustomerName Like "ATHENS PAPER*"
-  AND strCovenantName = "Min Net Income"
-  AND strMonthKey Between "202510" And "202605"
-ORDER BY strMonthKey;
+SELECT * INTO bkp_tblMain_Athens_202604 FROM tblMain
+WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+
+SELECT * INTO bkp_tblMainCovenants_Athens_202604 FROM tblMainCovenants
+WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');

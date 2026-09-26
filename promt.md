@@ -1,9 +1,5 @@
-SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS
-WHERE COLUMN_NAME = 'strMonthKey' ORDER BY TABLE_NAME;
-
-
-SELECT * INTO bkp_tblMain_Athens_202604 FROM tblMain
-WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
-
-SELECT * INTO bkp_tblMainCovenants_Athens_202604 FROM tblMainCovenants
-WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+BEGIN TRAN;
+DELETE FROM tblMainCovenants WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+DELETE FROM tblMainDisplayCovenants WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+DELETE FROM tblMainTTMCalculations WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+DELETE FROM tblMain WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');

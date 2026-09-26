@@ -1,11 +1,17 @@
-READ-ONLY. Blackbook PDF (report page) shows YTD Sales and YTD PBT = 0
-for ATHENS PAPER 202504-202509 only. tblMain has correct non-zero
-curRevenueOrSalesYTD / curProfitBeforeTaxesYTD for those months, and
-the edit-page UI shows them correctly. Other months in the PDF are fine.
-Note 202504-202509 are fiscal months 7-12 of FY2025 (Oct start).
+READ-ONLY. Blackbook PDF is INTERMITTENT: sometimes all months are
+correct, sometimes YTD Sales and YTD PBT are 0 for some months
+(e.g. ATHENS 202504-202509), sometimes rows are missing. DB and the
+edit-page UI are always correct. Suspect a race or cache inconsistency
+during PDF generation.
 
-Trace for the PDF: which endpoint(s) feed those rows, how the YTD
-Sales / YTD PBT cells are resolved (aliases, fiscal-year grouping,
-recompute from monthly, series merge between years), and quote the
-file:line that turns them into 0. Also say whether any change made in
-this session caused it. Report only.
+Check and quote file:line:
+1. Does the Blackbook button wait for ALL series fetches (current-year,
+   prior-years, historic-year, rolling24) and any client-side YTD
+   backfill/merge to finish before building the PDF? Any loading-state
+   gate, Promise.all, or stale closure/state?
+2. Are YTD values for prior fiscal years recomputed/merged on the client
+   after load? If PDF reads before that, which cells become 0?
+3. Server cache: do the 4 metrics endpoints cache independently
+   (300s TTL) so the PDF can mix fresh and stale series?
+4. Does "0" come from a default/fallback (?? 0, formatCurrency(null))?
+Report only. Include how to reproduce reliably.

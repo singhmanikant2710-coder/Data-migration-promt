@@ -1,14 +1,9 @@
-Display fix (ATHENS, Monthly Summary): columns "Suppressed Availability"
-and "Amzn $ Ineligible" show the number without "$"; legacy shows it
-as currency.
-
-1. READ-ONLY first: quote file:line where these columns are built and
-   rendered, and where their format comes from (custom field format in
-   tblCustomer / tblCustomerCustomTable, or kind hardcoded).
-2. FIX: render them with the field's own format from the customer's
-   custom field definition ("$" -> currency, same as legacy). Only if
-   no format metadata exists, fall back to currency for these two
-   labels. Do not change other custom fields or values.
+Extend the covenant NULL -> "—" rule to the 3 remaining surfaces:
+1. DetailGrid.tsx:352
+2. BlackBookPdf.tsx (via report/page.tsx 609/620/634)
+3. csv.ts — also remove the Min TNW / Min PBT carry-forward at
+   csv.ts:187 and :190 (legacy shows blank for months without a value).
+Covenant-scoped only. Do not change formatCurrency or values.
 Build, tests, do not commit.
 
 REPORT FORMAT (mandatory):

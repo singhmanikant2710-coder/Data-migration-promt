@@ -1,17 +1,25 @@
-READ-ONLY. Blackbook PDF is INTERMITTENT: sometimes all months are
-correct, sometimes YTD Sales and YTD PBT are 0 for some months
-(e.g. ATHENS 202504-202509), sometimes rows are missing. DB and the
-edit-page UI are always correct. Suspect a race or cache inconsistency
-during PDF generation.
+FIX the intermittent Blackbook PDF (report/page.tsx). Minimal, safe
+changes only:
 
-Check and quote file:line:
-1. Does the Blackbook button wait for ALL series fetches (current-year,
-   prior-years, historic-year, rolling24) and any client-side YTD
-   backfill/merge to finish before building the PDF? Any loading-state
-   gate, Promise.all, or stale closure/state?
-2. Are YTD values for prior fiscal years recomputed/merged on the client
-   after load? If PDF reads before that, which cells become 0?
-3. Server cache: do the 4 metrics endpoints cache independently
-   (300s TTL) so the PDF can mix fresh and stale series?
-4. Does "0" come from a default/fallback (?? 0, formatCurrency(null))?
-Report only. Include how to reproduce reliably.
+1. YTD Sales / YTD PBT columns: use the row's stored
+   curRevenueOrSalesYTD / curProfitBeforeTaxesYTD first (legacy reads
+   the stored value). Use sumYtdForRow only when the stored value is
+   null. This removes the dependency on the captured series.
+2. Build columns / columnsHistory with useMemo from the SAME arrays
+   passed to BlackBookPdf (enrichedSeries, history, rolling24), instead
+   of effect + setState, so closures can never be stale.
+3. One readiness flag: Download button and autoDownload must wait until
+   current-year, rolling24 (if selected), prior-years AND the covenant
+   merge have all finished (success or error). autoDownload fires only
+   once (useRef guard).
+4. Pass noCache: true on the 3 metrics fetches, same as the edit page.
+5. report/page.tsx:230 selectedYear uses the calendar year. Use the
+   fiscal year for the selected month (customer fiscal start). If the
+   fiscal start is not available on this page, report and do not apply.
+Build, tests, do not commit.
+
+REPORT FORMAT (mandatory):
+- ADDED: new logic/lines (file:line)
+- REMOVED: logic/lines removed (file:line)
+- BEHAVIOUR CHANGE: what the user sees on screen, incl. NULL value case
+- NOT TOUCHED: related code deliberately left as-is

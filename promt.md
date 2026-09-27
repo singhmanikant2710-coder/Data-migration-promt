@@ -1,13 +1,19 @@
-Fiscal YTD report (report page, Summary PDF) shows 24 months for ATHENS
-202603 (202404-202603). Legacy shows 18: current FY to date
-(202510-202603) + the full prior FY only (202410-202509).
+Two fixes on the Blackbook report:
 
-1. READ-ONLY first: quote how the Fiscal YTD history rows are selected
-   (prior-years endpoint, beforeYear param, any slice/filter).
-2. FIX: in Fiscal YTD mode, show only rows with intFiscalYear =
-   selected fiscal year (up to the selected month) and
-   intFiscalYear = selected fiscal year - 1. Do not change Rolling 24.
-Generic for all customers. Build, tests, do not commit.
+1. REGRESSION from the last change: Rolling 24 mode now also shows 18
+   months. Apply the fiscal-year row selection (fiscalYtdRows /
+   fiscalPriorRows) ONLY when Fiscal YTD is selected. In Rolling 24 mode
+   use the previous rolling24 behaviour exactly (24 months). Pass the
+   selected mode into BlackBookPdf explicitly; do not infer it from data.
+
+2. Back navigation: after opening the preview (View/Print Preview) and
+   clicking Back, the report options reset to defaults (Fiscal YTD +
+   Summary). Preserve the user's selections (Fiscal YTD / Rolling 24,
+   Summary / Detail, and the other option groups) — keep them in the URL
+   query params so Back restores them. Defaults apply only on first
+   open with no params.
+
+Build, tests, do not commit.
 
 REPORT FORMAT (mandatory):
 - ADDED: new logic/lines (file:line)

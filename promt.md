@@ -1,20 +1,14 @@
-REGRESSION. ATHENS PAPER COMPANY INC (WholesaleTrade): the "Min Tangible
-Net Worth" covenant column disappeared from Summary Top Strip and
-Monthly Summary. MAMMOTH MEDICAL INC (same industry) is fine.
-ATHENS covenants in tblMainCovenants: Other 1 (%) intCovenantOrder=0,
-Min Tangible Net Worth =1, Min Net Income =2 (format "$").
+GENERIC FIX (all customers/industries): Monthly Summary must show only
+months up to the month selected in the month dropdown, like legacy.
+Example ATHENS: select 202602 -> Monthly Summary shows 202510-202602
+(not 202603). Same for the view page and any grid fed by the selected
+month (current-year, prior-year, Rolling 24 end month, Detail grid).
+PDF Fiscal YTD already filters <= selected month — keep consistent.
 
-1. READ-ONLY first: trace ATHENS through backend SummaryPayload
-   (covenant slot/order assignment, cap, name matching) and frontend
-   covenant filters (Order-100 slot filter, 1..N cap, registry/profile
-   excludes). Quote the exact line that drops Min Tangible Net Worth and
-   explain why Min Net Income survives.
-2. FIX: covenant visibility = intCovenantOrder 1..N of the covenant
-   itself, independent of other covenants' orders (order 0 must not
-   shift slots). Generic for all customers.
-3. PDF: covenant values in the PDF must follow the same rule as the
-   Summary Top Strip? -> NO, keep as is until confirmed.
-
+1. READ-ONLY first: quote where each grid gets its rows and whether it
+   filters by the selected month.
+2. FIX: filter rows to monthKey <= selected month (and for Rolling 24,
+   the 24 months ending at the selected month). Do not change values.
 Build, tests, do not commit.
 
 REPORT FORMAT (mandatory):

@@ -1,34 +1,42 @@
--- 1. Customer-level industry
-SELECT strCustomerName, strIndustry
-FROM tblCustomer WHERE strCustomerName LIKE 'AMERICAN CREDIT%';
+Based on your read-only report. Legacy per-industry forms
+(frm0XX...MainCurrentEdit / ...CurrentYear) are the source of truth.
 
--- 2. Month-level industry
-SELECT strIndustry, COUNT(*) AS rows_, MIN(strMonthKey) AS fromMk, MAX(strMonthKey) AS toMk
-FROM tblMain WHERE strCustomerName LIKE 'AMERICAN CREDIT%'
-GROUP BY strIndustry;
+PART A — generic infrastructure (all customers):
+1. One shared industry normaliser (legacy tokens: Trucking,
+   Manufacturing, WholesaleTrade, DirectAuto, IndirectAuto, Factoring,
+   MCA, ConsumerFinance, Other, EnergyRelated, ABL, SpecialtyFinance,
+   Equipment) used by backend BlackbookSummaryService, edit page, view
+   page, registry, monthSummaryProfiles and industryCustomFieldProfiles.
+   Tolerate spaces/case/"Industry"/"IndustryType" suffixes.
+2. View page must resolve the same mapping as the edit page for all 13
+   industries (add the missing cases, incl. indirectauto).
 
--- 3. Kitne customers mein ye mismatch hai (generic impact)
-SELECT m.strCustomerName, c.strIndustry AS customerIndustry,
-       m.strIndustry AS monthIndustry, COUNT(*) AS rows_
-FROM tblMain m JOIN tblCustomer c ON c.strCustomerName = m.strCustomerName
-WHERE ISNULL(m.strIndustry,'') <> ISNULL(c.strIndustry,'')
-GROUP BY m.strCustomerName, c.strIndustry, m.strIndustry
-ORDER BY m.strCustomerName;
+PART B — Indirect Auto = frm005 exactly (fix items 1-11 of your report):
+- Give Indirect Auto its own mapping (copy of mapDirectAuto, then
+  adjust). Direct Auto must stay byte-identical.
+- Backend indirectauto fixed profile: remove A/R $$$ / A/R Turn Days;
+  bind "Discount / Reserve" to curDiscountDividedByReserve /
+  perDiscountDividedByReserve.
+- Month/TTM: rows and sources exactly as frm005 (incl. Avg Principal
+  N/R <- curAveragePrincipalNRTTM, Interest Coverage Month + TTM with
+  "x"); rows stay visible when NULL ("—").
+- Cash & Charge-offs: rows, $ and % columns and sources exactly as
+  frm005 (Discount/Reserve, 60+ DPD, Cash Collections, Net C/O, YTD Net
+  C/O, Net C/O TTM $ + %, Reserve Coverage as "x").
+- Tile row / grid columns and order exactly as frm005; 5 covenant slots;
+  no covenant-threshold tiles that frm005 doesn't have.
 
+PART C — READ-ONLY audit, no changes: for each of the other 12
+industries, compare legacy frm0XX (tile row, Month/TTM, Cash & Charge-
+offs / middle panel, right rail) with our backend profile + edit
+mapping + view mapping. One table per industry, differences only
+(label, source field, format, missing/extra), with file:line.
 
-READ-ONLY. AMERICAN CREDIT ACCEPTANCE shows the wrong template:
-extra Top Strip tiles "A/R $$$" and "A/R Turn Days"; missing "Avg
-Principal N/R" (Month/TTM); Cash & Charge-offs shows "TTM Net C/O%"
-where legacy shows "Net C/O TTM $" and "Net C/O TTM %"; missing
-"Discount / Reserve $" and "Discount / Reserve %". Some of its tblMain
-rows have strIndustry = NULL.
+Do not change values, calculations or persistence.
+Build, tests, do not commit.
 
-1. How does the new app choose the industry/template for a customer
-   (URL param, tblMain.strIndustry, tblCustomer.strIndustry, fallback
-   to generic)? Quote file:line for edit, view and report pages.
-2. How does legacy choose it (frmMenu / tblCustomer.strIndustry ->
-   which frm00X / rpt00X opens)? Quote the VBA/control source.
-3. For the Indirect Auto legacy form, list the exact tile/panel labels
-   and control sources for Month/TTM and Cash & Charge-offs; compare
-   with our indirect-auto mapping and list differences.
-Report only.
+REPORT FORMAT (mandatory):
+- ADDED: new logic/lines (file:line)
+- REMOVED: logic/lines removed (file:line)
+- BEHAVIOUR CHANGE: what the user sees on screen, incl. NULL value case
+- NOT TOUCHED: related code deliberately left as-is

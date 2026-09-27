@@ -1,5 +1,4 @@
-SELECT strMonthKey, strCovenantActual, strCovenantFormat
+SELECT DISTINCT strCovenantName, strCovenantReported, intCovenantOrder
 FROM tblMainCovenants
 WHERE strCustomerName LIKE 'ATHENS PAPER%'
-  AND strCovenantName = 'Other 1 (%)'
-ORDER BY strMonthKey;
+  AND strMonthKey BETWEEN '202410' AND '202603';

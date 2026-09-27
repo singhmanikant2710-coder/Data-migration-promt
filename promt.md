@@ -24,3 +24,14 @@ READ-ONLY. Blackbook PDF column set differs from legacy for ATHENS
 3. Legacy: which query/report builds the Blackbook PDF columns
    (qryReportBlackBookData*, rpt*)? Quote the column/control sources.
 Report only.
+
+
+SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'tblCustomer' AND COLUMN_NAME LIKE '%Custom%'
+ORDER BY COLUMN_NAME;
+
+SELECT strCustomFieldDescription1, strCustomFieldDescription2,
+       strCustomFieldDescription3, strCustomFieldDescription4,
+       strCustomFieldDescription5
+FROM tblCustomer
+WHERE strCustomerName LIKE 'ATHENS PAPER%';

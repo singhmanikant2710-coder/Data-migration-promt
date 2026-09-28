@@ -1,8 +1,13 @@
-SELECT strMonthKey, strCustomField1, strCustomField2, strCustomField3
+SELECT strCustomerName, strMonthKey, curProfitBeforeTaxes, curProfitBeforeTaxesYTD,
+  perInterestCoverageTTM, per60DPD, perNetChargeOffTTM, curNetChargeOffTTM,
+  curAveragePrincipalNRTTM, curAverageGrossNRTTM,
+  strPrincipalOrGrossCalculationSelectionNetChargeOff, perReserveCoverage,
+  strCustomField1, strCustomField2, strCustomField3, strCustomField4
 FROM tblMain
-WHERE strCustomerName = 'ECLIPSE BUSINESS CAPITAL SPV LLC' AND strMonthKey = '202604';
+WHERE strCustomerName IN ('MARINER FINANCE LLC','AMERICAN CREDIT ACCEPTANCE','SHABANA MOTORS LLC')
+  AND strMonthKey = '<MONTH>';
 
-SELECT curCashCollections, curNetChargeOff, curNetChargeOffYTD,
-       curNetChargeOffTTM, curDiscountDividedByReserve, perReserveCoverage
-FROM tblMain
-WHERE strCustomerName = "AMERICAN CREDIT ACCEPTANCE" AND strMonthKey = "202603";
+SELECT strMonthKey, strCovenantName, intCovenantOrder, strCovenantFormat, strCovenantActual
+FROM tblMainCovenants
+WHERE strCustomerName = 'MARINER FINANCE LLC' AND strMonthKey = '<MONTH>'
+ORDER BY intCovenantOrder;

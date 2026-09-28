@@ -1,36 +1,36 @@
-WITH lastm AS (
-  SELECT strCustomerName, MAX(strMonthKey) AS mk
-  FROM tblMainCovenants GROUP BY strCustomerName
-),
-per AS (
-  SELECT c.strIndustry, v.strCustomerName,
-    COUNT(*) AS totalCov,
-    SUM(CASE WHEN v.intCovenantOrder BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS validCov,
-    SUM(CASE WHEN v.intCovenantOrder = 0 THEN 1 ELSE 0 END) AS orderZero,
-    SUM(CASE WHEN v.intCovenantOrder > 5 THEN 1 ELSE 0 END) AS orderAbove5,
-    MAX(v.intCovenantOrder) AS maxOrder
-  FROM tblMainCovenants v
-  JOIN lastm l ON l.strCustomerName = v.strCustomerName AND l.mk = v.strMonthKey
-  JOIN tblCustomer c ON c.strCustomerName = v.strCustomerName
-  GROUP BY c.strIndustry, v.strCustomerName
-)
-SELECT strIndustry, COUNT(*) AS customers,
-  MIN(totalCov) AS minTotal, MAX(totalCov) AS maxTotal,
-  MIN(validCov) AS minValid, MAX(validCov) AS maxValid,
-  MAX(orderZero) AS maxOrderZero, MAX(orderAbove5) AS maxAbove5, MAX(maxOrder) AS maxOrder,
-  SUM(CASE WHEN totalCov > 6 THEN 1 ELSE 0 END) AS customersOver6,
-  SUM(CASE WHEN validCov > 4 THEN 1 ELSE 0 END) AS customersValidOver4
-FROM per
-GROUP BY strIndustry
-ORDER BY strIndustry;
+FINAL GENERIC COVENANT FIX — replaces order/cap-based selection.
 
-WITH lastm AS (
-  SELECT strCustomerName, MAX(strMonthKey) AS mk
-  FROM tblMainCovenants GROUP BY strCustomerName
-)
-SELECT v.strCustomerName, v.intCovenantOrder, COUNT(*) AS covenantsOnSameOrder
-FROM tblMainCovenants v
-JOIN lastm l ON l.strCustomerName = v.strCustomerName AND l.mk = v.strMonthKey
-WHERE v.intCovenantOrder BETWEEN 1 AND 5
-GROUP BY v.strCustomerName, v.intCovenantOrder
-HAVING COUNT(*) > 1;
+Evidence: legacy forms bind txtCovenantName{i} -> tblMain.strCovenantName{i}
+and txtCovenantActual{i} -> dblCovenantActual{i}(Formatted), slots 1..4
+(DirectAuto/IndirectAuto 1..5). Data: many customers have 7-10
+covenants (cap of 6 drops valid ones, e.g. WESTLAKE "Other 1 (%)"), and
+13 customers have 2-3 covenants on the same intCovenantOrder.
+
+RULE (all industries, all surfaces: Top Strip, Monthly Summary, Rolling
+24, Fiscal YTD, Detail grid, PDF, CSV, payload AND fallback paths):
+1. Columns = non-blank tblMain.strCovenantName1..N of the selected
+   month, in slot order. N = 5 for DirectAuto/IndirectAuto, else 4.
+2. Value = tblMainCovenants.strCovenantActual of the covenant with the
+   SAME NAME, same customer + month. If no such row, use
+   dblCovenantActual{i}. NULL -> "—".
+3. Format = that covenant's strCovenantFormat (existing rules).
+4. Remove the covenant cap and all intCovenantOrder-based
+   selection/filters (backend ~:87-98 / allowedCovSlots, payload
+   Order-100 filters, report ord filter). Order 0, 5+ and duplicate
+   orders no longer matter.
+
+EVIDENCE & SAFETY (mandatory):
+- Quote legacy control sources for each surface changed.
+- Regression before/after on: WESTLAKE (7 covenants), ATHENS (order 0),
+  ECLIPSE (order 5/6), MAMMOTH (normal), MIDDLE GEORGIA and TBS
+  FACTORING (duplicate orders), MDR CONSTRUCTION (orders 5-8).
+- STOP if any fixed/non-covenant column changes.
+- No customer/label-specific code. Bump payloadVersion.
+Do not change values, calculations, persistence. Build, tests, do not
+commit.
+
+REPORT FORMAT (mandatory):
+- ADDED / REMOVED (file:line)
+- BEHAVIOUR CHANGE per surface incl. NULL case
+- Regression table: customer | covenant columns before | after
+- NOT TOUCHED

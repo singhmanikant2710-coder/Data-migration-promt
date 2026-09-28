@@ -26,3 +26,12 @@ REPORT FORMAT (mandatory):
 - Root cause per item + ADDED / REMOVED (file:line)
 - BEHAVIOUR CHANGE per surface incl. NULL case
 - NOT TOUCHED
+
+
+SELECT strCustomerName, strMonthKey,
+  perNetChargeOffTTM,
+  CAST(ROUND(perNetChargeOffTTM * 100, 2) AS decimal(10,2)) AS NetCO_TTM_Pct_Expected,
+  curNetChargeOffTTM, curAveragePrincipalNRTTM
+FROM tblMain
+WHERE (strCustomerName = 'WESTLAKE SERVICES LLC'      AND strMonthKey = '202604')
+   OR (strCustomerName = 'AMERICAN CREDIT ACCEPTANCE' AND strMonthKey = '202603');

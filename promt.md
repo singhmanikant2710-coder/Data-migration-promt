@@ -37,121 +37,27 @@ WHERE (strCustomerName = 'WESTLAKE SERVICES LLC'      AND strMonthKey = '202604'
    OR (strCustomerName = 'AMERICAN CREDIT ACCEPTANCE' AND strMonthKey = '202603');
 
 
-   
-Thanks John.
+   Hi Geoff,
 
-1) Agreed on NULL handling, and our TTM averages will exclude NULL months once the data holds NULL. We can't confirm how it was ingested, but a quick check for the DBA would settle it: if the numeric columns in SQL tblMain are NOT NULL or have a default of 0 (INFORMATION_SCHEMA.COLUMNS: IS_NULLABLE / COLUMN_DEFAULT), the load converted blanks to 0. If they are nullable with no default, the zeros came from somewhere else and we can dig further.
+Here's the RM/PM mismatch analysis, filtered to SourceSystem IN
+('ACBS','MWS','IFL'), for records with no matching Employee ID in
+Distribution Parties:
 
-2) Correction on our side: no decision needed. We checked more customers (ECLIPSE BUSINESS CAPITAL, WESTLAKE SERVICES) and their custom field text matches Access exactly, symbols included. SHABANA MOTORS is the only mismatch, and one of its values also differs (3.64 vs 2.79x), so it looks like the same situation as Mariner, data changed after the load, not a conversion problem.
+Relationship Manager gap:
+- 842 unmatched RM officers
+- 9,465 customers affected
+- $8,226,558,559 in Committed Exposure
 
-3) Agreed. So far it's MARINER and SHABANA. We'll let you know if we find more.
+Portfolio Manager gap:
+- 104 unmatched PM officers
+- 4,359 customers affected
+- $11,308,602,188 in Committed Exposure
 
-4) 
+Full detail (946 rows total — every unmatched RM/PM with their customer
+count and exposure subtotal) is available as a CSV/Excel export if you'd
+like to review the underlying list — happy to send it over.
 
-
-Hi Geoff,
-
-Yes — the query is built and working (grouped by RM/PM, filtered to ACBS/
-MWS/IFL, with count and Committed Exposure subtotals).
-
-Ashok's team applied a schema change on Recipient_role / Relationship_mgr_
-number / Portfolio_mgr_number today (zero-padded IDs, trigger-enforced), so
-I'm re-running the query against the updated data now to make sure the
-numbers reflect the current state rather than a stale comparison. Will send
-you the results shortly.
+Let me know how you'd like to proceed on closing this gap.
 
 Thanks,
 Manikant
-
-
-
-;WITH cust AS (
-    SELECT
-        LTRIM(RTRIM(d.[CUST_NUM])) AS [CustNum],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[OfficerNumber])))) AS [RmId],
-        MIN(LTRIM(RTRIM(d.[OfficerName]))) AS [RmName],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[PM Number])))) AS [PmId],
-        MIN(LTRIM(RTRIM(d.[PMName]))) AS [PmName],
-        SUM(TRY_CONVERT(decimal(38,10), NULLIF(d.[Commitment], ''))) AS [TotalCommitted]
-    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
-    WHERE NULLIF(LTRIM(RTRIM(d.[CUST_NUM])), '') IS NOT NULL
-      AND d.[SourceSystem] IN ('ACBS', 'MWS', 'IFL')
-    GROUP BY LTRIM(RTRIM(d.[CUST_NUM]))
-)
-SELECT
-    'Relationship Manager' AS [Field],
-    cust.[RmId] AS [EmployeeId],
-    cust.[RmName] AS [DataMartName],
-    COUNT_BIG(*) AS [CustomerCount],
-    SUM(cust.[TotalCommitted]) AS [CommittedExposure]
-FROM cust
-WHERE cust.[RmId] IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-      WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
-  )
-GROUP BY cust.[RmId], cust.[RmName]
-
-UNION ALL
-
-SELECT
-    'Portfolio Manager',
-    cust.[PmId],
-    cust.[PmName],
-    COUNT_BIG(*),
-    SUM(cust.[TotalCommitted])
-FROM cust
-WHERE cust.[PmId] IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-      WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
-  )
-GROUP BY cust.[PmId], cust.[PmName]
-
-ORDER BY [Field], [CommittedExposure] DESC;
-
-
-
-;WITH cust AS (
-    SELECT
-        LTRIM(RTRIM(d.[CUST_NUM])) AS [CustNum],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[OfficerNumber])))) AS [RmId],
-        MIN(LTRIM(RTRIM(d.[OfficerName]))) AS [RmName],
-        TRY_CONVERT(int, MIN(LTRIM(RTRIM(d.[PM Number])))) AS [PmId],
-        MIN(LTRIM(RTRIM(d.[PMName]))) AS [PmName],
-        SUM(TRY_CONVERT(decimal(38,10), NULLIF(d.[Commitment], ''))) AS [TotalCommitted]
-    FROM dbo.[01_DATA_01_Data Mart Trial] AS d WITH (NOLOCK)
-    WHERE NULLIF(LTRIM(RTRIM(d.[CUST_NUM])), '') IS NOT NULL
-      AND d.[SourceSystem] IN ('ACBS', 'MWS', 'IFL')
-    GROUP BY LTRIM(RTRIM(d.[CUST_NUM]))
-),
-rm_unmatched AS (
-    SELECT cust.[RmId], cust.[RmName], COUNT_BIG(*) AS [CustomerCount],
-           SUM(cust.[TotalCommitted]) AS [CommittedExposure]
-    FROM cust
-    WHERE cust.[RmId] IS NOT NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-          WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[RmId]
-      )
-    GROUP BY cust.[RmId], cust.[RmName]
-),
-pm_unmatched AS (
-    SELECT cust.[PmId], cust.[PmName], COUNT_BIG(*) AS [CustomerCount],
-           SUM(cust.[TotalCommitted]) AS [CommittedExposure]
-    FROM cust
-    WHERE cust.[PmId] IS NOT NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM dbo.[03_LIBRARY_10_Distribution Parties] AS dp WITH (NOLOCK)
-          WHERE TRY_CONVERT(int, LTRIM(RTRIM(dp.[Recipient_role]))) = cust.[PmId]
-      )
-    GROUP BY cust.[PmId], cust.[PmName]
-)
--- Overall totals
-SELECT
-    (SELECT COUNT(*) FROM rm_unmatched) AS [Rm_UnmatchedOfficers],
-    (SELECT SUM(CustomerCount) FROM rm_unmatched) AS [Rm_TotalCustomers],
-    (SELECT SUM(CommittedExposure) FROM rm_unmatched) AS [Rm_TotalExposure],
-    (SELECT COUNT(*) FROM pm_unmatched) AS [Pm_UnmatchedOfficers],
-    (SELECT SUM(CustomerCount) FROM pm_unmatched) AS [Pm_TotalCustomers],
-    (SELECT SUM(CommittedExposure) FROM pm_unmatched) AS [Pm_TotalExposure];

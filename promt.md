@@ -1,29 +1,28 @@
-DECLARE @c nvarchar(200) = 'TBS FACTORING SERVICE LLC';
-DECLARE @mk varchar(6) = (SELECT MAX(strMonthKey) FROM tblMain WHERE strCustomerName = @c);
+Factoring fix (all Factoring customers, all surfaces). Evidence:
+TBS FACTORING SERVICE LLC 201907 — tblMain:
+perNetIncomeYTDDividedByRevenueYTD = 0.1094546 (legacy 10.95%),
+curEBITTTM = 11887.767 (legacy $11,888).
 
-SELECT strMonthKey,
+1. YTD PBT Margin: UI shows 0.11%. Stored fraction must be shown as
+   Access Percent (x100) -> 10.95%, on Top Strip, Monthly Summary,
+   Rolling 24, Fiscal YTD, Detail grid, PDF, CSV. Also check every other
+   percent field in the Factoring template for the same missing x100
+   and list them (fix only those whose frm006 control is a bound Percent
+   control).
+2. Month/TTM "EBIT TTM" is blank. Bind it to curEBITTTM (frm006 control
+   source) -> $11,888. Check the other Month/TTM rows are bound too.
+3. Cash & Charge-offs: remove "Collections %" — frm006 has no such
+   control in that block (it was re-added in Part D). Quote frm006 to
+   confirm before removing.
 
-  -- YTD PBT Margin = PBT YTD / Revenue YTD
-  curProfitBeforeTaxesYTD, curRevenueOrSalesYTD,
-  perNetIncomeYTDDividedByRevenueYTD AS YTD_PBT_Margin_Stored,
-  CASE WHEN ISNULL(curRevenueOrSalesYTD,0) = 0 THEN 0
-       ELSE curProfitBeforeTaxesYTD / curRevenueOrSalesYTD END AS YTD_PBT_Margin_Calc,
+EVIDENCE & SAFETY (mandatory):
+- Quote frm006 control source + format for every field changed.
+- Scope: Factoring only. STOP if another industry is affected.
+- Regression before/after: TBS FACTORING + TOWER CAP SPV, LLC.
+- No customer-specific code. Do not change values, calculations,
+  persistence. Build, tests, do not commit.
 
-  -- EBIT TTM = PBT TTM + Interest Expense TTM
-  curProfitBeforeTaxesTTM, curInterestExpenseTTM,
-  curEBITTTM AS EBIT_TTM_Stored,
-  ISNULL(curProfitBeforeTaxesTTM,0) + ISNULL(curInterestExpenseTTM,0) AS EBIT_TTM_Calc,
-
-  -- Collections % (Principal N/R ya Gross N/R prior month ke basis pe)
-  strPrincipalOrGrossCalculationSelectionCashCollection AS CollectionBasis,
-  curCashCollections, curPrincipalNRPriorMonth, curGrossNRorARPriorMonth,
-  perCashCollections AS Collections_Pct_Stored,
-  CASE WHEN strPrincipalOrGrossCalculationSelectionCashCollection = 'Principal N/R'
-       THEN CASE WHEN ISNULL(curPrincipalNRPriorMonth,0) = 0 THEN 0
-                 ELSE ROUND(curCashCollections,0) / ROUND(curPrincipalNRPriorMonth,0) END
-       ELSE CASE WHEN ISNULL(curGrossNRorARPriorMonth,0) = 0 THEN 0
-                 ELSE ROUND(curCashCollections,0) / ROUND(curGrossNRorARPriorMonth,0) END
-  END AS Collections_Pct_Calc
-
-FROM tblMain
-WHERE strCustomerName = @c AND strMonthKey = @mk;
+REPORT FORMAT (mandatory):
+- Root cause per item + ADDED / REMOVED (file:line)
+- BEHAVIOUR CHANGE per surface incl. NULL case
+- NOT TOUCHED

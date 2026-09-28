@@ -1,20 +1,36 @@
-SELECT strCovenantName1, strCovenantName2, strCovenantName3,
-       strCovenantName4, strCovenantName5,
-       dblCovenantActual1, dblCovenantActual2, dblCovenantActual3
-FROM tblMain
-WHERE strCustomerName = 'WESTLAKE SERVICES LLC' AND strMonthKey = '202604';
+WITH lastm AS (
+  SELECT strCustomerName, MAX(strMonthKey) AS mk
+  FROM tblMainCovenants GROUP BY strCustomerName
+),
+per AS (
+  SELECT c.strIndustry, v.strCustomerName,
+    COUNT(*) AS totalCov,
+    SUM(CASE WHEN v.intCovenantOrder BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS validCov,
+    SUM(CASE WHEN v.intCovenantOrder = 0 THEN 1 ELSE 0 END) AS orderZero,
+    SUM(CASE WHEN v.intCovenantOrder > 5 THEN 1 ELSE 0 END) AS orderAbove5,
+    MAX(v.intCovenantOrder) AS maxOrder
+  FROM tblMainCovenants v
+  JOIN lastm l ON l.strCustomerName = v.strCustomerName AND l.mk = v.strMonthKey
+  JOIN tblCustomer c ON c.strCustomerName = v.strCustomerName
+  GROUP BY c.strIndustry, v.strCustomerName
+)
+SELECT strIndustry, COUNT(*) AS customers,
+  MIN(totalCov) AS minTotal, MAX(totalCov) AS maxTotal,
+  MIN(validCov) AS minValid, MAX(validCov) AS maxValid,
+  MAX(orderZero) AS maxOrderZero, MAX(orderAbove5) AS maxAbove5, MAX(maxOrder) AS maxOrder,
+  SUM(CASE WHEN totalCov > 6 THEN 1 ELSE 0 END) AS customersOver6,
+  SUM(CASE WHEN validCov > 4 THEN 1 ELSE 0 END) AS customersValidOver4
+FROM per
+GROUP BY strIndustry
+ORDER BY strIndustry;
 
-READ-ONLY. WESTLAKE SERVICES LLC 202604 (IndirectAuto): in the browser
-the Monthly Summary first renders "Other 1 (%)" and the custom fields
-with $ / %, then they disappear / lose symbols after a moment.
-Attached: Network status + summary payload JSON, and tblMain slot
-captions. /api/v1/covenants and metadata return "Other 1 (%)".
-
-1. Trace the render sequence: which effect/fetch replaces the first
-   column set (fallback -> payload), and which exact line then drops
-   "Other 1 (%)" and coerces the custom values. Quote file:line.
-2. From the payload JSON: what Order does "Other 1 (%)" get and why
-   (backend slot resolution vs tblMain captions)?
-3. Check caches: payload/profile keys, Redis/in-memory, client cache —
-   could an old cached payload be served?
-Report only.
+WITH lastm AS (
+  SELECT strCustomerName, MAX(strMonthKey) AS mk
+  FROM tblMainCovenants GROUP BY strCustomerName
+)
+SELECT v.strCustomerName, v.intCovenantOrder, COUNT(*) AS covenantsOnSameOrder
+FROM tblMainCovenants v
+JOIN lastm l ON l.strCustomerName = v.strCustomerName AND l.mk = v.strMonthKey
+WHERE v.intCovenantOrder BETWEEN 1 AND 5
+GROUP BY v.strCustomerName, v.intCovenantOrder
+HAVING COUNT(*) > 1;

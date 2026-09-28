@@ -1,29 +1,29 @@
-ConsumerFinance fix (all CF customers, all surfaces). Evidence:
-MIDDLE GEORGIA MANAGEMENT SERVICES INC 202011 — tblMain:
-perDiscountDividedByReserve = 0.0959151433085082 (legacy 9.59%),
-perNetChargeOffTTM = 0.0702947845804989 (legacy 7.03%).
+DECLARE @c nvarchar(200) = 'TBS FACTORING SERVICE LLC';
+DECLARE @mk varchar(6) = (SELECT MAX(strMonthKey) FROM tblMain WHERE strCustomerName = @c);
 
-1. Loan Loss Reserves %: Summary Top Strip already shows 9.59% (correct).
-   Cash & Charge-offs panel shows 0.10% — it is not applying the Access
-   Percent x100. Use the same value/formatter as the Top Strip.
-2. Net C/O TTM %: UI shows 0.29% on every surface; legacy 7.03%.
-   Find which field it reads (likely monthly perNetChargeOff or the
-   Principal/Gross selector recompute). Every surface must read the
-   stored perNetChargeOffTTM x100: Top Strip, Monthly Summary, Cash &
-   Charge-offs, Rolling 24, Fiscal YTD, Detail grid, PDF, CSV. The
-   Principal/Gross selector may only recompute the three selector cells
-   (Cash Collections %, Net C/O %, 60+ DPD %), never Net C/O TTM %.
+SELECT strMonthKey,
 
-EVIDENCE & SAFETY (mandatory):
-- Quote the frm008 control source for both fields on each surface.
-- Scope: ConsumerFinance only. STOP if another industry is affected.
-- Regression before/after: MIDDLE GEORGIA 202011 + MARINER 202603
-  (Net C/O TTM 8.51%, Reserve Coverage 122.37%) + GRACELAND RENTALS
-  202604 (must stay unchanged).
-- No customer-specific code. Do not change values, calculations,
-  persistence. Build, tests, do not commit.
+  -- YTD PBT Margin = PBT YTD / Revenue YTD
+  curProfitBeforeTaxesYTD, curRevenueOrSalesYTD,
+  perNetIncomeYTDDividedByRevenueYTD AS YTD_PBT_Margin_Stored,
+  CASE WHEN ISNULL(curRevenueOrSalesYTD,0) = 0 THEN 0
+       ELSE curProfitBeforeTaxesYTD / curRevenueOrSalesYTD END AS YTD_PBT_Margin_Calc,
 
-REPORT FORMAT (mandatory):
-- Root cause per item + ADDED / REMOVED (file:line)
-- BEHAVIOUR CHANGE per surface incl. NULL case
-- NOT TOUCHED
+  -- EBIT TTM = PBT TTM + Interest Expense TTM
+  curProfitBeforeTaxesTTM, curInterestExpenseTTM,
+  curEBITTTM AS EBIT_TTM_Stored,
+  ISNULL(curProfitBeforeTaxesTTM,0) + ISNULL(curInterestExpenseTTM,0) AS EBIT_TTM_Calc,
+
+  -- Collections % (Principal N/R ya Gross N/R prior month ke basis pe)
+  strPrincipalOrGrossCalculationSelectionCashCollection AS CollectionBasis,
+  curCashCollections, curPrincipalNRPriorMonth, curGrossNRorARPriorMonth,
+  perCashCollections AS Collections_Pct_Stored,
+  CASE WHEN strPrincipalOrGrossCalculationSelectionCashCollection = 'Principal N/R'
+       THEN CASE WHEN ISNULL(curPrincipalNRPriorMonth,0) = 0 THEN 0
+                 ELSE ROUND(curCashCollections,0) / ROUND(curPrincipalNRPriorMonth,0) END
+       ELSE CASE WHEN ISNULL(curGrossNRorARPriorMonth,0) = 0 THEN 0
+                 ELSE ROUND(curCashCollections,0) / ROUND(curGrossNRorARPriorMonth,0) END
+  END AS Collections_Pct_Calc
+
+FROM tblMain
+WHERE strCustomerName = @c AND strMonthKey = @mk;

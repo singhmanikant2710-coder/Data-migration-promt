@@ -1,59 +1,21 @@
-STRICT-SCOPE FIX — ConsumerFinance, DirectAuto, IndirectAuto only.
-Legacy (frm004 / frm005 / frm008 + rpt004/005/008) is the source of truth.
+Hi John, while comparing the new BCAT screens against legacy customer by customer, we found a few differences that come from the data in the SQL Server dev database rather than the application. Sharing them so they can be covered before the final data copy at cutover.
 
-SAFETY RULES (mandatory):
-- Change ONLY items a-d below. Touch nothing else.
-- Do NOT change calculations, stored values, DB data, APIs, persistence,
-  or any other industry. Item e is READ-ONLY.
-- Do NOT touch the "FCC TTM" no-suffix rule, covenant rules, custom-field
-  "as stored" rule, selected-month clamp, or any earlier fix.
-- No customer-specific code or values.
-- If any change would affect another industry or an unlisted field,
-  STOP and report instead of applying.
+1. Blank values became 0
+Where a numeric field is blank (NULL) in Access, the SQL Server copy holds 0. The screen then shows $0 where legacy shows blank, and 12-month averages count those zeros as real months.
+Examples (202603):
+- AMERICAN CREDIT ACCEPTANCE: Net C/O TTM $, Reserve Coverage, Cash Collections $, Net C/O $ - blank in Access, 0 in SQL.
+- SHABANA MOTORS LLC 202601: Avg Principal N/R TTM - Access $44,413, SQL $4,412.50, because zero months are averaged.
+Ask: when copying from Access, keep NULL as NULL (all numeric columns, all customers).
 
-PRE-VERIFIED — do NOT fix (data issues, SQL != Access):
-MARINER PBT, YTD PBT, Interest Coverage TTM, 60+ DPD %, Net C/O selector,
-all covenants; SHABANA custom fields 1-4; ACA/SHABANA blank-vs-$0.
+2. Custom field text changed
+Custom fields are text and legacy displays them exactly as stored. In SQL the symbols were dropped and one value differs.
+Example SHABANA MOTORS LLC 202601: Access "3.1%", "$2555", "3.67%", "2.79x" vs SQL "3.1", "2555", "3.67", "3.64".
+Ask: copy custom field text exactly as stored in Access.
 
-FIX (all surfaces: Summary Top Strip, Monthly Summary, Month/TTM,
-Cash & Charge-offs, right rail, Fiscal YTD, Rolling 24, Detail grid,
-PDF, CSV):
+3. Customer data differs from legacy
+MARINER FINANCE LLC 202603 in dev SQL does not match Access: Month PBT (SQL $9,757 vs Access $17,539), YTD PBT ($30,458 vs $35,584), Interest Coverage TTM (2.07 vs 2.73), the Net C/O basis (Gross N/R vs Principal N/R), and all covenants (SQL shows order 0 with no values; Access has orders 1-4 with values). It looks like an older or edited copy.
+Ask: could this customer's data be refreshed from Access in dev, and confirm the cutover copy will come straight from Access?
 
-a. Net C/O TTM %: display the stored perNetChargeOffTTM
-   (MARINER 202603 = 0.0851 -> 8.51%). UI shows 0.46% — find what it
-   computes instead and replace it with the stored field. No recompute.
+Once the data is corrected, we will re-run the 12-month (TTM) recalculation on our side for the affected customers.
 
-b. Reserve Coverage: Access Percent format, stored value x100
-   (1.22374 -> 122.37%). Replace the "x" ratio format for this field.
-
-c. "Interest Coverage TTM": must show "x" (1.88 -> 1.88x). Remove this
-   label from every no-suffix set (MonthSummaryTable, DetailGrid
-   /Coverage/i, BlackBookPdf RATIO_NO_SUFFIX_LABELS). Keep "FCC TTM"
-   no-suffix exactly as it is.
-
-d. ConsumerFinance (frm008) structure:
-   - Month/TTM: rows and order exactly as frm008; remove the extra
-     "FCC TTM" row if frm008 does not have it there.
-   - Cash & Charge-offs: rows, order and visibility exactly as frm008
-     (Net C/O % followed by the Principal N/R / Gross N/R selector);
-     remove the standalone "Principal N/R" row if frm008 does not show
-     it. Keep the Principal/Gross dropdown working exactly as today.
-   Quote frm008 control sources / positions you used.
-
-e. READ-ONLY: SHABANA 202601 curAveragePrincipalNRTTM — Access 44,413,
-   SQL 4,412.50. Did our TTM mirror (AVG over window) overwrite it, and
-   does it average migrated zeros that legacy stored as NULL? Report
-   only, no change.
-
-Build, tests, do not commit.
-
-REPORT FORMAT (mandatory):
-- Per item a-d: root cause (1 line) + ADDED (file:line) + REMOVED
-  (file:line)
-- BEHAVIOUR CHANGE per surface, incl. NULL and zero case
-- NOT TOUCHED (confirm FCC TTM, covenants, custom fields, other
-  industries unchanged)
-- Item e findings
-- Expected after fix: ACA 202603 Interest Coverage TTM 1.88x;
-  SHABANA 202601 Interest Coverage TTM 1.75x, Reserve Coverage 120.91%;
-  MARINER 202603 Net C/O TTM 8.51%, Reserve Coverage 122.37%
+Happy to share the comparison queries if useful.

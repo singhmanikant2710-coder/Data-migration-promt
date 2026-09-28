@@ -1,22 +1,29 @@
-DECLARE @c nvarchar(200) = 'MIDDLE GEORGIA MANAGEMENT SERVICES INC';
-DECLARE @mk varchar(6) = '202011';
+ConsumerFinance fix (all CF customers, all surfaces). Evidence:
+MIDDLE GEORGIA MANAGEMENT SERVICES INC 202011 — tblMain:
+perDiscountDividedByReserve = 0.0959151433085082 (legacy 9.59%),
+perNetChargeOffTTM = 0.0702947845804989 (legacy 7.03%).
 
--- 1. Min EBITDA/Interest
-SELECT strMonthKey, strCovenantName, intCovenantOrder, strCovenantFormat, strCovenantActual
-FROM tblMainCovenants
-WHERE strCustomerName = @c AND strMonthKey = @mk
-ORDER BY intCovenantOrder;
+1. Loan Loss Reserves %: Summary Top Strip already shows 9.59% (correct).
+   Cash & Charge-offs panel shows 0.10% — it is not applying the Access
+   Percent x100. Use the same value/formatter as the Top Strip.
+2. Net C/O TTM %: UI shows 0.29% on every surface; legacy 7.03%.
+   Find which field it reads (likely monthly perNetChargeOff or the
+   Principal/Gross selector recompute). Every surface must read the
+   stored perNetChargeOffTTM x100: Top Strip, Monthly Summary, Cash &
+   Charge-offs, Rolling 24, Fiscal YTD, Detail grid, PDF, CSV. The
+   Principal/Gross selector may only recompute the three selector cells
+   (Cash Collections %, Net C/O %, 60+ DPD %), never Net C/O TTM %.
 
-SELECT strMonthKey,
-  strCovenantName1, dblCovenantActual1, strCovenantName2, dblCovenantActual2,
-  strCovenantName3, dblCovenantActual3, strCovenantName4, dblCovenantActual4
-FROM tblMain WHERE strCustomerName = @c AND strMonthKey = @mk;
+EVIDENCE & SAFETY (mandatory):
+- Quote the frm008 control source for both fields on each surface.
+- Scope: ConsumerFinance only. STOP if another industry is affected.
+- Regression before/after: MIDDLE GEORGIA 202011 + MARINER 202603
+  (Net C/O TTM 8.51%, Reserve Coverage 122.37%) + GRACELAND RENTALS
+  202604 (must stay unchanged).
+- No customer-specific code. Do not change values, calculations,
+  persistence. Build, tests, do not commit.
 
--- 2. Net C/O TTM % + Loan Loss Reserves $ / %
-SELECT strMonthKey,
-  perNetChargeOffTTM, curNetChargeOffTTM,
-  curAveragePrincipalNRTTM, curAverageGrossNRTTM,
-  strPrincipalOrGrossCalculationSelectionNetChargeOff,
-  curDiscountDividedByReserve AS LoanLossReserve_Dollar,
-  perDiscountDividedByReserve AS LoanLossReserve_Pct
-FROM tblMain WHERE strCustomerName = @c AND strMonthKey = @mk;
+REPORT FORMAT (mandatory):
+- Root cause per item + ADDED / REMOVED (file:line)
+- BEHAVIOUR CHANGE per surface incl. NULL case
+- NOT TOUCHED

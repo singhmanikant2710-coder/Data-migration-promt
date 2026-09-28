@@ -47,3 +47,18 @@ Thanks John.
 3) Agreed. So far it's MARINER and SHABANA. We'll let you know if we find more.
 
 4) 
+
+
+Hi Geoff,
+
+Yes — the query is built and working (grouped by RM/PM, filtered to ACBS/
+MWS/IFL, with count and Committed Exposure subtotals).
+
+Ashok's team applied a schema change on Recipient_role / Relationship_mgr_
+number / Portfolio_mgr_number today (zero-padded IDs, trigger-enforced), so
+I'm re-running the query against the updated data now to make sure the
+numbers reflect the current state rather than a stale comparison. Will send
+you the results shortly.
+
+Thanks,
+Manikant

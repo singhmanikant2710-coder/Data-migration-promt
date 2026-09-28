@@ -1,17 +1,24 @@
-GENERIC FIX (all customers/industries): Monthly Summary must show only
-months up to the month selected in the month dropdown, like legacy.
-Example ATHENS: select 202602 -> Monthly Summary shows 202510-202602
-(not 202603). Same for the view page and any grid fed by the selected
-month (current-year, prior-year, Rolling 24 end month, Detail grid).
-PDF Fiscal YTD already filters <= selected month — keep consistent.
+SELECT DISTINCT strCustomerName, strCovenantName, intCovenantOrder
+FROM tblMainCovenants
+WHERE intCovenantOrder = 0 OR intCovenantOrder > 4
+ORDER BY strCustomerName;
 
-1. READ-ONLY first: quote where each grid gets its rows and whether it
-   filters by the selected month.
-2. FIX: filter rows to monthKey <= selected month (and for Rolling 24,
-   the 24 months ending at the selected month). Do not change values.
-Build, tests, do not commit.
 
-REPORT FORMAT (mandatory):
-- ADDED / REMOVED (file:line)
-- BEHAVIOUR CHANGE incl. NULL case
-- NOT TOUCHED
+SELECT DISTINCT c.strCustomerName, c.strCovenantName
+FROM tblMainCovenants c
+JOIN tblMain m ON m.strCustomerName = c.strCustomerName AND m.strMonthKey = c.strMonthKey
+WHERE c.intCovenantOrder BETWEEN 1 AND 4
+  AND c.strCovenantName NOT IN (ISNULL(m.strCovenantName1,''), ISNULL(m.strCovenantName2,''),
+      ISNULL(m.strCovenantName3,''), ISNULL(m.strCovenantName4,''), ISNULL(m.strCovenantName5,''))
+ORDER BY c.strCustomerName;
+
+SELECT strCustomerName, strIndustry,
+  strCustomFieldDescription1, strCustomFieldDescription2,
+  strCustomFieldDescription3, strCustomFieldDescription4
+FROM tblCustomer
+WHERE COALESCE(strCustomFieldDescription1, strCustomFieldDescription2,
+               strCustomFieldDescription3, strCustomFieldDescription4) IS NOT NULL
+ORDER BY strIndustry;
+
+SELECT DISTINCT TOP 20 strCustomerName, strIndustry
+FROM tblMain WHERE ISNULL(curCPLTDTTM,0) <> 0 AND strMonthKey >= '202601';

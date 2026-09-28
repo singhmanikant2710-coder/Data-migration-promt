@@ -35,3 +35,15 @@ SELECT strCustomerName, strMonthKey,
 FROM tblMain
 WHERE (strCustomerName = 'WESTLAKE SERVICES LLC'      AND strMonthKey = '202604')
    OR (strCustomerName = 'AMERICAN CREDIT ACCEPTANCE' AND strMonthKey = '202603');
+
+
+   
+Thanks John.
+
+1) Agreed on NULL handling, and our TTM averages will exclude NULL months once the data holds NULL. We can't confirm how it was ingested, but a quick check for the DBA would settle it: if the numeric columns in SQL tblMain are NOT NULL or have a default of 0 (INFORMATION_SCHEMA.COLUMNS: IS_NULLABLE / COLUMN_DEFAULT), the load converted blanks to 0. If they are nullable with no default, the zeros came from somewhere else and we can dig further.
+
+2) Correction on our side: no decision needed. We checked more customers (ECLIPSE BUSINESS CAPITAL, WESTLAKE SERVICES) and their custom field text matches Access exactly, symbols included. SHABANA MOTORS is the only mismatch, and one of its values also differs (3.64 vs 2.79x), so it looks like the same situation as Mariner, data changed after the load, not a conversion problem.
+
+3) Agreed. So far it's MARINER and SHABANA. We'll let you know if we find more.
+
+4) 

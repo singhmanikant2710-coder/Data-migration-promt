@@ -1,7 +1,7 @@
 DECLARE @c nvarchar(200) = 'MIDDLE GEORGIA MANAGEMENT SERVICES INC';
-DECLARE @mk varchar(6) = (SELECT MAX(strMonthKey) FROM tblMain WHERE strCustomerName = @c);
+DECLARE @mk varchar(6) = '202011';
 
--- 1. Min EBITDA/Interest (covenant table + tblMain slots)
+-- 1. Min EBITDA/Interest
 SELECT strMonthKey, strCovenantName, intCovenantOrder, strCovenantFormat, strCovenantActual
 FROM tblMainCovenants
 WHERE strCustomerName = @c AND strMonthKey = @mk

@@ -1,7 +1,9 @@
--- Covenant rows hain lekin us month ki tblMain row nahi (yahi fallback trigger karta hai)
-SELECT DISTINCT c.strCustomerName, c.strMonthKey
-FROM tblMainCovenants c
-WHERE NOT EXISTS (SELECT 1 FROM tblMain m
-                  WHERE m.strCustomerName = c.strCustomerName
-                    AND m.strMonthKey = c.strMonthKey)
-ORDER BY c.strCustomerName, c.strMonthKey;
+SELECT strMonthKey, intFiscalYear, intFiscalMonth, curRevenueOrSales
+FROM tblMain WHERE strCustomerName = 'ALAN WIRE COMPANY'
+  AND strMonthKey BETWEEN '202505' AND '202603'
+ORDER BY strMonthKey;
+
+SELECT strMonthKey, intFiscalYear, intFiscalMonth, curRevenueOrSales
+FROM tblMain WHERE strCustomerName = "ALAN WIRE COMPANY"
+  AND strMonthKey Between "202505" And "202603"
+ORDER BY strMonthKey;

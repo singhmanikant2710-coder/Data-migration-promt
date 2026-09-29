@@ -1,26 +1,32 @@
 READ-ONLY. No code changes.
 
-Earlier we fixed YTD PBT: a stored YTD of exactly 0 was treated as
-"missing" and replaced with TTM (TryMergeTtmIntoSeries). You reported
-the same "zero treated as missing" pattern for YTD Revenue and YTD Gross
-Profit in a routine that WRITES to the database.
+Goal: when a user edits a field on the Blackbook edit page, the live
+(pre-save) values must match legacy. Today some dependent values show
+wrong numbers until Refresh/Save, then become correct.
 
-Report:
-1. Every place (backend + frontend) where curRevenueOrSalesYTD,
-   curGrossProfitYTD (and aliases) are checked for missing/zero and
-   replaced or recomputed. Quote file:line and the exact condition.
-2. For each: does it only change the display, or does it WRITE to
-   tblMain / tblMainYTDCalculations / any table? Which save path calls it
-   and when?
-3. What value gets written/shown when YTD = 0 (TTM? sum of monthly?
-   something else)?
-4. Legacy: how does Access compute YTD Revenue / YTD GP
-   (qryMainYTDCalculations_*, funSave)? Does legacy ever replace a 0
-   YTD? Quote it.
-5. Impact: SQL query to find rows in tblMain where these YTD values are
-   0 and the monthly values do not sum to 0 (possible damage already
-   written), plus the count of rows where YTD = 0 genuinely.
-6. Risk rating (low/medium/high) and the smallest safe fix, legacy
-   parity. Do not apply.
+Produce, per industry (13), a compact inventory:
 
-Report only, with file:line and legacy quotes.
+1. EDITABLE FIELDS: every input the user can edit on the edit page (Top
+   Strip, Monthly Summary inline, Month/TTM, Cash & Charge-offs, right
+   rail, covenants, custom fields). Field label -> tblMain column.
+2. DEPENDENTS: for each editable field, which displayed fields depend on
+   it (directly or via other calculated fields).
+3. FRONTEND LIVE PREVIEW: for each dependent, what the frontend computes
+   before save (file:line + formula), or "not recomputed".
+4. BACKEND ON SAVE: which method recomputes it (SqlMainRepository /
+   TblMainCalcs / TTM / YTD paths) + formula, file:line.
+5. LEGACY: is it an Access CALCULATED FIELD on tblMain (same-row,
+   updates live on edit — quote expression) or computed in funSave /
+   queries on Save (cross-row: YTD, TTM, prior month — quote)?
+6. MISMATCH: dependents where frontend preview formula != legacy
+   formula, or where the frontend estimates a cross-row value (YTD/TTM)
+   that legacy only updates on Save.
+
+Classify every dependent:
+ A = same-row legacy calculated field -> should update LIVE on frontend
+ B = cross-row (YTD/TTM/prior month) -> should keep the stored value
+     until Save (legacy behaviour)
+
+Output: one table per industry (field | column | dependents | frontend
+preview | backend | legacy class A/B | mismatch yes/no), then a short
+list of all mismatches. Report only.

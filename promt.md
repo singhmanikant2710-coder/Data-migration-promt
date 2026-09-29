@@ -34,3 +34,13 @@ SELECT strMonthKey, curCPLTDTTM, curInterestExpenseTTM, curFixedChargesTTM,
        curCashAvailableForFixedChargesTTM, dblFixedChargeCoverageTTM
 FROM tblMain WHERE strCustomerName LIKE 'ATHENS PAPER%'
   AND strMonthKey IN ('202603','202604');
+
+
+SELECT m.strCustomerName, m.strMonthKey, s.slot, s.name, c.intCovenantOrder
+FROM tblMain m
+CROSS APPLY (VALUES (1,m.strCovenantName1),(2,m.strCovenantName2),(3,m.strCovenantName3),
+                    (4,m.strCovenantName4),(5,m.strCovenantName5)) s(slot, name)
+JOIN tblMainCovenants c ON c.strCustomerName = m.strCustomerName
+  AND c.strMonthKey = m.strMonthKey AND c.strCovenantName = s.name
+WHERE s.name IS NOT NULL AND c.intCovenantOrder <> s.slot
+ORDER BY m.strCustomerName, m.strMonthKey;

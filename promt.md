@@ -1,36 +1,28 @@
-Net C/O TTM % still shows 0.29% for MIDDLE GEORGIA 202011
-(ConsumerFinance) on Top Strip and Cash & Charge-offs.
+Factoring fix (all Factoring customers, all surfaces). Evidence:
+TBS FACTORING SERVICE LLC 201907 — tblMain:
+perNetIncomeYTDDividedByRevenueYTD = 0.1094546 (legacy 10.95%),
+curEBITTTM = 11887.767 (legacy $11,888).
 
-Evidence:
-- rolling24 / current-year API return perNetChargeOffTTM = 0.0702947...
-  (correct, legacy 7.03%).
-- /summary payload: { id: "fixed.ttmNetCoPercent", label: "Net C/O TTM %",
-  format: "percent", source: "perNetChargeOffTTM" } (correct).
-- 0.29% = monthly curNetChargeOff / curAveragePrincipalNRTTM, i.e. the
-  Principal/Gross selector value of "Net C/O %". So some frontend code
-  matches the label by prefix ("Net C/O") and applies the selector
-  recompute to "Net C/O TTM %".
+1. YTD PBT Margin: UI shows 0.11%. Stored fraction must be shown as
+   Access Percent (x100) -> 10.95%, on Top Strip, Monthly Summary,
+   Rolling 24, Fiscal YTD, Detail grid, PDF, CSV. Also check every other
+   percent field in the Factoring template for the same missing x100
+   and list them (fix only those whose frm006 control is a bound Percent
+   control).
+2. Month/TTM "EBIT TTM" is blank. Bind it to curEBITTTM (frm006 control
+   source) -> $11,888. Check the other Month/TTM rows are bound too.
+3. Cash & Charge-offs: remove "Collections %" — frm006 has no such
+   control in that block (it was re-added in Part D). Quote frm006 to
+   confirm before removing.
 
-1. Find EVERY place that applies the selector/percent override or
-   recompute by label (edit/page.tsx computeConsumerFinancePercentOverride
-   and callers, MonthSummaryTable payload render, monthSummaryRegistry,
-   consumerFinance.ts carry(), Top Strip tile build). Quote file:line.
-2. Fix: the selector may affect ONLY exact labels "Cash Collections %",
-   "Net C/O %", "60+ DPD %" (exact match, no prefix/regex). "Net C/O TTM %"
-   always shows stored perNetChargeOffTTM x100.
-
-   3. The Principal/Gross dropdown's initial value must come from the
-   stored strPrincipalOrGrossCalculationSelection* field for that month
-   (MIDDLE GEORGIA 202011 = "Principal N/R"), not a default.
-   Quote where the default is set.
-
-EVIDENCE & SAFETY: ConsumerFinance only; regression before/after
-MIDDLE GEORGIA 202011, MARINER 202603, GRACELAND RENTALS 202604; confirm
-"Net C/O %" selector cell still changes with the dropdown.
-Build, tests, do not commit.
+EVIDENCE & SAFETY (mandatory):
+- Quote frm006 control source + format for every field changed.
+- Scope: Factoring only. STOP if another industry is affected.
+- Regression before/after: TBS FACTORING + TOWER CAP SPV, LLC.
+- No customer-specific code. Do not change values, calculations,
+  persistence. Build, tests, do not commit.
 
 REPORT FORMAT (mandatory):
-- Root cause (file:line) + ADDED / REMOVED
+- Root cause per item + ADDED / REMOVED (file:line)
 - BEHAVIOUR CHANGE per surface incl. NULL case
 - NOT TOUCHED
-

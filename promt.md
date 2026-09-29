@@ -26,3 +26,13 @@ REPORT FORMAT (mandatory):
 - Root cause per item + ADDED / REMOVED (file:line)
 - BEHAVIOUR CHANGE per surface incl. NULL case
 - NOT TOUCHED
+
+
+SELECT strMonthKey, strCovenantName, strCovenantActual
+FROM tblMainCovenants
+WHERE strCustomerName = '<CUSTOMER>' AND strMonthKey = '<MONTH>'
+  AND strCovenantName = 'Min Tangible Net Worth';
+
+SELECT strCovenantName1, dblCovenantActual1, strCovenantName2, dblCovenantActual2
+FROM tblMain
+WHERE strCustomerName = '<CUSTOMER>' AND strMonthKey = '<MONTH>';

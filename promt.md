@@ -1,18 +1,24 @@
-Items 2 and 3 — the legacy expressions are pasted below (ground truth,
-from Access tblMain Field.Expression). Use them exactly.
+BEGIN TRAN;
+DELETE FROM tblMainCovenants        WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+DELETE FROM tblMainDisplayCovenants WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+DELETE FROM tblMainTTMCalculations  WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+DELETE FROM tblMain                 WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
+-- rows affected check karo (tblMain = 1 ya 2), phir:
+COMMIT;
 
-<<< PASTE THE FULL FORMULA LIST HERE >>>
+SELECT strCovenantName1, strCovenantName2, strCovenantName3, strCovenantName4, strCovenantName5
+FROM tblMain WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey = '202604';
 
-Answer to your open question: FCC TTM, Interest Coverage TTM and any
-field whose expression uses a TTM / YTD / prior-month / average column
-are class B — they keep the LAST SAVED value until Save, even if a
-same-row input (e.g. curCPLTDTTM) was edited. Legacy recalculates
-nothing live, so B is the safe side.
+SELECT strCovenantName, intCovenantOrder, strCovenantActual
+FROM tblMainCovenants
+WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey = '202604'
+ORDER BY intCovenantOrder;
 
-Also in 2B: trucking.ts:323 Opex YTD — show the stored value only; NULL
-renders blank. Remove the client-side monthly-sum fallback.
-
-Everything else as in my previous message (2A, 2B, 3, evidence &
-safety, regression on ATHENS + one Trucking + one Auto customer,
-report format with ADDED / REMOVED, BEHAVIOUR CHANGE live vs after
-save incl. NULL, NOT TOUCHED). Build, tests, do not commit.
+New month seeding writes "Other 1 (%)" (intCovenantOrder 0) into a
+tblMain covenant slot (ATHENS 202604). Legacy funSave writes
+strCovenantName{i} / dblCovenantActual{i} with i = intCovenantOrder, only
+for 1..N; order 0 / out-of-range never occupies a slot. Fix the new-month
+seeding (SeedCovenantsFromPreviousMonthAsync / SeedFromLatestAsync) to
+place each covenant in slot = its intCovenantOrder, 1..N only. Quote
+legacy. Generic. Build, tests, do not commit. Report ADDED/REMOVED,
+BEHAVIOUR CHANGE incl. NULL, NOT TOUCHED.

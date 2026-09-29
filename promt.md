@@ -1,32 +1,48 @@
-READ-ONLY. No code changes.
+DECLARE @tol decimal(19,6) = 1.0;
 
-Goal: when a user edits a field on the Blackbook edit page, the live
-(pre-save) values must match legacy. Today some dependent values show
-wrong numbers until Refresh/Save, then become correct.
+WITH ytd AS (
+  SELECT LTRIM(RTRIM(m.strCustomerName)) AS Customer, m.strMonthKey,
+    m.intFiscalYear, m.intFiscalMonth,
+    CONVERT(decimal(19,6), m.curRevenueOrSalesYTD) AS StoredRevYtd,
+    CONVERT(decimal(19,6), m.curGrossProfitYTD) AS StoredGpYtd,
+    SUM(COALESCE(CONVERT(decimal(19,6), m.curRevenueOrSales), 0)) OVER (
+      PARTITION BY LTRIM(RTRIM(m.strCustomerName)), m.intFiscalYear
+      ORDER BY m.intFiscalMonth ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS CorrectRevYtd,
+    SUM(COALESCE(CONVERT(decimal(19,6), m.curGrossProfit), 0)) OVER (
+      PARTITION BY LTRIM(RTRIM(m.strCustomerName)), m.intFiscalYear
+      ORDER BY m.intFiscalMonth ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS CorrectGpYtd
+  FROM dbo.tblMain m
+  WHERE m.intFiscalYear > 0 AND m.intFiscalMonth BETWEEN 1 AND 12
+)
+SELECT Customer, strMonthKey, intFiscalMonth,
+  StoredRevYtd, CorrectRevYtd, StoredGpYtd, CorrectGpYtd
+FROM ytd
+WHERE (ABS(CorrectRevYtd) < @tol AND ABS(COALESCE(StoredRevYtd,0)) >= @tol)
+   OR (ABS(CorrectGpYtd)  < @tol AND ABS(COALESCE(StoredGpYtd,0))  >= @tol)
+ORDER BY Customer, strMonthKey;
 
-Produce, per industry (13), a compact inventory:
 
-1. EDITABLE FIELDS: every input the user can edit on the edit page (Top
-   Strip, Monthly Summary inline, Month/TTM, Cash & Charge-offs, right
-   rail, covenants, custom fields). Field label -> tblMain column.
-2. DEPENDENTS: for each editable field, which displayed fields depend on
-   it (directly or via other calculated fields).
-3. FRONTEND LIVE PREVIEW: for each dependent, what the frontend computes
-   before save (file:line + formula), or "not recomputed".
-4. BACKEND ON SAVE: which method recomputes it (SqlMainRepository /
-   TblMainCalcs / TTM / YTD paths) + formula, file:line.
-5. LEGACY: is it an Access CALCULATED FIELD on tblMain (same-row,
-   updates live on edit — quote expression) or computed in funSave /
-   queries on Save (cross-row: YTD, TTM, prior month — quote)?
-6. MISMATCH: dependents where frontend preview formula != legacy
-   formula, or where the frontend estimates a cross-row value (YTD/TTM)
-   that legacy only updates on Save.
+DECLARE @tol decimal(19,6) = 1.0;
 
-Classify every dependent:
- A = same-row legacy calculated field -> should update LIVE on frontend
- B = cross-row (YTD/TTM/prior month) -> should keep the stored value
-     until Save (legacy behaviour)
-
-Output: one table per industry (field | column | dependents | frontend
-preview | backend | legacy class A/B | mismatch yes/no), then a short
-list of all mismatches. Report only.
+WITH ytd AS (
+  SELECT
+    CONVERT(decimal(19,6), m.curRevenueOrSalesYTD) AS StoredRevYtd,
+    CONVERT(decimal(19,6), m.curGrossProfitYTD) AS StoredGpYtd,
+    SUM(COALESCE(CONVERT(decimal(19,6), m.curRevenueOrSales), 0)) OVER (
+      PARTITION BY LTRIM(RTRIM(m.strCustomerName)), m.intFiscalYear
+      ORDER BY m.intFiscalMonth ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS CorrectRevYtd,
+    SUM(COALESCE(CONVERT(decimal(19,6), m.curGrossProfit), 0)) OVER (
+      PARTITION BY LTRIM(RTRIM(m.strCustomerName)), m.intFiscalYear
+      ORDER BY m.intFiscalMonth ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS CorrectGpYtd
+  FROM dbo.tblMain m
+  WHERE m.intFiscalYear > 0 AND m.intFiscalMonth BETWEEN 1 AND 12
+)
+SELECT
+  SUM(CASE WHEN ABS(COALESCE(StoredRevYtd,0)) < @tol  AND ABS(CorrectRevYtd) < @tol  THEN 1 ELSE 0 END) AS RevYtd_GenuineZero,
+  SUM(CASE WHEN ABS(COALESCE(StoredRevYtd,0)) >= @tol AND ABS(CorrectRevYtd) < @tol  THEN 1 ELSE 0 END) AS RevYtd_Damaged,
+  SUM(CASE WHEN ABS(COALESCE(StoredRevYtd,0)) < @tol  AND ABS(CorrectRevYtd) >= @tol THEN 1 ELSE 0 END) AS RevYtd_ZeroButShouldNotBe,
+  SUM(CASE WHEN ABS(COALESCE(StoredGpYtd,0))  < @tol  AND ABS(CorrectGpYtd)  < @tol  THEN 1 ELSE 0 END) AS GpYtd_GenuineZero,
+  SUM(CASE WHEN ABS(COALESCE(StoredGpYtd,0))  >= @tol AND ABS(CorrectGpYtd)  < @tol  THEN 1 ELSE 0 END) AS GpYtd_Damaged,
+  SUM(CASE WHEN ABS(COALESCE(StoredGpYtd,0))  < @tol  AND ABS(CorrectGpYtd)  >= @tol THEN 1 ELSE 0 END) AS GpYtd_ZeroButShouldNotBe,
+  COUNT(*) AS TotalRows
+FROM ytd;

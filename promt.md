@@ -1,32 +1,28 @@
-BUG (recurring): ATHENS Add New Month 202604 — before any input, Min
-Tangible Net Worth, Min Net Income (covenants) and AMZN %, Suppressed
-Availability (custom fields) show 202603 values. DB for 202604 is NULL
-for all of them; API responses for 202604 have no value. So the
-FRONTEND fills the new month from 202603 (or from a client cache).
+FINAL FIX — backend root cause. Frontend patching is not enough.
 
-STEP 1 — READ-ONLY, quote the exact line that produces the 202603 value:
-- latestPoint / latestPointComputed selection (edit/page.tsx) falling
-  back to the latest month with data instead of the selected month
-- Top Strip covenant tile slot fallback reading latestPointComputed
-- custom-field tiles: any fallback to an earlier row / latest value
-- carry-forward (latestValueUpToRow / pick over earlier rows)
-- client caches: does the new POST /api/v1/main/month path call
-  invalidateCustomerCaches (summary memo, GET cache, lookups) like the
-  save paths do? If not, the page renders a cached 202603 payload.
-- monthlyTopStrip memo deps (latestPointComputed missing)
+Root cause (your own finding): BlackbookSummaryService.cs:135 calls
+GetMainRowValuesAsync, which returns the latest month <= requested when
+the requested month has no data, so the summary payload for a new month
+(e.g. ATHENS 202604) carries 202603 covenant actuals and custom fields
+(:325 ReadFirst(values, slotCandidates), :359 custom fields). Every page
+(edit, view, report/PDF) consumes this payload.
 
-STEP 2 — FIX (generic, legacy parity):
-- Every tile/column shows the SELECTED month's value only; missing -> "—".
-- Call invalidateCustomerCaches after POST /api/v1/main/month and reload
-  the payload/series for the new month.
-- Add the missing memo dependency.
+FIX (legacy parity — legacy never shows another month's values):
+1. The summary payload for month X uses month X's row ONLY (exact match).
+   If X has no row or no value -> NULL. Remove the "<= requested"
+   fallback for this payload. Set payload.monthKey = X.
+2. Check every other caller of GetMainRowValuesAsync; if any relies on the
+   fallback, keep a separate method for it — do not change their behaviour.
+3. Bump payloadVersion so no cached payload is served.
+4. Keep the frontend payloadForMonth guard (harmless extra safety).
 
-RULES: read-only first; smallest fix; frontend only unless STEP 1 proves
-otherwise; no change to calculations/data.
+RULES: read-only check of callers first; smallest change; no change to
+calculations or data.
 GOLDEN (before AND after): ATHENS 202603 Min TNW 62,297, Min Net Income
 8,369, AMZN % / Suppressed Availability unchanged; ECLIPSE 202604;
-WESTLAKE 202604 Other 1 (%) 9.06; ATHENS new 202604 all "—"/0 before
-input. If any existing-month value changes, STOP.
+WESTLAKE 202604 Other 1 (%) 9.06; MIDDLE GEORGIA 202011 Net C/O TTM
+7.03%; ATHENS new 202604 on edit, view and PDF: covenants + custom "—".
+If any existing-month value changes, STOP.
 Build, tests, do not commit.
-REPORT: root cause (file:line), ADDED/REMOVED, BEHAVIOUR CHANGE incl.
-NULL, golden table, NOT TOUCHED.
+REPORT: callers of GetMainRowValuesAsync, ADDED/REMOVED (file:line),
+BEHAVIOUR CHANGE incl. NULL, golden table, NOT TOUCHED.

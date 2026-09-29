@@ -14,3 +14,17 @@ already uses it. So the tile reads the wrong key/source.
 Build, tests, do not commit.
 Report ADDED/REMOVED, BEHAVIOUR CHANGE incl. NULL, NOT TOUCHED, and a
 table: field | DB value (202604) | UI before | UI after.
+
+
+
+
+Follow-up (same fix, legacy parity): before writing covenant slots in
+SeedFromLatestAsync, clear the slots exactly as legacy does with
+"0101 Historical Covenant Clear Update" (funSave :715) — quote that
+query and clear the same columns, only for the customer + month being
+saved. Then write slots by intCovenantOrder as now.
+Example: ATHENS 202604 currently has slot1 "Other 1 (%)", slot2 Min TNW,
+slot3 Min Net Income; after one save it must be slot1 Min TNW, slot2 Min
+Net Income, slot3-6 empty.
+Build, tests, do not commit. Report ADDED/REMOVED, BEHAVIOUR CHANGE incl.
+NULL, NOT TOUCHED.

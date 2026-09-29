@@ -1,32 +1,26 @@
-Factoring fix (all Factoring customers, all surfaces). Evidence:
-TBS FACTORING SERVICE LLC 201907 — tblMain:
-perNetIncomeYTDDividedByRevenueYTD = 0.1094546 (legacy 10.95%),
-curEBITTTM = 11887.767 (legacy $11,888).
+READ-ONLY. No code changes.
 
-1. YTD PBT Margin: UI shows 0.11%. Stored fraction must be shown as
-   Access Percent (x100) -> 10.95%, on Top Strip, Monthly Summary,
-   Rolling 24, Fiscal YTD, Detail grid, PDF, CSV. Also check every other
-   percent field in the Factoring template for the same missing x100
-   and list them (fix only those whose frm006 control is a bound Percent
-   control).
-2. Month/TTM "EBIT TTM" is blank. Bind it to curEBITTTM (frm006 control
-   source) -> $11,888. Check the other Month/TTM rows are bound too.
-3. Cash & Charge-offs: remove "Collections %" — frm006 has no such
-   control in that block (it was re-added in Part D). Quote frm006 to
-   confirm before removing.
+Earlier we fixed YTD PBT: a stored YTD of exactly 0 was treated as
+"missing" and replaced with TTM (TryMergeTtmIntoSeries). You reported
+the same "zero treated as missing" pattern for YTD Revenue and YTD Gross
+Profit in a routine that WRITES to the database.
 
-EVIDENCE & SAFETY (mandatory):
-- Quote frm006 control source + format for every field changed.
-- Scope: Factoring only. STOP if another industry is affected.
-- Regression before/after: TBS FACTORING + TOWER CAP SPV, LLC.
-- No customer-specific code. Do not change values, calculations,
-  persistence. Build, tests, do not commit.
+Report:
+1. Every place (backend + frontend) where curRevenueOrSalesYTD,
+   curGrossProfitYTD (and aliases) are checked for missing/zero and
+   replaced or recomputed. Quote file:line and the exact condition.
+2. For each: does it only change the display, or does it WRITE to
+   tblMain / tblMainYTDCalculations / any table? Which save path calls it
+   and when?
+3. What value gets written/shown when YTD = 0 (TTM? sum of monthly?
+   something else)?
+4. Legacy: how does Access compute YTD Revenue / YTD GP
+   (qryMainYTDCalculations_*, funSave)? Does legacy ever replace a 0
+   YTD? Quote it.
+5. Impact: SQL query to find rows in tblMain where these YTD values are
+   0 and the monthly values do not sum to 0 (possible damage already
+   written), plus the count of rows where YTD = 0 genuinely.
+6. Risk rating (low/medium/high) and the smallest safe fix, legacy
+   parity. Do not apply.
 
-REPORT FORMAT (mandatory):
-- Root cause per item + ADDED / REMOVED (file:line)
-- BEHAVIOUR CHANGE per surface incl. NULL case
-- NOT TOUCHED
-
-CovenantsController.cs is not in the changed-file list. The invalidation
-you reported at :135 / :214 / :457 was not applied. Apply it now and
-show the diff.
+Report only, with file:line and legacy quotes.

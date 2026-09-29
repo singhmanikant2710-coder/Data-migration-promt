@@ -1,46 +1,16 @@
+REGRESSION from the class-B change: Cash & Charge-offs "Fixed Charges
+TTM" shows $0 for ATHENS 202604, before and after save. DB has
+curFixedChargesTTM = 1568.299 (202603 = 1613.731), and FCC TTM 5.10
+already uses it. So the tile reads the wrong key/source.
 
-
-
-BEGIN TRAN;
-DELETE FROM tblMainCovenants        WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
-DELETE FROM tblMainDisplayCovenants WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
-DELETE FROM tblMainTTMCalculations  WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
-DELETE FROM tblMain                 WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
--- rows affected check karo (tblMain = 1 ya 2), phir:
-COMMIT;
-
-SELECT strCovenantName1, strCovenantName2, strCovenantName3, strCovenantName4, strCovenantName5
-FROM tblMain WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey = '202604';
-
-SELECT strCovenantName, intCovenantOrder, strCovenantActual
-FROM tblMainCovenants
-WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey = '202604'
-ORDER BY intCovenantOrder;
-
-New month seeding writes "Other 1 (%)" (intCovenantOrder 0) into a
-tblMain covenant slot (ATHENS 202604). Legacy funSave writes
-strCovenantName{i} / dblCovenantActual{i} with i = intCovenantOrder, only
-for 1..N; order 0 / out-of-range never occupies a slot. Fix the new-month
-seeding (SeedCovenantsFromPreviousMonthAsync / SeedFromLatestAsync) to
-place each covenant in slot = its intCovenantOrder, 1..N only. Quote
-legacy. Generic. Build, tests, do not commit. Report ADDED/REMOVED,
-BEHAVIOUR CHANGE incl. NULL, NOT TOUCHED.
-
-
-SELECT strCovenantName1, strCovenantName2, strCovenantName3, strCovenantName4, strCovenantName5
-FROM tblMain WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey = '202604';
-
-SELECT strMonthKey, curCPLTDTTM, curInterestExpenseTTM, curFixedChargesTTM,
-       curCashAvailableForFixedChargesTTM, dblFixedChargeCoverageTTM
-FROM tblMain WHERE strCustomerName LIKE 'ATHENS PAPER%'
-  AND strMonthKey IN ('202603','202604');
-
-
-SELECT m.strCustomerName, m.strMonthKey, s.slot, s.name, c.intCovenantOrder
-FROM tblMain m
-CROSS APPLY (VALUES (1,m.strCovenantName1),(2,m.strCovenantName2),(3,m.strCovenantName3),
-                    (4,m.strCovenantName4),(5,m.strCovenantName5)) s(slot, name)
-JOIN tblMainCovenants c ON c.strCustomerName = m.strCustomerName
-  AND c.strMonthKey = m.strMonthKey AND c.strCovenantName = s.name
-WHERE s.name IS NOT NULL AND c.intCovenantOrder <> s.slot
-ORDER BY m.strCustomerName, m.strMonthKey;
+1. Quote file:line of the Fixed Charges TTM tile and exactly which
+   key/object it reads, and why it resolves to 0 now (e.g. value was
+   produced by the frontend calc loop that now skips class B).
+2. Fix generically: every class-B field shows the saved value from the
+   row (stored column); check all CLASS_B_CALCS fields for the same
+   problem (compare tile value vs DB for ATHENS 202604).
+3. Class B with no saved value renders "—", not 0 (e.g. A/R Turn Days,
+   Inventory Turn on a new unsaved month).
+Build, tests, do not commit.
+Report ADDED/REMOVED, BEHAVIOUR CHANGE incl. NULL, NOT TOUCHED, and a
+table: field | DB value (202604) | UI before | UI after.

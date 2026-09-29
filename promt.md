@@ -1,3 +1,9 @@
-SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = 'tblMain'
-  AND COLUMN_NAME IN ('curRevenueOrSalesYTD','curGrossProfitYTD');
+SELECT strMonthKey, intFiscalMonth,
+  curRevenueOrSales, curRevenueOrSalesYTD,
+  SUM(ISNULL(curRevenueOrSales,0)) OVER (ORDER BY strMonthKey ROWS UNBOUNDED PRECEDING) AS ExpectedRevYtd,
+  curGrossProfit, curGrossProfitYTD,
+  SUM(ISNULL(curGrossProfit,0)) OVER (ORDER BY strMonthKey ROWS UNBOUNDED PRECEDING) AS ExpectedGpYtd,
+  dblAccountsReceivableTurnDays, curInventoryTurn
+FROM tblMain
+WHERE strCustomerName LIKE 'ATHENS PAPER%' AND intFiscalYear = 2026
+ORDER BY strMonthKey;

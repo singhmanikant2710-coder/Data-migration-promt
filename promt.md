@@ -1,30 +1,30 @@
-REGRESSION from the class-B change: Cash & Charge-offs "Fixed Charges
-TTM" shows $0 for ATHENS 202604, before and after save. DB has
-curFixedChargesTTM = 1568.299 (202603 = 1613.731), and FCC TTM 5.10
-already uses it. So the tile reads the wrong key/source.
+REGRESSION — new month copies previous month's values.
+ATHENS: Add New Month 202604 shows Min Tangible Net Worth 62,297 and
+Min Net Income 8,369 (202603 values), and custom fields AMZN % /
+Suppressed Availability also carry 202603 values.
 
-1. Quote file:line of the Fixed Charges TTM tile and exactly which
-   key/object it reads, and why it resolves to 0 now (e.g. value was
-   produced by the frontend calc loop that now skips class B).
-2. Fix generically: every class-B field shows the saved value from the
-   row (stored column); check all CLASS_B_CALCS fields for the same
-   problem (compare tile value vs DB for ATHENS 202604).
-3. Class B with no saved value renders "—", not 0 (e.g. A/R Turn Days,
-   Inventory Turn on a new unsaved month).
+STEP 1 — READ-ONLY, report first:
+a. SeedFromLatestAsync slot mirror: quote where dblCovenantActual{i} /
+   Formatted is written. Does it use sourceRows (latest month's actuals)
+   instead of the NEW month's own tblMainCovenants actual?
+b. Legacy Add New Month (cmdAddNewMonth_Click + funSave): quote exactly
+   which columns are copied into the new tblMain row — especially
+   strCustomField1..10 and covenant slots. Does legacy copy custom
+   field values or leave them blank?
+c. Our Add New Month path: quote which columns it copies.
+
+STEP 2 — FIX, only what STEP 1 proves:
+- Covenant slot actuals for a month = that SAME month's
+  tblMainCovenants actual (NULL for a new month). Never previous month.
+- Custom fields on a new month: exactly what legacy does (copy or blank).
+- Nothing else.
+
+SAFETY (mandatory):
+- Regression: ATHENS new 202604 before save and after save; ATHENS 202603
+  re-save must stay byte-identical (Min TNW 62,297, Min Net Income 8,369,
+  custom fields unchanged); one other industry customer add-month.
+- STOP if any existing month's value would change.
 Build, tests, do not commit.
-Report ADDED/REMOVED, BEHAVIOUR CHANGE incl. NULL, NOT TOUCHED, and a
-table: field | DB value (202604) | UI before | UI after.
 
-
-
-
-Follow-up (same fix, legacy parity): before writing covenant slots in
-SeedFromLatestAsync, clear the slots exactly as legacy does with
-"0101 Historical Covenant Clear Update" (funSave :715) — quote that
-query and clear the same columns, only for the customer + month being
-saved. Then write slots by intCovenantOrder as now.
-Example: ATHENS 202604 currently has slot1 "Other 1 (%)", slot2 Min TNW,
-slot3 Min Net Income; after one save it must be slot1 Min TNW, slot2 Min
-Net Income, slot3-6 empty.
-Build, tests, do not commit. Report ADDED/REMOVED, BEHAVIOUR CHANGE incl.
-NULL, NOT TOUCHED.
+REPORT FORMAT: STEP 1 quotes, ADDED/REMOVED (file:line), BEHAVIOUR
+CHANGE incl. NULL, NOT TOUCHED.

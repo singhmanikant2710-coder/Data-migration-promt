@@ -28,11 +28,32 @@ REPORT FORMAT (mandatory):
 - NOT TOUCHED
 
 
-SELECT strMonthKey, strCovenantName, strCovenantActual
-FROM tblMainCovenants
-WHERE strCustomerName = '<CUSTOMER>' AND strMonthKey = '<MONTH>'
-  AND strCovenantName = 'Min Tangible Net Worth';
+BUG (generic): after editing a value (e.g. Min Tangible Net Worth) and
+"Save and Close", reopening the page shows the OLD value. The DB
+(tblMainCovenants + tblMain) has the NEW value. So a cache serves stale
+data.
 
-SELECT strCovenantName1, dblCovenantActual1, strCovenantName2, dblCovenantActual2
-FROM tblMain
-WHERE strCustomerName = '<CUSTOMER>' AND strMonthKey = '<MONTH>';
+1. READ-ONLY first: list every cache between DB and screen for the edit/
+   view/report pages — backend BlackbookSummaryService payload KV cache
+   (payloadVersion, 180s), MetricsController series cache (300s), client
+   _summaryCache in metadataService, lib/api GET cache / in-flight dedupe,
+   covenants/metadata caches. Quote file:line and TTL, and which ones
+   the save path already clears.
+2. FIX: after ANY successful save (Refresh/Save and Save and Close, incl.
+   covenant and custom-field writes), invalidate for that customer:
+   - backend payload + metrics cache entries (server side, in the save
+     endpoint)
+   - client caches (summary, metrics, covenants, metadata)
+   so the next load always fetches fresh data. Do not disable caching
+   for reads that did not change.
+
+EVIDENCE & SAFETY: no change to values, calculations, persistence.
+Test on 2 customers from different industries: edit -> Save and Close ->
+reopen -> new value; revert -> reopen -> old value.
+Build, tests, do not commit.
+
+REPORT FORMAT (mandatory):
+- Caches found (file:line, TTL, cleared on save yes/no)
+- ADDED / REMOVED (file:line)
+- BEHAVIOUR CHANGE incl. NULL case
+- NOT TOUCHED

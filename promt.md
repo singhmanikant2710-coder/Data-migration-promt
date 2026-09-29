@@ -1,3 +1,6 @@
+
+
+
 BEGIN TRAN;
 DELETE FROM tblMainCovenants        WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
 DELETE FROM tblMainDisplayCovenants WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey IN ('202604','202605');
@@ -22,3 +25,12 @@ seeding (SeedCovenantsFromPreviousMonthAsync / SeedFromLatestAsync) to
 place each covenant in slot = its intCovenantOrder, 1..N only. Quote
 legacy. Generic. Build, tests, do not commit. Report ADDED/REMOVED,
 BEHAVIOUR CHANGE incl. NULL, NOT TOUCHED.
+
+
+SELECT strCovenantName1, strCovenantName2, strCovenantName3, strCovenantName4, strCovenantName5
+FROM tblMain WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey = '202604';
+
+SELECT strMonthKey, curCPLTDTTM, curInterestExpenseTTM, curFixedChargesTTM,
+       curCashAvailableForFixedChargesTTM, dblFixedChargeCoverageTTM
+FROM tblMain WHERE strCustomerName LIKE 'ATHENS PAPER%'
+  AND strMonthKey IN ('202603','202604');

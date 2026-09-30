@@ -1,23 +1,34 @@
-BUG: Add New Month seeds tblMainCovenants with strCovenantReported =
-NULL (ATHENS 202604: Other 1 (%), Min TNW, Min Net Income all NULL).
-Legacy 202604 has Monthly / Quarterly / Quarterly — legacy seeds covenant
-definitions for a new month from the tblCustomer template
-(strCovenant{X}Name/Reported/Order/Threshold/Description/Format,
-Form_frm001TruckingMain.bas:352-433).
-Attached: 202603 tblMainCovenants Reported values and tblCustomer
-template Reported values for ATHENS.
+REGRESSION: changing a covenant's Order on the Customer page no longer
+changes the covenant order in the Blackbook (it worked before). Cause
+(verify): Blackbook now reads tblMain slots (strCovenantName{i} /
+dblCovenantActual{i}) and those slots are only (re)written for a NEW
+month (SeedFromLatestAsync returns early when covenant rows exist). An
+order change updates tblMainCovenants.intCovenantOrder but never
+re-mirrors tblMain slots.
 
-1. READ-ONLY: quote SeedFromLatestAsync's clone INSERT — is Reported
-   copied, and from where? Why is it NULL for 202604?
-2. FIX (smallest): on a new month, strCovenantReported comes from the
-   tblCustomer template for the covenant with the same name (legacy
-   source). If no template match, fall back to the latest month's value.
-   Do not change how name/order/threshold/format/actual are seeded.
-RULES: new-month seeding only; existing months unchanged.
-GOLDEN: ATHENS new 202604 -> Other 1 (%) Monthly, Min TNW Quarterly, Min
-Net Income Quarterly; covenant actuals still NULL; ATHENS 202603
-unchanged; one other industry add-month has Reported filled.
+Legacy (funSave, Form_frm001TruckingMain.bas:715-739): on every save it
+clears the slots ("0101 Historical Covenant Clear Update") and refills
+slot i from the covenant with intCovenantOrder = i.
+
+STEP 1 — READ-ONLY: quote which endpoint the Customer page order change
+calls, which rows it updates (tblCustomer template? tblMainCovenants for
+which month(s)?), and where tblMain slots are written today.
+
+STEP 2 — FIX: after an order change (and after any covenant save), for
+every month whose tblMainCovenants rows were changed, re-mirror that
+month's tblMain slots: clear the slot columns, then write slot i from
+that SAME month's covenant with intCovenantOrder = i (1..N), using that
+month's own actuals. Reuse the existing clear + order-keyed write code
+(extract it into one method), do not duplicate logic. Invalidate caches
+as today.
+
+RULES: no change to new-month seeding behaviour, values, calculations;
+existing months' actuals must stay as saved.
+GOLDEN: ATHENS 202603 swap Min TNW (1) and Min Net Income (2) -> Blackbook
+shows Min Net Income first, values 8,369 / 62,297 unchanged; swap back ->
+original. ECLIPSE and WESTLAKE unchanged. ATHENS Add New Month still
+blank covenants.
 Build, tests, do not commit.
-REPORT: root cause (file:line), ADDED/REMOVED, BEHAVIOUR CHANGE incl.
-NULL, NOT TOUCHED.
+REPORT: root cause (file:line), ADDED/REMOVED (file:line), BEHAVIOUR
+CHANGE incl. NULL, NOT TOUCHED.
 

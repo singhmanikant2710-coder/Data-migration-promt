@@ -1,56 +1,32 @@
-Hi Ashok,
+STRICT-SCOPE FIX — Customer page, covenant "Reported" column.
 
-1) Default and non-numeric values:
-Agreed, DEFAULT ('0') is char, so that part is fine. Two remaining points:
-- '0' doesn't match the 5-char convention (existing rows use '00000'), so
-  we'd have two encodings for "no ID". Suggest DEFAULT NULL instead. NULL is
-  also what our sample-load writes when there's no match, so it keeps the
-  data consistent.
-- On non-numeric values: the app itself only ever writes digits (the UI
-  enforces digits-only, max 5), so it can't create a non-numeric value. The
-  risk is a value entered directly in the DB. In that case:
-  (a) the trigger's "<> 0" comparison forces an int conversion and would
-      error on that row, and
-  (b) our API reads these columns with Convert.ToInt32, which would also
-      fail on a non-numeric value.
-  So yes, agreed: we'll change these properties to string in the
-  application so it no longer depends on the value being numeric. Please
-  also change the trigger comparison to <> '0' (string).
+Same symptom as the Order column you just fixed: the Reported value
+(tblMainCovenants / tblCustomer strCovenant{X}Reported, e.g. "Monthly",
+"Quarterly") shows when the dropdown is opened, but the closed control
+looks blank/clipped. All customers.
 
-2) Unique key:
-A composite unique on (name, email, role) wouldn't catch the problem Geoff
-found. The same Employee ID with two different names or emails would still
-be three unique combinations, so it would be allowed. Our resolver needs
-the ID itself to be unique.
+STEP 1 — READ-ONLY: quote the Reported select (CustomerEditParts.tsx
+file:line), its className, the column/td widths, and the CSS cascade
+from the built stylesheet (which class wins for width and padding), and
+compute the content box like you did for Order. Also confirm the value
+is present in the DOM (data path fine) — if the data path is the cause,
+quote that instead.
 
-Suggestion:
-- Keep Recipient_email as the primary key (as today).
-- Add a unique index on Recipient_role alone. If NULLs are allowed, make it
-  filtered so multiple NULLs are permitted:
-  CREATE UNIQUE INDEX UX_DistributionParties_RecipientRole
-  ON dbo.[03_LIBRARY_10_Distribution Parties] (Recipient_role)
-  WHERE Recipient_role IS NOT NULL;
-- Note: if the default stays '0', every row without an ID would get '0' and
-  violate this index. That's another reason to default to NULL.
+STEP 2 — FIX: smallest change so the stored Reported value is fully
+visible in the closed control (e.g. remove the offending padding class
+or give the column enough width). Do not truncate the text.
 
-Please apply this in Prod before Friday's data load, so any duplicate ID in
-the 1,495 rows is caught at load time.
+RULES:
+- Only the Reported column display on the Customer page.
+- Do NOT touch: the dropdown options, onChange/save, Order column,
+  other columns' widths, sorting, backend, APIs, data, other pages.
+- If the fix needs more than that, STOP and report.
 
-Thanks,
-Manikant
-
-Thanks, Geoff. We'll keep email as the primary key and have Ashok add a
-unique index on Recipient_role (Employee ID) as well, so a duplicate or
-errant ID gets rejected at entry. I've asked him to apply it before
-Friday's migration, so any duplicate in the 1,495 records is caught at
-load time.
-
-Thanks,
-Manikant
+TEST: ATHENS PAPER, WESTLAKE SERVICES LLC, MIDDLE GEORGIA MANAGEMENT
+SERVICES INC — Reported shows "Monthly"/"Quarterly" as stored; Order
+column still shows its number; save works.
+Build, tsc, do not commit.
+REPORT: root cause (file:line + CSS evidence), ADDED/REMOVED
+(file:line), BEHAVIOUR CHANGE incl. NULL/blank value, NOT TOUCHED.
 
 
-Add server-side validation in DistributionPartiesController Create and Update:
-Role must be non-empty, digits only, max 5 characters. Return 400 with a
-clear message otherwise. Report ADDED/REMOVED (file:line), behaviour for a
-valid ID (must be unchanged), the blank/NULL Role case, and the build result.
-Do not commit.

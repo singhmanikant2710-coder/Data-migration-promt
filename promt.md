@@ -1,28 +1,34 @@
-SELECT strCustomerName, intFiscalYearMonthStart
+STRICT-SCOPE FIX — Customer view page, covenant "Order" column.
+
+Issue (John): the covenant Order value is visible in the dropdown (edit)
+but the Order column in the covenant grid/list on the Customer view page
+is blank. Order values are 0..9; 0 is a valid value and must show "0".
+
+STEP 1 — READ-ONLY: trace Order from API response -> model -> grid
+column -> render. Quote file:line where it is lost (wrong property name,
+`value || ""`, falsy 0, missing column binding, hidden column, etc.).
+Confirm in the API response which field carries it.
+
+STEP 2 — FIX: only make the Order value display in that column, exactly
+as stored (0 shows "0", NULL shows blank).
+
+RULES (mandatory):
+- Change ONLY the display of Order on the Customer view page.
+- Do NOT touch: the dropdown, save/update, sorting, covenant name ->
+  format behaviour, other columns, backend, APIs, data, caches, any
+  other page.
+- Smallest diff. If the fix needs anything outside this, STOP and report.
+
+TEST: 3 customers (ATHENS PAPER, WESTLAKE SERVICES LLC, MIDDLE GEORGIA
+MANAGEMENT SERVICES INC) — Order column equals tblCustomer covenant order
+values, incl. 0; dropdown and save work as before.
+Build, tests, do not commit.
+REPORT: root cause (file:line), ADDED/REMOVED (file:line), BEHAVIOUR
+CHANGE incl. 0 and NULL, NOT TOUCHED.
+
+SELECT strCustomerName,
+  strCovenantAName, strCovenantAOrder, strCovenantBName, strCovenantBOrder,
+  strCovenantCName, strCovenantCOrder, strCovenantDName, strCovenantDOrder
 FROM tblCustomer
-WHERE strCustomerName LIKE 'FREZ%';
-
-REGRESSION (critical): FREZ-N-STOR INC (tblCustomer.strIndustry = Other)
-renders the GENERIC template instead of the Other (frm009) template.
-New UI shows Month/TTM = PBT, Interest Expense, EBIT, Interest Coverage +
-Cash & Charge-offs (Net C/O, 60+ DPD, Reserve Coverage). Legacy frm009:
-- Month/TTM: PBT, Interest Expense, Depreciation, Amortization, EBITDA,
-  Distributions, Cash Avail for FC; TTM: same rows TTM
-- Box 2: CPLTD (prior period), Interest Expense TTM, Fixed Charges TTM,
-  FCC (x)
-- Box 3: Equity / Liabilities / Availability (already correct)
-
-1. READ-ONLY: trace industry "Other" through normalizeIndustryKey,
-   resolveIndustryMapping (edit + view), backend NormalizeIndustry and
-   profiles. Quote the line where it falls to generic.
-2. FIX: "Other" -> the Other mapping (frm009) exactly as before the
-   resolver refactor. Then verify ALL 13 industry keys resolve to their
-   own mapping (not generic) on edit AND view pages: list key -> mapping.
-3. Do not change any mapping's content.
-
-GOLDEN: FREZ-N-STOR matches legacy frm009 layout above; one customer per
-industry (ATHENS, ECLIPSE, WESTLAKE, LEON'S AUTO, MIDDLE GEORGIA, TBS
-FACTORING, CSC LEASING, GREEN PLAINS, TIMEPAYMENT, CREST, UNIVERSAL MGMT,
-CIT NORTHBRIDGE) still renders its own template.
-Build, tests, do not commit. Report root cause (file:line), ADDED/
-REMOVED, key->mapping table, NOT TOUCHED.
+WHERE strCustomerName IN ('ATHENS PAPER COMPANY INC','WESTLAKE SERVICES LLC',
+                          'MIDDLE GEORGIA MANAGEMENT SERVICES INC');

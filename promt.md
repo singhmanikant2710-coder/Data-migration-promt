@@ -1,12 +1,7 @@
-SELECT strMonthKey, strCovenantName, intCovenantOrder, strCovenantReported
+SELECT strCovenantName, strCovenantReported
 FROM tblMainCovenants
-WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey = '202604'
-ORDER BY intCovenantOrder;
+WHERE strCustomerName LIKE 'ATHENS PAPER%' AND strMonthKey = '202603';
 
-SELECT strCovenantReported, COUNT(*) AS rows_
-FROM tblMainCovenants
-GROUP BY strCovenantReported
-ORDER BY rows_ DESC;
-
-SELECT * FROM tblLookupComboBox
-WHERE strComboBoxName LIKE '%Reported%';
+SELECT strCovenantAName, strCovenantAReported, strCovenantBName, strCovenantBReported,
+       strCovenantCName, strCovenantCReported
+FROM tblCustomer WHERE strCustomerName LIKE 'ATHENS PAPER%';

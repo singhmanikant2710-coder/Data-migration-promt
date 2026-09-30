@@ -1,43 +1,33 @@
-Context: CASRR. Spec items 6-7: the Customer Info RELATIONSHIP MANAGER and
-PORTFOLIO MANAGER dropdowns must list their options from
-[03_LIBRARY_10_Distribution Parties] (Recipient_name), not from
-[01_DATA_01_Data Mart Trial]. Selecting a person must save that person's
-number (Recipient_role), name (Recipient_name) and email (Recipient_email)
-from Distribution Parties.
+Hi team,
 
-Current state: options come from GetDataMartRelationshipManagersAsync /
-GetDataMartPortfolioManagersAsync (Data Mart, padded via PadEmployeeIdSql),
-consumed by CustomerInfoSection.tsx:179-180. On save, the ID resolver
-(ResolveDistributionPartyByEmployeeIdAsync) already fetches the canonical
-name + email from Distribution Parties.
+While comparing BCAT with legacy we found several customers whose dev data does not match legacy Access. These are data issues, not application defects, and John's team will correct them in the data before cutover. Please do not test these customers or raise defects on them until the data is fixed.
 
-Requirements (generic fix, don't break other screens):
-1. RM and PM dropdown options come from Distribution Parties. Label format
-   stays "ID - NAME", e.g. "17436 - WAGNER, JOHN C". Only include rows with
-   a non-blank, non-all-zero Recipient_role and a non-blank Recipient_name.
-   Order by name. Search-as-you-type must keep working.
-2. Save path: keep the existing SplitNumberName + ID resolver flow, so
-   number/name/email all come from Distribution Parties. Don't create a
-   second, competing save path.
-3. Pre-selection for existing reviews: match the stored value to an option
-   by Employee ID (numeric compare, i.e. '08784' = '8784'), not by the full
-   label text. A review whose stored name is in the old Data Mart format
-   ("JOHN C WAGNER II") but whose ID exists in Distribution Parties must
-   pre-select the Distribution Parties option, with NO duplicate synthetic
-   entry. If the stored ID is not in Distribution Parties, keep the existing
-   ensureIncludesSelected behaviour (show it as-is).
-4. NULL / all-zero stored ID: the field shows empty or name-only, exactly as
-   in the last change.
-5. Do NOT change: the Reports page RM/PM filters, the sample-load NULL-on-miss
-   INSERT, PML/ECO/SCO dropdowns, or the Distribution Parties maintenance
-   screen. If the Data Mart lookup endpoints become unused, report it, but
-   don't delete them.
+1. Fiscal year labelled differently from legacy (fix in Access before cutover)
+- BANKERS HEALTHCARE GROUP LLC
+- KEYSTONE PRIVATE INCOME FUND
+- NATIONWIDE SPECIALTY FINANCE INC
+- VERMEER MOUNTAIN WEST INC
 
-Report:
-- ADDED and REMOVED lines (file:line)
-- On-screen change for Customer Info RM/PM: option list source, label,
-  pre-selection for (a) a matched ID, (b) an old Data Mart-format name with
-  a matched ID, (c) an ID not in Distribution Parties, (d) NULL / all-zero
-- What gets saved to DB in each case
-- Backend + frontend build results
-Do not commit.
+2. Dev data differs from Access (edited or older copy)
+- MARINER FINANCE LLC (PBT, YTD PBT, Interest Coverage, Net C/O basis, covenants)
+- SHABANA MOTORS LLC (custom field values, Avg Principal N/R TTM)
+
+3. Months missing in dev or leftover covenant rows
+- ALAN WIRE COMPANY (202508-202512 missing)
+- ADIR INTERNATIONAL LLC (202401-202404)
+- WORLD ACCEPTANCE CORPORATION (202508)
+- ALLSTATES WORLDCARGO INC (202609)
+- MDR CONSTRUCTION INC (202601)
+- THUNDER CARRIER SERVICES LLC (row with blank month)
+
+4. Recent months entered in Access after the dev load (values show $0 or blank in dev)
+- FIRST TOWER LOAN LLC, SAC FINANCE INC, GATEWAY COMMERCIAL FINANCE LLC, SUNSET MANAGEMENT INC, FIRST FINANCIAL CREDIT INC, BLOOMFIELD CAPITAL INCOME FUND V, LIBERTY BANKER LIFE INSURANCE, STANDARD PREMIUM FINANCE (202604-202606)
+
+5. Customers with no industry set
+About 44 customers have no industry in the customer record, so the screens show a generic template (e.g. ALLSTATES WORLDCARGO INC, TEMPO GLOBAL RESOURCES). Please skip these until the industry is filled in.
+
+Applies to all customers: where legacy shows a blank but BCAT shows $0 (for example Cash Collections, Net C/O, Reserve Coverage on some months), the dev copy stored the blank as 0. This is part of the same data fix, so please don't log it as a defect.
+
+If you see a mismatch on any other customer, please share the customer, month, screen, legacy value and BCAT value so we can check whether it is code or data.
+
+Thanks.

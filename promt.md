@@ -1,19 +1,12 @@
-Decision: Option 1, plus the CompCallCode guard on EVERY path.
+Yes, apply the same fix to the client-side CSV branch
+(admin/monthly-upload/page.tsx:314-321): run expandScientificIfNeeded
+only inside the isNumericColumn branch, exactly as in save/route.ts. Text
+columns keep the raw trimmed value. Numeric columns behave exactly as
+today. Check for any other place in the codebase that calls
+expandScientificIfNeeded unconditionally, and list it (fix it only if
+it's on an upload path).
 
-1. Recover via xlsxCellToText on all non-streaming paths (small Data Mart
-   xlsx, client-side branch, sample files). Already-done parts unchanged.
-2. Streaming path (large xlsx): keep streaming. Apply the CompCallCode
-   guard there too: row.values gives raw values, so a numeric value in
-   CompCallCode must reject the file with the same "format as Text (row N)"
-   message. Same guard on the non-streaming paths. Do NOT add other
-   columns to the reject list.
-3. Monthly upload page: add a one-line hint near the file input, e.g.
-   "For large files, CSV is recommended. In Excel, format code/ID columns
-   (e.g. CompCallCode) as Text before saving."
-4. CSV behaviour byte-identical on both uploads; numeric columns unchanged.
-
-Report ADDED/REMOVED (file:line); behaviour for CompCallCode as an Excel
-number on: small xlsx, large (streaming) xlsx, CSV; "01E0" as Text on
-both xlsx paths; and an empty CompCallCode cell (must be allowed → NULL,
-not rejected). Build results. Do not commit.
-
+Report ADDED/REMOVED (file:line), behaviour on the small-CSV path for:
+"01E0", "01E1", "1-30", empty cell (→ NULL), a numeric amount, and an
+amount in E-notation ("4.01343E+12" → "4013430000000"). Build result.
+Do not commit.

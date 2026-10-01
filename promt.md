@@ -1,50 +1,32 @@
-Context: CASRR. On the Reports page, the RM and PM filter dropdowns show the
-same person multiple times in different name formats, e.g. for "wagner":
-  JOHN C WAGNER II / WAGNER II, JOHN C / WAGNER, JOHN C
-(all Employee ID 17436), plus WAGNER, JACK C. (likely a different person).
-The options come from distinct Reviews.Relationship_mgr_name /
-Portfolio_mgr_name via getLookupOptions('relationship-managers' /
-'portfolio-managers').
+Decisions:
 
-Investigate first, then fix:
-1. Find how the selected RM/PM filter value is applied in every report query
-   (WHERE ... Relationship_mgr_name = @x, IN (...), LIKE, etc.) and list every
-   report/endpoint that uses it.
+1) Option A: two slices, options first.
+Condition: slice 1 must NOT change which reviews a report returns. While the
+predicates are still name-based, selecting an ID option must still produce
+the same results as before (e.g. send the stored name variants for that ID
+if the predicate supports a list, otherwise keep slice 1 uncommitted until
+slice 2 is ready). Never ship a dropdown whose selection filters on a name
+that doesn't exist in Reviews.
+For slice 2, give me before/after SQL count queries per report (Wagner 17436
+filter + no filter), so I can verify in SSMS myself.
 
-Fix (generic; must not break any report):
-2. Build the RM/PM filter options grouped by Employee ID
-   (TRY_CONVERT(int, Relationship_mgr_number / Portfolio_mgr_number)), one
-   option per ID. Label = the Distribution Parties canonical name for that ID
-   if it exists, else the most recent stored name. Do NOT merge different IDs,
-   and do NOT merge by name similarity (JACK C ≠ JOHN C).
-3. Reviews with NULL/all-zero ID but a stored name (≈640 RM / 750 PM legacy
-   rows) stay as separate name-only options, deduplicated by exact trimmed
-   name only.
-4. Apply the filter consistently in every report found in step 1:
-   - ID option → match all reviews with that numeric ID, regardless of the
-     stored name format.
-   - name-only option → match by exact name, as today.
-   Selecting "WAGNER, JOHN C" must return the reviews currently split across
-   all three name variants, in one run.
-5. The "Applied Report Filters" text in PDFs must show the canonical label,
-   not an internal ID.
-6. Do not change Customer Info dropdowns, sample-load, or any report's
-   layout/columns.
+2) Option B: make CRO Review Production Summary honour the RM/PM filter,
+same predicate as the other 15 reports. List this explicitly in the report
+as a behaviour change (row counts drop when an RM/PM filter is set). The
+PDF must no longer claim a filter that isn't applied.
 
-Report:
-- ADDED / REMOVED lines (file:line)
-- Every report affected, with before/after row counts for the Wagner (17436)
-  filter
-- On-screen change in the RM/PM filter dropdowns
-- NULL / all-zero ID case, and "no filter selected" (must be unchanged)
-- Backend + frontend build results
-Do not commit.
+3) Option C: prefix with the ID, e.g. "17436 - JOHN C WAGNER II". For the
+name part, use the most frequent stored variant for that ID, with
+max(Review_id) as the deterministic tiebreak. IDs that ARE in Distribution
+Parties use the canonical label (also "ID - NAME"), so all ID options share
+one format. Name-only legacy options have no prefix.
+
+Report ADDED/REMOVED (file:line) per slice, the on-screen change, the
+NULL / all-zero / no-filter cases, and the build results. Do not commit.
 
 
-Hi Geoff, FYI: 640 historical reviews have an RM name with no Employee ID,
-and 750 have a PM name with no Employee ID. The app handles them (it shows
-the name, and a reviewer can re-select from the Distribution Parties list),
-but they can't be matched by ID. If your Friday historical reload can
-populate the IDs (or NULL them out for associates no longer with the bank),
-that will also clean up the duplicate RM/PM names showing in the Reports
-filters.
+FYI Geoff: while fixing the duplicate RM/PM names in the Reports filters, we
+found the CRO Review Production Summary report was ignoring the RM/PM filter
+(it showed all rows but printed the filter as applied). We're fixing it to
+filter like the other reports, so its row counts will now correctly drop
+when an RM/PM filter is selected.

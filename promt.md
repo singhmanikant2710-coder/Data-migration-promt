@@ -39,3 +39,6 @@ Also create:
 
 Report the files created (paths + row counts) and confirm no app source
 file was changed.
+
+
+SELECT * INTO dbo.[DP_backup_test] FROM dbo.[03_LIBRARY_10_Distribution Parties];

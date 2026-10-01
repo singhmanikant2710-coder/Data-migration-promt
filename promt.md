@@ -1,7 +1,8 @@
-No issue, Geoff. Please don’t say sorry—I’m enjoying my work because of your management and support. That’s why I’m giving 100% effort to finish everything as promised.
+Haan, “you’re very senior and respectful to me” thoda unnatural lag raha hai. Better and more professional:
+
+> No issue, Geoff. Please don’t say sorry. I have a lot of respect for you, and I genuinely enjoy working with you because of your support, guidance, and the way you manage the team. That’s why I’m giving 100% effort to make sure everything is completed as promised.
 
 I’ll try to complete the regression tomorrow and push the changes. If I’m unable to complete it tomorrow, I’ll definitely push the changes to QA on Monday before you log in.
-
 Decision: RECOVER, with targeted guards. Build part 2 and the guard together.
 
 1. Generic rule for text columns in XLSX (Data Mart + Sample files): use

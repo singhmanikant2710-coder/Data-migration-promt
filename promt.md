@@ -1,17 +1,12 @@
-Bug in the Distribution Parties upload error table: row numbers inside the
-messages don't match the ROW column. Uploading 01-errors.csv shows:
-- Row 5: "Duplicate email - already used on row 3" (should be row 4)
-- Row 11: "Duplicate Employee ID - the same ID is on row 9" (should be
-  row 10)
-The ROW column is the file line number (page adds +1 for the header), but
-the row referenced inside the message is the 0-header data-row number.
+SELECT COUNT(*) AS Total FROM dbo.[03_LIBRARY_10_Distribution Parties];  -- 930
 
-Fix generically: use ONE numbering everywhere, the file line number
-(header = line 1, first data row = line 2). Do the offset in one place
-(the backend, so messages and the row field agree), and remove the +1 in
-the page so it isn't applied twice. The file-level error (row 0, e.g.
-"no data rows") must still display as "-".
+SELECT Recipient_role, Recipient_name, Recipient_email
+FROM dbo.[03_LIBRARY_10_Distribution Parties]
+WHERE Recipient_email IN ('test.alpha@example-test.com',
+                          'DAKERS@firsthorizon.com',
+                          'JADAMS@firsttennessee.com');
+-- TESTUSER (99901) hona chahiye, AKERS nahi, aur JADAMS ki ID '00910'
 
-Report ADDED/REMOVED (file:line), the corrected table for 01-errors.csv
-(every row number and message), and confirm the empty-file and
-missing-header cases are unchanged. Build results. Do not commit.
+SELECT TOP 1 * FROM dbo.[05_AUDIT_01_Distribution Parties Uploads]
+ORDER BY Uploaded_at_utc DESC;
+-- tumhara naam, file name, aur Added 1 / Removed 1 / Changed 0

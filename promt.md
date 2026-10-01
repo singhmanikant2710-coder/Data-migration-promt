@@ -1,12 +1,20 @@
-Hi Geoff,
 
-They can be different. Simple headers are best: "Employee ID", "Name",
-"Email". We'll map them to the table columns internally. Column order won't
-matter and headers will be case-insensitive. We'll also provide a template
-download on the upload page.
+Hi Geoff / Ashok,
+
+For the Prod migration, a quick sequencing check:
+1. Ashok's schema changes (Recipient_role / Relationship_mgr_number /
+   Portfolio_mgr_number as nvarchar(10), the zero-padding trigger, and the
+   unique index on Recipient_role) must be in Prod BEFORE the data load.
+2. Our CASRR code release depends on that schema, so it should go to Prod
+   in the same window. When is the deployment planned, so we can align?
+3. After the load we'll do a quick check: Distribution Parties row count
+   and no duplicate IDs, plus a couple of reviews for RM/PM and the email
+   pre-fill.
 
 Thanks,
 Manikant
+
+
 
 Context: CASRR. Build the Distribution Parties upload, per the client:
 - Admin uploads the full bank employee file (Name, Email, Employee ID,

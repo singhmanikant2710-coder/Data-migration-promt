@@ -1,24 +1,36 @@
-Slice A verified (18 files, inert). Go ahead with Slice B.
+B1 verified. Go ahead with B2: the frontend wiring.
 
 Requirements:
-1. New grouped-options endpoint for RM and PM returning { value, label }:
-   - value = Employee ID as stored (padded string), label = "ID - NAME".
-   - NAME = Distribution Parties canonical name if the ID exists there,
-     else the most frequent stored variant (max Review_id tiebreak).
-   - One option per numeric ID (TRY_CONVERT(int, ...)). Never merge
-     different IDs, never merge by name similarity.
-   - Legacy name-only rows (NULL / all-zero ID): separate options,
-     value = exact trimmed name, label = name, sent as the existing name
-     filter (not as an ID).
-2. reports/page.tsx: an ID option sends RelationshipManagerId /
-   PortfolioManagerId and leaves the name filter EMPTY; a name-only option
-   sends the name and leaves the ID empty. Never send both for one selection.
-3. "Applied Report Filters" in every PDF shows the selected option's label,
-   never a raw ID.
-4. No filter selected: request identical to today.
-5. Don't change Customer Info dropdowns, sample-load, or any report layout.
+1. reports/page.tsx: RM and PM filter SearchableSelects load options from
+   GET /api/v1/lookups/report-managers/relationship and .../portfolio
+   instead of getLookupOptions("relationship-managers"/"portfolio-managers").
+   Show the label, store the selected option (value + isEmployeeId).
+2. In ALL 13 per-report request builders and serializePayload:
+   - isEmployeeId = true  → send RelationshipManagerId / PortfolioManagerId
+     = value, and leave the name filter (RelationshipManager / PortfolioManager)
+     EMPTY.
+   - isEmployeeId = false → send the name filter = value, and leave the ID
+     EMPTY.
+   - Never send both for one selection. Use ONE shared helper for this
+     mapping so all 13 builders behave identically; don't hand-edit 13
+     different variants.
+3. All ~9 filtersEcho objects and buildFilterParagraph: the "Applied Report
+   Filters" text in every PDF shows the selected option's LABEL
+   (e.g. "17436 - WAGNER, JOHN C"), never a raw ID alone.
+4. No filter selected: the request must be byte-identical to today.
+5. Saved/restored filter state (if the page persists or restores filters):
+   an old saved plain name must still work, i.e. treat it as a name-only
+   selection.
+6. Don't change Customer Info dropdowns, sample-load, any backend code, or
+   any report layout/columns.
 
-Report ADDED/REMOVED (file:line), on-screen change in the RM/PM filter
-dropdowns (Wagner example), what each option type sends in the request,
-the NULL / all-zero / no-filter cases, and the build results. Do not
-commit.
+Report:
+- ADDED / REMOVED lines (file:line)
+- A table of all 13 request builders + serializePayload confirming each one
+  uses the shared helper
+- What the request body contains for: (a) ID option "17436 - WAGNER, JOHN C",
+  (b) name-only option "JOHN C WAGNER II", (c) no RM/PM selected,
+  (d) RM = ID option and PM = name-only option together
+- The PDF "Applied Report Filters" text for (a)-(d)
+- Frontend build result
+Do not commit.

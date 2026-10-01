@@ -1,33 +1,12 @@
 Hi Geoff,
 
-That approach works well, and it's simpler. To confirm our understanding:
-
-1. An admin uploads the full employee file (Name, Email, Employee ID,
-   ~15k rows) monthly/quarterly, as CSV or XLSX.
-2. Each upload fully replaces the Distribution Parties table, so departed
-   associates drop off automatically. Existing reviews keep their stored
-   RM/PM; new sample loads for departed RM/PMs load as NULL for reassignment.
-3. Maintenance-screen additions are a bridge between uploads and will be
-   replaced by the next file (new associates will be in it by then).
-   Please confirm that's the intent.
-
-Safeguards we'll build in: the whole file is validated first (blank or
-duplicate emails, missing or duplicate Employee IDs, IDs over 5 digits),
-you'll see a preview (added / removed / changed) before confirming, and
-the replace runs as one transaction, so a failed upload leaves the
-current table untouched.
-
-One question: what will the file's column headers be? (e.g. "Email",
-"Name", "Employee ID") We'll match the template to your file.
-
-On xlsx: we'll add xlsx support for the Data Mart Trial, Sample files and
-the new Distribution Parties upload. The CompCallCode fix (keeping values
-as text) is already in the Data Mart upload; we'll also verify it carries
-through to the Accounts table as text at sample load.
+They can be different. Simple headers are best: "Employee ID", "Name",
+"Email". We'll map them to the table columns internally. Column order won't
+matter and headers will be case-insensitive. We'll also provide a template
+download on the upload page.
 
 Thanks,
 Manikant
-
 
 Context: CASRR. Build the Distribution Parties upload, per the client:
 - Admin uploads the full bank employee file (Name, Email, Employee ID,

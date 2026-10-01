@@ -1,18 +1,6 @@
+Okay, tomorrow I'll complete all the enhancements related to CASSR, and then we'll do one round of regression testing to avoid any critical issues.
 
-Hi Geoff / Ashok,
-
-For the Prod migration, a quick sequencing check:
-1. Ashok's schema changes (Recipient_role / Relationship_mgr_number /
-   Portfolio_mgr_number as nvarchar(10), the zero-padding trigger, and the
-   unique index on Recipient_role) must be in Prod BEFORE the data load.
-2. Our CASRR code release depends on that schema, so it should go to Prod
-   in the same window. When is the deployment planned, so we can align?
-3. After the load we'll do a quick check: Distribution Parties row count
-   and no duplicate IDs, plus a couple of reviews for RM/PM and the email
-   pre-fill.
-
-Thanks,
-Manikant
+Tomorrow is a holiday in India, but I'll still be working unofficially on CASSR to meet the deadline.
 
 
 

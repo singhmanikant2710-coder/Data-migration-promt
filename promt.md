@@ -1,36 +1,26 @@
-B1 verified. Go ahead with B2: the frontend wiring.
+Test result: selecting the name-only option "JOHN C WAGNER II" returned 19
+reviews, but it should return only the reviews with a NULL / all-zero ID
+(max 4: 19035, 19358, 19587, 19841). The name predicate also matches
+reviews that HAVE an ID (17436), so those reviews appear under both the ID
+option and the name-only option.
 
-Requirements:
-1. reports/page.tsx: RM and PM filter SearchableSelects load options from
-   GET /api/v1/lookups/report-managers/relationship and .../portfolio
-   instead of getLookupOptions("relationship-managers"/"portfolio-managers").
-   Show the label, store the selected option (value + isEmployeeId).
-2. In ALL 13 per-report request builders and serializePayload:
-   - isEmployeeId = true  → send RelationshipManagerId / PortfolioManagerId
-     = value, and leave the name filter (RelationshipManager / PortfolioManager)
-     EMPTY.
-   - isEmployeeId = false → send the name filter = value, and leave the ID
-     EMPTY.
-   - Never send both for one selection. Use ONE shared helper for this
-     mapping so all 13 builders behave identically; don't hand-edit 13
-     different variants.
-3. All ~9 filtersEcho objects and buildFilterParagraph: the "Applied Report
-   Filters" text in every PDF shows the selected option's LABEL
-   (e.g. "17436 - WAGNER, JOHN C"), never a raw ID alone.
-4. No filter selected: the request must be byte-identical to today.
-5. Saved/restored filter state (if the page persists or restores filters):
-   an old saved plain name must still work, i.e. treat it as a name-only
-   selection.
-6. Don't change Customer Info dropdowns, sample-load, any backend code, or
-   any report layout/columns.
+Fix, generic across all 17 reports:
+1. Add flags RelationshipManagerNameOnly / PortfolioManagerNameOnly (bool?)
+   to ReportHierarchyFilters and the CRM PD Grade Migration request.
+2. Frontend (managerRequestFields): when a name-only option
+   (isEmployeeId = false, chosen from the grouped list) is selected, send
+   the name AND NameOnly = true. Restored legacy plain-name state with no
+   option match: send the name WITHOUT the flag (behaviour as today).
+3. In every repository, next to the existing name predicate, add:
+   AND (@RelMgrNameOnly IS NULL OR @RelMgrNameOnly = 0
+        OR TRY_CONVERT(int, r.[Relationship_mgr_number]) IS NULL
+        OR TRY_CONVERT(int, r.[Relationship_mgr_number]) = 0)
+   (same for PM), plus the matching bindings. Mirror the existing
+   @RelMgr / @RelMgrId counts exactly per file. Additive only, CRLF
+   preserved. Verify with git diff --stat from the repo root.
+4. No flag sent → every report returns identical rows to today.
 
-Report:
-- ADDED / REMOVED lines (file:line)
-- A table of all 13 request builders + serializePayload confirming each one
-  uses the shared helper
-- What the request body contains for: (a) ID option "17436 - WAGNER, JOHN C",
-  (b) name-only option "JOHN C WAGNER II", (c) no RM/PM selected,
-  (d) RM = ID option and PM = name-only option together
-- The PDF "Applied Report Filters" text for (a)-(d)
-- Frontend build result
-Do not commit.
+Report ADDED/REMOVED (file:line), per-file predicate/binding count parity,
+and the expected result for: ID option (23), name-only option (only the
+NULL-ID reviews), no filter (unchanged), restored plain name (unchanged).
+Backend + frontend build results. Do not commit.

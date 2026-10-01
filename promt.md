@@ -1,29 +1,19 @@
-Haan, “you’re very senior and respectful to me” thoda unnatural lag raha hai. Better and more professional:
+Decision: Option 1, plus the CompCallCode guard on EVERY path.
 
-> No issue, Geoff. Please don’t say sorry. I have a lot of respect for you, and I genuinely enjoy working with you because of your support, guidance, and the way you manage the team. That’s why I’m giving 100% effort to make sure everything is completed as promised.
+1. Recover via xlsxCellToText on all non-streaming paths (small Data Mart
+   xlsx, client-side branch, sample files). Already-done parts unchanged.
+2. Streaming path (large xlsx): keep streaming. Apply the CompCallCode
+   guard there too: row.values gives raw values, so a numeric value in
+   CompCallCode must reject the file with the same "format as Text (row N)"
+   message. Same guard on the non-streaming paths. Do NOT add other
+   columns to the reject list.
+3. Monthly upload page: add a one-line hint near the file input, e.g.
+   "For large files, CSV is recommended. In Excel, format code/ID columns
+   (e.g. CompCallCode) as Text before saving."
+4. CSV behaviour byte-identical on both uploads; numeric columns unchanged.
 
-I’ll try to complete the regression tomorrow and push the changes. If I’m unable to complete it tomorrow, I’ll definitely push the changes to QA on Monday before you log in.
-Decision: RECOVER, with targeted guards. Build part 2 and the guard together.
+Report ADDED/REMOVED (file:line); behaviour for CompCallCode as an Excel
+number on: small xlsx, large (streaming) xlsx, CSV; "01E0" as Text on
+both xlsx paths; and an empty CompCallCode cell (must be allowed → NULL,
+not rejected). Build results. Do not commit.
 
-1. Generic rule for text columns in XLSX (Data Mart + Sample files): use
-   the cell's formatted display text (ExcelJS cell.text) when the raw value
-   is numeric, via ONE shared helper used by both parsers. Large integers
-   must never come out in scientific notation (e.g. 4013430000000 stays
-   "4013430000000", not "4.01343E+12").
-2. Targeted reject-with-hint only for closed-domain/code columns where a
-   numeric cell means data was lost:
-   - DelinquentID: keep the existing guard unchanged.
-   - CompCallCode: if an XLSX cell is numeric (not text), reject the file
-     with "CompCallCode must be formatted as Text in Excel (row N)".
-   Keep these columns in one small list next to the helper.
-3. Sample file xlsx (part 2): refactor onUploadFile so the existing
-   splitCsvLine validation loop is shared unchanged between CSV and XLSX.
-   customer_number goes through the recover helper.
-4. CSV behaviour must be byte-identical to today on both uploads. Numeric
-   columns parse exactly as today.
-
-Report ADDED/REMOVED (file:line), and a CSV vs XLSX behaviour table for:
-"01E0" as text, CompCallCode as an Excel number, "0012" (text and as a
-"00000"-formatted number), "1-30", empty cell, numeric amount, a 13-digit
-account number, and customer_number in a sample file. Empty cell must
-stay NULL, never "0". Build results. Do not commit.

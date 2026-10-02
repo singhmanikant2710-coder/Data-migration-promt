@@ -1,16 +1,13 @@
-Checklist Questionnaire PDF: remove the customer detail fields section
-(CUSTOMER heading with SAMPLE NAME, CUSTOMER NAME, CUSTOMER #, UNIT, MARKET,
-RM NAME, PM NAME, PORTFOLIO SEGMENT, PORTFOLIO CLASSIFICATION, PORTFOLIO
-INDUSTRY). Screenshot attached. Keep the header bar, the
-"CUSTOMER NAME (REVIEW ID)" line above each table, the
-CATEGORY / QUESTION / RESPONSE / COMMENTS table and the footer exactly as
-they are.
+Policy Exceptions PDF: change the report header title from
+"CRM Policy Exceptions" to "Credit Policy Exceptions" (screenshot attached).
+Apply it everywhere this report shows its title (header bar, footer
+"Report Name • Page X of Y", Applied Report Filters text if it repeats
+the name).
 
-Constraints: change only this report. Don't change the backend query unless
-those fields are used ONLY by this section (report it either way). Don't
-affect any other report.
+Constraints: change only this report's title. Don't rename the dropdown
+selection, routes, API or file names in this change (the PDF file name is
+handled separately). Don't affect other reports.
 
-Report ADDED/REMOVED (file:line), the new page layout top to bottom,
-multi-customer output (each customer's line + table still separated
-correctly), and the case with no checklist rows. Build result. Do not
-commit.
+Report ADDED/REMOVED (file:line), every place the title appears
+before/after, and the no-data case ("No records found..." page still shows
+the new title). Build result. Do not commit.

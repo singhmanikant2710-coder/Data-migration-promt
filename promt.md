@@ -1,13 +1,9 @@
-Policy Exceptions PDF: change the report header title from
-"CRM Policy Exceptions" to "Credit Policy Exceptions" (screenshot attached).
-Apply it everywhere this report shows its title (header bar, footer
-"Report Name • Page X of Y", Applied Report Filters text if it repeats
-the name).
+CRO Review Production PDF: change the header date font size from 10 to 9
+(screenshot attached). Nothing else changes.
 
-Constraints: change only this report's title. Don't rename the dropdown
-selection, routes, API or file names in this change (the PDF file name is
-handled separately). Don't affect other reports.
+Constraints: change only this report. If the size comes from a shared
+style, override it for this report only; don't change the shared default.
 
-Report ADDED/REMOVED (file:line), every place the title appears
-before/after, and the no-data case ("No records found..." page still shows
-the new title). Build result. Do not commit.
+Report ADDED/REMOVED (file:line), confirm the date still fits on one line
+and stays right-aligned in white. Confirm no other report file changed.
+Build result. Do not commit.

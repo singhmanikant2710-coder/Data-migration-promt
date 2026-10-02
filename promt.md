@@ -19,3 +19,4 @@ Report ADDED/REMOVED (file:line), the on-screen change for each of the 3
 items, a component title that has no number prefix (unchanged), and NULL
 cases (blank comments/severity render as before). Confirm no other report
 file changed. Build result. Do not commit.
+

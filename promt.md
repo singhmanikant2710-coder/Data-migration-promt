@@ -1,12 +1,10 @@
-CRM Summary PDF: make the page header bar height match the
-"CRM Summary for Management" PDF (screenshot attached). Header text, date
-and colours stay as they are; only the height changes.
+Correction: I meant the COMPENSATE variant (your "Option C"), not reflow.
+In CrmSummaryPDF.tsx also change the header's marginBottom from 20
+(spacing.lg + 4) to 12, so the bar height matches Management and the
+total space above the content is unchanged (your 0/26 pagination diffs).
+Only that one line plus a short comment. Re-run the same page-count
+check (5 shapes + 26-step sweep) and confirm 0 diffs vs before this task.
+Delete any temp harness afterwards.
 
-Constraints: change only this report. If the height comes from a shared
-component, reuse the setting the Management report uses; don't change
-shared defaults. Don't change content, sections or page breaks.
-
-Report ADDED/REMOVED (file:line), the header before/after, and confirm
-page breaks are unchanged (no new blank pages, no content pushed to an
-extra page). Confirm no other report file changed. Build result. Do not
-commit.
+Report ADDED/REMOVED (file:line), the page-count table, and the build
+result. Do not commit.

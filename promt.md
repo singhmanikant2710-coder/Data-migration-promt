@@ -1,13 +1,16 @@
-CRM Summary for Management PDF: in the category-ratings table (RISK
-RECOGNITION / SCORECARD MANAGEMENT / UNDERWRITING / CREDIT SERVICING / LOAN
-ADMINISTRATION), show "---" instead of "Satisfactory" (or any false /
-not-unsatisfactory value). Keep "Unsatisfactory" as is. Screenshot
-attached.
+Checklist Questionnaire PDF: remove the customer detail fields section
+(CUSTOMER heading with SAMPLE NAME, CUSTOMER NAME, CUSTOMER #, UNIT, MARKET,
+RM NAME, PM NAME, PORTFOLIO SEGMENT, PORTFOLIO CLASSIFICATION, PORTFOLIO
+INDUSTRY). Screenshot attached. Keep the header bar, the
+"CUSTOMER NAME (REVIEW ID)" line above each table, the
+CATEGORY / QUESTION / RESPONSE / COMMENTS table and the footer exactly as
+they are.
 
-Constraints: display-only change in this report. Don't change the
-underlying data, the CRM Summary report (it uses checkboxes), or any other
-report.
+Constraints: change only this report. Don't change the backend query unless
+those fields are used ONLY by this section (report it either way). Don't
+affect any other report.
 
-Report ADDED/REMOVED (file:line), and the rendered value for: Unsatisfactory,
-Satisfactory, false, NULL/blank (must show "---", never blank or "null").
-Build result. Do not commit.
+Report ADDED/REMOVED (file:line), the new page layout top to bottom,
+multi-customer output (each customer's line + table still separated
+correctly), and the case with no checklist rows. Build result. Do not
+commit.

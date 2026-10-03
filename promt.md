@@ -1,16 +1,16 @@
-FIX DIRECTLY — no investigation report, no options. Do not commit.
+FIX DIRECTLY — no options, no investigation report. Do not commit.
 
-Cause: the blank page after the "Risk Rating Justification" heading appeared only after follow-up 2. The images in the real field are tiny (148x41 and 77x30 px), so image size is not the cause. The new wrapper that renderInlineWithImages (and the li/h1/h2/blockquote/span branches from follow-up 2) puts around text+image segments is a View that react-pdf cannot split across pages, so the whole field jumps to the next page.
+Real cause (confirmed by pattern): the Risk Rating Justification block jumps to the next page whenever its total content is taller than the space left on the page — even with only tiny images. Before the image fix the content just fitted. So the CONTAINER in ReviewPDF.tsx that holds the rich-text field is unbreakable, not HtmlRichText.
 
-Fix:
-1. renderInlineWithImages must NOT wrap its segments in a container View. Return a flat array (or React.Fragment) of siblings: each text run as the same <Text> the code produced before follow-up 2, each image as a bare <Image> (sized by computeImageLayout). The siblings are placed directly in the existing parent, so the parent's layout and page-splitting are exactly as before follow-up 2.
-2. Same for every branch follow-up 2 changed (p/div flushInline, h1, h2, blockquote, li, strong/b/em/i/u/a/span at block level): no new wrapping View; no wrap={false}, minPresenceAhead or fixed height on text or on the image. For li, keep the bullet row; place images after it as siblings.
-3. Keep the IMAGE_PAGE_SLACK / height cap from follow-up 3.
-4. Content without images must be byte-identical to before follow-up 2.
+1. In ReviewPDF.tsx, find every View/Text that wraps a rich-text field (Risk Rating Justification and all other long-text sections using HtmlCell/HtmlRichText/longTextContainer/styles.section). Report each one that has wrap={false}, a fixed height, or is otherwise non-splittable (file:line).
+2. Make those long-text containers breakable (remove wrap={false} / fixed height on the content container only). Keep the heading together with the start of its content by giving the heading minPresenceAhead (≈ 40pt) — do not keep the whole section together.
+3. Keep wrap={false} on small fixed blocks (header bars, label/value rows, table header/data rows) exactly as today.
+4. Apply the same check to InitialMemoPDF.tsx and FinalMemoPDF.tsx long-text sections, same rule.
+5. Do not change section `break` props, page setup, or other reports.
 
-Verify with real PDFs (your page-mapping harness), including test-data/rrj-20120.html if it exists:
-- text starts directly under the heading, no blank half page, no blank pages
-- both tables and both images render, images at 111x30.75pt and 57.75x22.5pt, in document order
-- your previous 15 checks still pass
+Verify with real PDFs (page-mapping harness):
+- test-data/rrj-20120.html in the Risk Rating Justification slot: text starts directly under the heading, flows to the next page, no blank half page, no blank pages, both tables + both images present.
+- Same field with images removed but 2 pages of text: flows, no jump.
+- Short fields: identical to today.
 
-Report only: ADDED / CHANGED / REMOVED (file:line), page placement for rrj-20120.html before vs after, tsc + npm run build + test:unit, git status. Do not commit or push.
+Report only: containers changed (file:line, before/after props), page placement before vs after for the cases above, tsc + npm run build + test:unit, git status. Do not commit or push.

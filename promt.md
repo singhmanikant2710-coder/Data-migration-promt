@@ -1,25 +1,23 @@
-Follow-up 2 for UAT #194 (same task, do not commit):
+Follow-up 3 for UAT #194 (same task, do not commit):
 
-The previous fix did not solve the real case. After restarting the dev server, the image is still missing from the CAS Linesheet PDF. The REAL saved HTML (from the live DOM) is:
+Regression after follow-up 2: in the CAS Linesheet PDF, the "Risk Rating Justification" heading stays at the top of page 2, the rest of that page is blank, and the WHOLE field content (paragraphs + Excel table + Word table + images) starts on page 3. Before follow-up 2, the text started directly under the heading and flowed across pages. The field contains multiple <p class="MsoNormal"> paragraphs, two tables and two data-URI images, wrapped by ReviewPDF in <div style="font-size:11px">.
 
-<p class="MsoNormal"><o:p>&nbsp;<img src="data:image/png;base64,..." style="max-width:100%;height:auto;display:block;" alt=""></o:p></p>
-
-Your fixtures used <div><o:p>...</o:p></div>; the real parent is <p>. An image pasted elsewhere (not inside <p>) renders fine, so sizing works — the loss is an <img> inside a <p> (and possibly other inline-rendered containers).
-
-Phase 1 (read-only): with file:line, trace this exact HTML through flattenTransparentNodes → the <p> branch → renderInlineNodesAst, and show where the <img> is dropped. Then list EVERY container whose children go through inline rendering (p, span, a, strong/b, em/i, u, li, td/th, h1/h2, blockquote, MsoNormal-style p, etc.) and whether an <img> inside each survives today. Explain whether partitionInlineAndImagesAst (previously reported as dead code) was meant for this.
+Phase 1 (read-only): with file:line, show the element tree now produced for this field (View/Text/Image nesting, any wrap={false}, minPresenceAhead, fixed heights) vs before follow-up 2, and identify what made the content unbreakable or forced it to the next page (e.g. renderInlineWithImages wrapping all segments in one View, wrap={false}, or one giant Text). Also check the ReviewPDF field container and heading for wrap/minPresenceAhead settings.
 
 Fix (generic, smallest change):
-- Any <img> appearing inside an inline-rendered container must render, in document order: split the children into inline-text runs and image blocks (reuse partitionInlineAndImagesAst if suitable, otherwise one small helper), keep the container's existing text styles for the text runs, and render images with the existing computeImageLayout sizing.
-- A run that is only whitespace/&nbsp; next to an image must not add an extra blank line.
-- HTML without images inside such containers must render byte-identically to today.
-- No editor, backend or DB change. No new URL schemes.
+- Long rich-text content must flow across pages exactly as before: text segments breakable, no wrapping View that is wrap={false}, no single block forced to the next page.
+- Only an individual Image (and a table row, as today) may be unbreakable.
+- The heading should stay with at least the first lines of its content (keep existing behaviour if that already exists; don't add new rules otherwise).
+- Fields WITHOUT images must render byte-identically to before follow-up 2 (and to before this task).
+- Keep the image-in-<p> fix working (image in document order, no extra blank lines).
 
-Verify against the EXACT real HTML above plus: <p>text <img> more text</p>; <p><img></p>; <li>item <img></li>; <td><img></td> (Excel/Word table cell); <p><span><img></span></p>; <p><strong>x</strong><img></p>; nested <o:p> inside <p> inside <div>. Use the real shipping functions.
+Verify on the real rendered component AND by rendering a PDF to check page placement: long field (2+ pages of text) with an image in the middle; long field with no image; short field with image near a page end; image taller than remaining page space (only the image should move, text before it stays).
 
 Report:
-1. Root cause (file:line) and why the previous fixture missed it
+1. Root cause (file:line)
 2. ADDED / CHANGED / REMOVED lines (file:line)
-3. Before vs after for each case above
-4. Build results (tsc + npm run build)
-5. git status
+3. Before vs after page placement for each case above
+4. Fields without images: confirm identical output
+5. Build results (tsc + npm run build + test:unit)
+6. git status (htmlLayout.ts is our new file, not an artifact)
 Do not commit or push.

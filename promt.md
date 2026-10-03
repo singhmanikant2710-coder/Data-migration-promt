@@ -1,9 +1,23 @@
-Yes — do the instrumentation, ONE round only, then fix directly in the same round. Do not commit.
+Context: CASRR (.NET 8 + Next.js/React/TypeScript + SQL Server). Production banking app: existing behaviour must not break.
 
-1. Temporarily add console.log in node_modules/@react-pdf/layout splitNodes/shouldBreak for the RRJ subtree (height, box.top, box.height, shouldSplit, canWrap, slicedLineBreak). Run once on test-data/rrj-20120.html in the real ReviewPDF. Revert node_modules immediately after (verify clean).
+TASK (follow-on to UAT #193, separate commit): On the Review Form SCREEN (not PDF), a table pasted from Word sticks out of the rich-text field box — it starts left of the box edge and can extend past the right edge — both while editing (RichTextEditor contentEditable) and in read mode after Save. Excel-pasted and editor-created tables look fine. Word sends inline styles like margin-left:-5.4pt, width:468pt, and MsoTableGrid classes. PDF output is already correct — do not touch PDF code.
 
-2. Fix in HtmlRichText.tsx (generic): never emit one giant Text for a long run. Split a run into separate sibling <Text> elements at paragraph boundaries (<br><br>, block-level boundaries, and every single <br> if needed), with identical styles, so react-pdf can place whole paragraphs on the current page even when it cannot split a single Text. Visual output (line spacing, blank lines) must look the same as today; exact element-tree identity for no-image fields is NOT required for this change, visual identity is.
+Work in 4 phases:
+PHASE 1 (read-only): file:line of the rich-text editor and the read-mode HTML display (every screen that shows saved rich text: Review Form sections, any preview), and their current CSS for tables/images.
+PHASE 2: smallest generic CSS-only fix, scoped to the rich-text containers only:
+- tables never overflow the field box: max-width:100%; negative left margins neutralised (margin-left:0) inside the container; wide content scrolls horizontally inside the field (overflow-x:auto on the container) instead of spilling out.
+- Do NOT rewrite or sanitise the saved HTML; do not change stored data or the PDF path.
+- Existing editor-created width:100% tables and Excel tables must look the same as today.
+PHASE 3: implement; match existing style approach (global CSS / module / Tailwind — whichever the editor uses).
+PHASE 4: build frontend.
 
-3. Acceptance on the real ReviewPDF with test-data/rrj-20120.html: RRJ text starts on page 2 directly under the heading, no half-empty page, both tables + both images present, no blank pages. Also check: same field without images; prose x2; a short field; Initial/Final Memo RRJ.
-
-Report only: geometry found (1-3 lines), change (file:line), page placement before/after for each case, builds, git status. Do not commit or push.
+Report:
+1. Root cause (file:line)
+2. ADDED lines (file:line)
+3. REMOVED / CHANGED lines (file:line)
+4. Screen before vs after: Word table (edit + read mode), Excel table, editor table, pasted image, very wide table
+5. Empty field / no table — unchanged
+6. Other screens using the same styles checked
+7. Build results
+8. git status (htmlLayout.ts and test-data/ are ours)
+Do not commit or push.

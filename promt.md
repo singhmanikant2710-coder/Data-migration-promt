@@ -1,12 +1,46 @@
-Context: CASRR (.NET 8 + Next.js/React/TypeScript + SQL Server). Production banking app: existing behaviour must not break.
+Context: CASRR (.NET 8 Clean Architecture backend + Next.js/React/TypeScript
+frontend + SQL Server). Production banking app: existing behaviour must not
+break. Change these two reports only, never shared PDF defaults.
 
-BUG (found while testing #212): Review 20120. DB has Review_approval_date, Review_distributed_date and Review_finalized_date all = 2026-10-05. On the Review Form (Review Status grid, approved/locked review), MGR APPROVAL shows 10/5/2026 (correct) but DISTRIBUTED and FINALIZED show 10/4/2026 and the calendar highlights the 4th. My machine is IST (UTC+05:30); the bank's users are in US Central (UTC-06:00/-05:00). This is a date-only value shifted by the timezone.
+TASK (UAT #215, Geoff) — CRM Findings and Observations PDF + CRM Findings for
+Management PDF.
 
-Phase 1 (read-only): trace with file:line how distributedDate/finalizedDate travel API → frontend → DateInputWithCalendar (value parsing, display formatting, picker selection, onChange output), and compare with how MGR APPROVAL is formatted (it's correct). Identify the exact conversion causing the shift (e.g. new Date("YYYY-MM-DD") parsed as UTC, toISOString().slice(0,10), DateTimeKind/"Z" from the API). List every other screen/field using the same component or helper and whether it has the same bug (CRO Start/Complete, Second Review Date, Prior Review Date, Samples, Load Samples, Reports date filters).
-Also confirm whether a shifted value can be SAVED back (e.g. user opens the calendar or locked-review save path) — i.e. is there data-corruption risk.
+Already done in earlier work — VERIFY only, change nothing unless broken:
+(1) Findings & Observations header height + date font match Findings for
+Mgmt; (2) no "01-"/"##-" prefix in component titles; (4) table header colour
+matches Findings for Mgmt (navy); (5) Findings for Mgmt has no hyphen before
+"(1)". Report file:line for each with PASS/FAIL.
 
-Fix (generic, smallest): treat these as date-only values end to end — parse "YYYY-MM-DD" (or the API date string) as a LOCAL calendar date, format without UTC conversion, emit "YYYY-MM-DD" from local Y/M/D. Fix it once in the shared component/helper so every caller is correct; do not special-case fields. Must show the same date for users in IST and in US Central. No backend change unless the API sends a timezone-shifted value (then report and ask).
+NEW work:
+(3) CRM Findings and Observations: add a "Commitment" column between
+    "Customer Name (Review ID)" and "Severity".
+(6) CRM Findings for Management: add a "Commitment" column between
+    "Customer Name (Review ID)" and "Comments".
+Value: the review's commitment exposure. In Phase 1 show which source the
+app already uses for review exposure (e.g. Review Queue "Exposure" =
+AccountsCommittedExposure / sum of 02_CORE_04_Accounts.Commitment, vs
+TBA_exposure) and STOP to ask me with A/B/C options if it's not obvious.
+Format like the Review Queue Exposure column ($ with thousands separators,
+no decimals); NULL → "--". Same value on every finding row of that review.
+Header text exactly "COMMITMENT" (same header style as neighbours).
+Comments column gets narrower — keep text wrapping, no overflow.
 
-Verify with real functions under TZ=Asia/Kolkata AND TZ=America/Chicago (and UTC): display, picker selection, round-trip save for 2026-10-05, month/year boundaries (2026-01-01, 2026-12-31), DST dates (2026-03-08, 2026-11-01), empty/NULL.
+PHASE 1 (read-only): file:line of both PDF components, their report
+repositories/SQL/DTOs, column widths (flexBasis %), and the exposure source.
+PHASE 2: smallest change: add the value to the existing report query/DTO
+and one column per report; reuse existing currency formatter. No schema
+change; other reports sharing the repository/DTO must be unaffected.
+PHASE 3: implement.
+PHASE 4: build backend + frontend; render both PDFs with real data.
 
-Report: root cause (file:line), ADDED / CHANGED / REMOVED (file:line), before vs after per timezone, other fields affected/fixed, data-corruption risk found (yes/no + which path), build results, git status. Do not commit or push.
+Report:
+1. What you found (file:line) + PASS/FAIL for items 1, 2, 4, 5
+2. ADDED lines (file:line)
+3. REMOVED / CHANGED lines (file:line)
+4. PDF before vs after (columns, widths, page count)
+5. Edge cases: commitment NULL/0, very large values, review with many
+   findings, long comments wrapping, landscape fit
+6. Other reports confirmed unaffected
+7. Build results
+8. git status (test-data/ and artifacts flagged)
+Do not commit or push.

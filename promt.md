@@ -1,45 +1,35 @@
 Context: CASRR (.NET 8 Clean Architecture backend + Next.js/React/TypeScript
 frontend + SQL Server). Production banking app: existing behaviour must not
-break. Change these two reports only, never shared PDF defaults.
+break. PDF conventions: @react-pdf, one .tsx per report; change this report
+only, never shared defaults (pageSetup.ts, HtmlRichText.tsx).
 
-TASK (UAT #215, Geoff) — CRM Findings and Observations PDF + CRM Findings for
-Management PDF.
+TASK (UAT #217, Geoff) — CRM PD Grade Migration PDF formatting only:
+1. "PD Grade Migration by Number of Accounts" (Matrix by Count): the BANK PD
+   column values (row labels 3, 4, 5 … 14) font size 10 → 9.
+2. "PD Grade Migration by Commitment ($MM)" (Matrix by Commitment): the
+   "CAS PD Totals" row font size 10 → 9 (whole totals row incl. Bank PD
+   Totals / # Changes / % Change cells).
+3. Matrix by Commitment row height must match the Matrix by Count row height
+   (same height for data rows; totals row consistent with the Count
+   matrix totals row).
+No data, calculation, colour, column width or header change.
 
-Already done in earlier work — VERIFY only, change nothing unless broken:
-(1) Findings & Observations header height + date font match Findings for
-Mgmt; (2) no "01-"/"##-" prefix in component titles; (4) table header colour
-matches Findings for Mgmt (navy); (5) Findings for Mgmt has no hyphen before
-"(1)". Report file:line for each with PASS/FAIL.
-
-NEW work:
-(3) CRM Findings and Observations: add a "Commitment" column between
-    "Customer Name (Review ID)" and "Severity".
-(6) CRM Findings for Management: add a "Commitment" column between
-    "Customer Name (Review ID)" and "Comments".
-Value: the review's commitment exposure. In Phase 1 show which source the
-app already uses for review exposure (e.g. Review Queue "Exposure" =
-AccountsCommittedExposure / sum of 02_CORE_04_Accounts.Commitment, vs
-TBA_exposure) and STOP to ask me with A/B/C options if it's not obvious.
-Format like the Review Queue Exposure column ($ with thousands separators,
-no decimals); NULL → "--". Same value on every finding row of that review.
-Header text exactly "COMMITMENT" (same header style as neighbours).
-Comments column gets narrower — keep text wrapping, no overflow.
-
-PHASE 1 (read-only): file:line of both PDF components, their report
-repositories/SQL/DTOs, column widths (flexBasis %), and the exposure source.
-PHASE 2: smallest change: add the value to the existing report query/DTO
-and one column per report; reuse existing currency formatter. No schema
-change; other reports sharing the repository/DTO must be unaffected.
+PHASE 1 (read-only): file:line of both matrices in the PD Grade Migration
+PDF component, current font sizes, row heights/padding of both matrices,
+and any styles shared between them or with other reports.
+PHASE 2: smallest change scoped to this report; if a style is shared by both
+matrices, split only what's needed.
 PHASE 3: implement.
-PHASE 4: build backend + frontend; render both PDFs with real data.
+PHASE 4: build frontend; render with real data and report page count before
+vs after (taller Commitment rows may push content to another page).
 
 Report:
-1. What you found (file:line) + PASS/FAIL for items 1, 2, 4, 5
+1. What you found (file:line)
 2. ADDED lines (file:line)
 3. REMOVED / CHANGED lines (file:line)
-4. PDF before vs after (columns, widths, page count)
-5. Edge cases: commitment NULL/0, very large values, review with many
-   findings, long comments wrapping, landscape fit
+4. PDF before vs after (fonts, row heights, page count)
+5. Edge cases: empty matrix / no data, many PD rows, long numbers
+   (e.g. 2,518.7), landscape page fit
 6. Other reports confirmed unaffected
 7. Build results
 8. git status (test-data/ and artifacts flagged)

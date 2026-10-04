@@ -1,2 +1,3 @@
-Follow-up (same task, do not commit):
-In SqlReviewRepository.cs GetQueueRowsAsync, do not insert Customer_number as the 4th SELECT column and do not renumber existing ordinals. Move r.[Customer_number] to the END of the SELECT (as you did in the six status queries), keep reading it via GetOrdinal("Customer_number"), and restore every other ordinal to its original value (3..16) exactly as in HEAD. Show the final SELECT and reader block, confirm `git diff` for that file only adds lines (no ordinal changes), CRLF preserved, and rebuild backend. Do not commit or push.
+SELECT Review_id, Customer_number, Customer_name
+FROM dbo.[02_CORE_02_Reviews]
+WHERE Review_id IN (21629, 21847, 21848, 21728, 21692, 21850, 21619);

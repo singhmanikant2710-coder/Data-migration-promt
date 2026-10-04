@@ -2,62 +2,65 @@ Context: CASRR (.NET 8 Clean Architecture backend + Next.js/React/TypeScript
 frontend + SQL Server). Production banking app: existing behaviour must not
 break.
 
-TASK (UAT #211, Geoff): Link the Review Form "Checklist" section help tip
-(ⓘ icon) to a new Help Tips library row. The row already exists in QA; it
-does NOT exist in Dev. Dev [Help Tips] table currently has Help_tp_id 1-12
-(form "02_SAMPLE LOAD_01_Main" / "04_REVIEW FORM_04", topics Customer Info,
-Transactions, Covenants, Policy Exceptions, Regulatory Flags, Collateral,
-Repayment, Scorecard, Risk Rating Justification, Key Risks, Unsatisfactory
-Ratings) — no Checklist row.
+TASK (UAT #212, Geoff): On the Review Form, the "Distributed" and
+"Finalized" date fields must be LOCKED (not editable) while the
+"Mgr Approval" date field is empty (NULL).
 
-New help tip (from Geoff):
-- FORM:  04_REVIEW FORM_04
-- TOPIC: Checklist Questions
-- HELP TIP (title in bold, then text):
-  **Checklist Questions**
-  Answer each question either Yes, No, or N/A. Follow included guidance (if
-  applicable) when answering the checklist question. "No" responses require
-  supporting comments. If you initially assign a "No" response and revise
-  the response to "Yes" or "N/A", remove any prior comments that were input.
+Expected:
+- Edit mode, Mgr Approval date empty → Distributed and Finalized date
+  inputs are disabled (same disabled styling the form already uses) with a
+  short hint/tooltip, e.g. "Enter Mgr Approval date first".
+- As soon as the user enters a Mgr Approval date (even before Save), both
+  fields unlock. If the user clears the Mgr Approval date again, they lock.
+- Backend must enforce the same rule: a save that sets Distributed or
+  Finalized date while Mgr Approval date is NULL is rejected with a clear
+  validation message (UI-only locking is not enough).
+- Existing data must never be cleared or changed automatically.
 
 Work in 4 phases:
 
 PHASE 1: READ-ONLY DISCOVERY (no edits)
-- Help Tips table: exact name, all columns + types, identity on Help_tp_id?,
-  and how the tip text is stored in existing rows (plain text vs HTML, how
-  bold/line breaks are written) — show one existing row's text format.
-- How existing sections fetch their tip (by form+topic string? by id?) with
-  file:line, e.g. TransactionsSection.tsx ~:884 / :375 (listLibrary()).
-- Checklist section component: does it have an ⓘ icon today? What does it
-  show/fetch now? file:line.
-- Maintenance → Help Tips screen: will the new row show and be editable
-  there?
-- If a decision is needed, STOP and ask with A/B/C options.
+- file:line for the three fields on the Review Form (which section/
+  component, DB columns e.g. Review_approval_date / Review_distributed_date /
+  Review_finalized_date), how they are edited and saved (UI → API →
+  service → repository/SQL).
+- Every OTHER path that sets Distributed/Finalized dates (Email / Initial
+  Memo / Final Memo actions, status changes, bulk updates, Review Progress,
+  admin tools, SQL). Report each with file:line.
+- How Review Status / tiles (Approved, Distributed, Finalized) are derived
+  from these dates, and confirm the rule doesn't change status logic.
+- Count in the DB / describe how to find existing reviews where Distributed
+  or Finalized is set but Mgr Approval is NULL (give me the SQL; don't run
+  against Prod).
+- STOP and ask me with A/B/C options + trade-offs on:
+  1. Existing rows with Distributed/Finalized already set but Mgr Approval
+     NULL: show those fields locked (values kept) vs editable so users can
+     fix them vs something else.
+  2. If Mgr Approval date is cleared while Distributed/Finalized have
+     values: block clearing it, or allow and keep values, or other.
+  3. Other paths that auto-set Distributed/Finalized (e.g. email/memo):
+     apply the same rule or leave unchanged.
 
 PHASE 2: PLAN
-- SQL: one idempotent script scripts/sql/insert-help-tip-checklist-questions.sql
-  — INSERT only IF NOT EXISTS (same form + topic); never update/delete
-  existing rows; no hard-coded Help_tp_id if identity; text formatted the
-  same way as existing rows (bold title + paragraph). Safe to run on Dev, QA
-  (already has it → no-op) and Prod.
-- Frontend: wire the Checklist ⓘ icon exactly the way other sections do
-  (same lookup by form + topic "Checklist Questions", same modal). Reuse
-  existing helpers, no duplicate logic.
-- No schema change. Do not run the script against any DB — I will run it.
+- Smallest generic change. One rule, defined once per layer (frontend
+  helper + backend validation), reused — no duplicated logic.
+- No schema change.
 
 PHASE 3: IMPLEMENT — touch only what this task needs.
 
-PHASE 4: VERIFY + REPORT — build frontend (and backend if touched).
+PHASE 4: VERIFY + REPORT — build backend and frontend.
 
 Report:
-1. What you found (file:line), table/columns, text format
-2. ADDED lines (file:line) incl. the full SQL script
+1. Root cause / what you found (file:line), plus other paths found
+2. ADDED lines (file:line)
 3. REMOVED / CHANGED lines (file:line)
-4. On-screen before vs after (Checklist ⓘ icon + modal)
-5. Edge cases: tip row missing (Dev before script) → what the icon shows;
-   script run twice; tip edited later in Maintenance → Help Tips shows new
-   text; read-only/locked review
-6. Other sections' help tips confirmed unaffected
+4. On-screen behaviour: before vs after (read mode, edit mode, entering /
+   clearing Mgr Approval)
+5. NULL / edge cases: all three NULL; approval set; approval cleared with
+   distributed/finalized set; existing inconsistent rows; cancelled
+   review; locked/finalized review; API call bypassing the UI
+6. Other screens/reports checked and unaffected (status tiles, Review
+   Progress buckets, reports filtering by these dates)
 7. Build results
 8. git status (test-data/ and artifacts flagged)
 Do not commit or push.

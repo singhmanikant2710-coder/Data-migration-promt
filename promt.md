@@ -1,5 +1,6 @@
-Follow-up (same task, do not commit):
-1. Backend rule must reject ONLY a CHANGE: reject when the posted Distributed or Finalized date is non-null AND differs from the stored value AND the effective Mgr Approval date (posted value, else stored) is NULL. Re-posting an unchanged existing value must pass, so (a) legacy rows with approval NULL + distributed/finalized set can still save other Review Info fields, and (b) clearing Mgr Approval while keeping unchanged Distributed/Finalized saves successfully (agreed option 2A). Clearing (null) is always allowed.
-2. Hoist this validation to the START of the reviewInfo save branch, before ANY write (assignments, reconsideration, appeal, timeline), so a rejected save writes nothing. Keep the same error message and 400 path.
-3. Confirm with file:line what the frontend actually posts for distributedDate/finalizedDate on a normal save (always, or only when changed).
-Report: CHANGED lines (file:line), before/after for: legacy row (approval NULL, distributed set) saving another field; clear approval with unchanged dist/final; change distributed with approval NULL (rejected, nothing written); approval + distributed in same save (allowed). Build results, git status. Do not commit or push.
+SELECT CONVERT(VARCHAR(MAX), CAST(CAST(Help_tip AS NVARCHAR(MAX)) AS VARBINARY(MAX)), 1) AS HexTip
+FROM dbo.[03_LIBRARY_06_Help Tips] WHERE Help_tip_topic = 'Checklist Questions';
+
+
+Fix for #211 script only (do not commit): in scripts/sql/insert-help-tip-checklist-questions.sql replace the help tip text with the exact QA value, as DECLARE @tip NVARCHAR(MAX) = CAST(<hex> AS NVARCHAR(MAX)); keep IF NOT EXISTS / identity handling unchanged. No other file. Hex:
+<paste 0x... here>

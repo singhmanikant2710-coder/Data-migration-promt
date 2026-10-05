@@ -1,7 +1,12 @@
-Hi Geoff, thanks for flagging. The XLSX upload works for smaller files, but
-there's a size safeguard for very large Excel files (yours is 61 MB),
-because large XLSX files are much heavier for the server to process than
-CSV. For the full monthly Data Mart file, please save it as CSV and upload
-that. It handles all ~86k rows. If uploading large XLSX files directly is
-important to you, let us know and we'll look at whether that limit can be
-safely raised.
+Hi Team,
+
+Quick update on the deployment sequence:
+
+1. The CI/CD pipeline is running now. Please wait until it completes successfully.
+2. Once it completes, please start executing the new DB scripts (shared earlier) in QA and Prod.
+3. John/Ashok – please confirm on this thread once all scripts have been executed in QA and Prod.
+4. After that confirmation, we can start testing on QA.
+5. John – after QA testing is complete, please merge release/1.0.0 into the production branch, following the same process you use for the QA branch merge.
+
+Thanks,
+Manikant

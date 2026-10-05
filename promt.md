@@ -1,19 +1,24 @@
 Hi Geoff,
 
-Thank you – really glad to hear everything looked good!
+Thank you so much – really appreciate it!
 
-On #229 (D-2/DAIRIO LLC, Customer # 84935024): yes, we found the root cause.
+On #193 / #194 (table columns, picture sizes and text alignment), here is exactly what is and isn't available, so you can share it with your team:
 
-- In the Data Mart, this customer has 32 accounts. 30 of them are under Market "Winston-Salem" and 2 (facility 3950129114, cost center 9728) are under Market "Greensboro & High Pt".
-- The Load Samples process was creating one review per distinct combination of Segment / Unit / Market / LOB for a customer. Because this customer had two different Markets, it created two reviews – all 32 accounts were attached to one of them and the second review was left empty.
-- Customer # 2899 loaded correctly because all of its accounts share the same Market. The comma in the name and the two customer numbers were not related to the issue.
+Available now
+- Tables pasted from Excel or Word keep their column widths in the PDFs (they are only scaled down if wider than the page), instead of stretching across the full page.
+- Pasted images keep their pasted size in the PDFs (very large images are scaled to fit the page).
+- On screen, pasted Word tables and images now stay within the field box.
 
-Fix (included in this release):
-- A customer now always creates exactly one review with all of its accounts. Where accounts have different Segment/Unit/Market/LOB values, the review takes them from the account with the largest commitment (Winston-Salem for this customer).
-- A safeguard was added so that if a load would ever create more than one review for the same customer, the load stops with a clear message instead of silently creating a duplicate.
+Not available in this release
+- Resizing table columns or images by dragging inside the Review Form editor. The best approach is to set the column widths / picture size in Excel or Word before copying and pasting – those sizes are now carried through to the PDF.
+- Tables created directly in the editor still use the full field width.
+- Text alignment formatting (left/centre/right) is not available in the editor, and alignment applied in Excel (e.g. right-aligned amounts) is not carried into the PDF.
 
-The two empty duplicate reviews already created in QA (Review IDs 21957 and 21942) have been flagged to the DB team via a report script, and will be removed only after review.
+These could be considered as a future enhancement if your team would find them valuable.
+
+On a personal note – this was my first UAT cycle handling CASRR directly, with more than 20 enhancements ranging from low and moderate to a few critical items. Being able to deliver all of them in a single cycle, in line with your expectations, means a lot to me. Your clear requirements, detailed screenshots and quick feedback made a big difference, so thank you for that.
 
 Thanks again for all your support!
 
+Best regards,
 Manikant

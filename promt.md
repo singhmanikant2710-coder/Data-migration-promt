@@ -1,13 +1,10 @@
-Hi Team,
+Hi Ashok,
 
-A quick update on my availability:
+Yes, all the scripts have been executed in Dev and verified there.
 
-- CASRR: All the new functionality for the current UAT cycle has been delivered and merged to QA. Business users will be testing over the next few days.
-- BCAT: Testing is currently in progress on the client side.
+Please review and execute them in QA and Prod, in the order listed in the earlier message. Note that find-duplicate-reviews-per-sample-customer.sql is report-only (the clean-up section is commented out), and truncate-all-tables-safe.sql should not be run in QA/Prod.
 
-Unless any concerns or new requests come up from either application, I currently have some bandwidth available. I'd be happy to pick up work on a new .NET application or support any ongoing work where an extra hand would help.
-
-Please feel free to assign me anything suitable. I'll continue to prioritise CASRR and BCAT if any issues are raised during testing.
+Please let me know once done, or if you have any questions.
 
 Thanks,
 Manikant

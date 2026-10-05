@@ -1,12 +1,24 @@
-Hi Team,
+Subject: CASRR – Release 1.0.0: All requested UAT enhancements delivered and merged to QA
 
-Quick update on the deployment sequence:
+Hi All,
 
-1. The CI/CD pipeline is running now. Please wait until it completes successfully.
-2. Once it completes, please start executing the new DB scripts (shared earlier) in QA and Prod.
-3. John/Ashok – please confirm on this thread once all scripts have been executed in QA and Prod.
-4. After that confirmation, we can start testing on QA.
-5. John – after QA testing is complete, please merge release/1.0.0 into the production branch, following the same process you use for the QA branch merge.
+I'm pleased to share that all the new functionality requested by Geoff as part of the current UAT cycle has been developed, tested in our local/Dev environments, and merged to QA under release/1.0.0.
 
-Thanks,
-Manikant
+Summary
+- Scope: All enhancement and fix items raised by the business (Geoff) for this cycle have been completed as per the business requirements.
+- Validation: Each item was tested end to end in local/Dev, including regression checks on related screens and reports.
+- Deployment: Changes are merged to QA. The required database scripts have been shared with the DB team (John/Ashok) for execution in QA and Prod.
+- Communication: Geoff and John have been informed, and users can now begin testing in QA once the DB team confirms the scripts are executed.
+
+The detailed list of the new functionality and fixes included in this release is attached for reference.
+
+Next steps
+1. DB team to confirm script execution in QA and Prod.
+2. Business users to complete UAT in QA.
+3. After QA sign-off, release/1.0.0 to be merged to the production branch.
+
+If any support is needed during testing, or if there are any further requirements, please feel free to reach out to me directly.
+
+Thanks & Regards,
+Manikant Singh
+SDE II, HashedIn by Deloitte

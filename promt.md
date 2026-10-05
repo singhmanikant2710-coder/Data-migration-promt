@@ -1,10 +1,6 @@
-Hi Ashok,
+Thank you, Srinivas.
 
-Yes, all the scripts have been executed in Dev and verified there.
-
-Please review and execute them in QA and Prod, in the order listed in the earlier message. Note that find-duplicate-reviews-per-sample-customer.sql is report-only (the clean-up section is commented out), and truncate-all-tables-safe.sql should not be run in QA/Prod.
-
-Please let me know once done, or if you have any questions.
+Srihari / Ashok – please let me know a convenient time to connect so we can go over the two .NET applications (scope, current status, access and priorities). I'm flexible tomorrow, so happy to work around your schedule.
 
 Thanks,
 Manikant

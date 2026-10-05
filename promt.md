@@ -1,1 +1,1 @@
-Before I allow Program.cs: show me the exact connection string `cs` it uses. It must point ONLY to a local throwaway database (LocalDB/localhost temp DB created by setup.sql) — never sqlmi-dv / CAS_RISKREVIEW_DEV / QA / Prod, because Clear(cs) deletes data. After verification, delete the whole casrr-verify temp folder and the temp database.
+Verification done — now DROP DATABASE CasrrVerify229 on (localdb)\MSSQLLocalDB and delete the casrr-verify temp folder. Confirm both are gone.

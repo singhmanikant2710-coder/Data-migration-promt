@@ -1,4 +1,6 @@
-SELECT d.[Market], d.[ACCT_NUM], d.[Commitment]
-FROM dbo.[01_DATA_01_Data Mart Trial] d WITH (NOLOCK)
-WHERE LTRIM(RTRIM(d.[CUST_NUM])) = '<customer number>'
-ORDER BY TRY_CONVERT(decimal(19,2), REPLACE(REPLACE(d.[Commitment],'$',''),',','')) DESC;
+SELECT * FROM dbo.[03_LIBRARY_09_Selections]
+WHERE Tab = 'Samples'
+ORDER BY Section, Selection_id;
+
+SELECT Sample_type, COUNT(*) AS Cnt FROM dbo.[02_CORE_01_Samples] GROUP BY Sample_type;
+SELECT Sample_target, COUNT(*) AS Cnt FROM dbo.[02_CORE_01_Samples] GROUP BY Sample_target;

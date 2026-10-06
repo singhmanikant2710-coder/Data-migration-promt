@@ -14,3 +14,5 @@ git status
 
 git commit -m "chore: revert accidental commit of test-data file and legacy accdb"
 git push
+
+git log --oneline -3 -- legacy/CAS_RiskReview_v3.accdb

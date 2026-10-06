@@ -16,3 +16,11 @@ git commit -m "chore: revert accidental commit of test-data file and legacy accd
 git push
 
 git log --oneline -3 -- legacy/CAS_RiskReview_v3.accdb
+
+
+git checkout 5632585 -- legacy/CAS_RiskReview_v3.accdb
+
+
+Add-Content .gitignore "test-data/"
+git add .gitignore legacy/CAS_RiskReview_v3.accdb
+git status

@@ -29,3 +29,17 @@ No rush at all – even short answers would be very helpful.
 
 Thanks,
 Manikant
+
+
+Hi Geoff,
+
+That pivot table is the best thing I've seen all week – zero open issues! 🎉
+
+Thank you for the UAT notes and the PowerPoint deck. They made a real difference – having the issues laid out so clearly with screenshots helped me deliver everything in one go without back-and-forth. It truly was great teamwork.
+
+One small request: if possible, could you send a formal sign-off email for this UAT cycle, including any feedback on the delivery? It would be very helpful for us, and I'd be grateful if you could copy my leadership team as well – I'm happy to share their email addresses.
+
+Thanks again for all your support and guidance throughout this cycle!
+
+Best regards,
+Manikant

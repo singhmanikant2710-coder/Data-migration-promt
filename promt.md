@@ -1,12 +1,16 @@
-Hi Geoff,
+cd C:\Users\CC438\source\repos\fhn-casrr
+git branch
 
-Thanks for flagging the Collateral / PSOR / SSOR rating issue – I'll look into it as a priority.
+git pull
 
-To trace it quickly, could you please share:
-- The Review ID(s) and the reviewer's name
-- Which ratings were lost (Collateral, PSOR, SSOR, or all three) and roughly when they were last saved
-- Whether the review might have been open in more than one browser tab, or by more than one person, at the same time
-- Whether they saw a success message after saving
+git rm --cached test-data/rrj-20120.html
 
-Thanks,
-Manikant
+git checkout HEAD~1 -- legacy/CAS_RiskReview_v3.accdb
+
+echo test-data/ >> .gitignore
+git add .gitignore legacy/CAS_RiskReview_v3.accdb
+
+git status
+
+git commit -m "chore: revert accidental commit of test-data file and legacy accdb"
+git push

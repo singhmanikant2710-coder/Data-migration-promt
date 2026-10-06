@@ -1,24 +1,31 @@
 Hi Geoff,
 
-Thank you so much – really appreciate it!
+Now that the UAT items are closed, I have a few questions about the process after a review is completed. I'm exploring whether CASRR could add more value there, so your input would really help.
 
-On #193 / #194 (table columns, picture sizes and text alignment), here is exactly what is and isn't available, so you can share it with your team:
+Current process
+1. After the Initial/Final Memo is emailed to the RM/PM, how are the findings followed up today – is remediation tracked anywhere (Excel, email, another system such as a GRC tool)?
+2. Who owns the follow-up – the CAS reviewer, the RM/PM, the PML/SCO, or another team?
 
-Available now
-- Tables pasted from Excel or Word keep their column widths in the PDFs (they are only scaled down if wider than the page), instead of stretching across the full page.
-- Pasted images keep their pasted size in the PDFs (very large images are scaled to fit the page).
-- On screen, pasted Word tables and images now stay within the field box.
+Rules
+3. Is there an expected timeline to remediate a finding (e.g. by severity: Key Finding vs Finding vs Observation), or is it agreed case by case?
+4. Do all findings need a formal response/action plan from the RM/PM, or only certain types?
 
-Not available in this release
-- Resizing table columns or images by dragging inside the Review Form editor. The best approach is to set the column widths / picture size in Excel or Word before copying and pasting – those sizes are now carried through to the PDF.
-- Tables created directly in the editor still use the full field width.
-- Text alignment formatting (left/centre/right) is not available in the editor, and alignment applied in Excel (e.g. right-aligned amounts) is not carried into the PDF.
+Closure
+5. When is a finding considered closed – does CAS need to validate it, and is evidence (documents, screenshots) required?
+6. What happens if a finding is not addressed by the expected date – is it escalated, and to whom?
 
-These could be considered as a future enhancement if your team would find them valuable.
+Reporting
+7. Do you or management currently report on open/overdue findings (by RM, PM, market, LOB)? If so, how often and to whom?
+8. Do internal audit or regulators ask for evidence of finding remediation, and how is that pulled together today?
+9. Do you track repeat findings – the same issue for the same customer across reviews?
 
-On a personal note – this was my first UAT cycle handling CASRR directly, with more than 20 enhancements ranging from low and moderate to a few critical items. Being able to deliver all of them in a single cycle, in line with your expectations, means a lot to me. Your clear requirements, detailed screenshots and quick feedback made a big difference, so thank you for that.
+Access
+10. Would RMs/PMs be able to access CASRR to respond directly, or should everything stay with the CAS team and email?
 
-Thanks again for all your support!
+Priority
+11. Out of the above, what takes your team the most manual effort today?
 
-Best regards,
+No rush at all – even short answers would be very helpful.
+
+Thanks,
 Manikant

@@ -1,32 +1,14 @@
-Subject: CASRR – Request to approve npm package "dompurify" for Veracode XSS remediation
+Answers:
 
-Hi Team,
+1. A – add dompurify (client-only).
+   Reason: all real sinks are client-only (tipHtml is null during SSR), dompurify has zero transitive dependencies, is small, and is recognised by Veracode as a cleanser. isomorphic-dompurify pulls jsdom for no benefit, and a hand-rolled sanitizer may leave the flaws Open.
+   Pin the exact version 3.4.16 (no ^ / ~) in package.json and update package-lock.json via npm install. No other dependency changes. In the report, note that package approval / npm feed availability must be confirmed with the bank before merge (we have raised this with the cloud team).
 
-We are remediating the open Veracode findings for CASRR (application: webapp-casrr, sandbox: casrr/api-qa, latest scan casrr/api-20261005.3). The scan reports 14 Medium findings of type CWE-80 (Basic XSS) in the Next.js frontend, where rich-text and help-tip HTML from the database is displayed on screen without sanitisation.
+2. A – read test-data/rrj-20120.html via shell, read-only.
+   Reason: verifying against real saved content (Excel/Word tables, <o:p>, data-URI images) is the strongest proof that normal content is unchanged. Use it only to run through the sanitizer and diff before/after. Never stage, modify, or copy it into the repo.
 
-What we want to apply
-- Add the npm package dompurify to the CASRR frontend and sanitise this HTML before it is displayed.
-- No backend, database or infrastructure change.
+3. A – no code change in ReviewPDFModal.tsx (#59, #60, #61).
+   Reason: there is no HTML sink – blobUrl is a blob: object URL created by URL.createObjectURL from the client-generated @react-pdf Blob, so no user/DB string reaches href/src. A blob: prefix check would not be recognised as a cleanser and would only add code to a file with no real flaw.
+   Write ready-to-paste Veracode "Mitigate by Design" justifications for each of the three, in the same style as the already approved mitigations (explain the data source, why no untrusted input reaches the sink, same-origin, content type application/pdf).
 
-Why dompurify
-- Industry-standard HTML sanitiser, recognised by Veracode as a valid cleanser, so the findings can be closed as Fixed.
-- Removes only dangerous content (scripts, event handlers, javascript: links) and keeps normal formatting (bold, tables, images), so existing screens are unaffected.
-- A custom-written sanitiser would likely not be recognised by Veracode and the findings would remain open.
-
-Package details
-- Name / version: dompurify 3.4.16 (exact version, pinned)
-- Licence: MPL-2.0 OR Apache-2.0
-- Dependencies: none (zero transitive packages)
-- Size: approx. 22 kB minified / 8 kB gzipped in the browser bundle
-- Usage: browser only (no server-side execution)
-- Source: public npm registry (npmjs.com)
-
-What we need from you
-1. Confirmation that dompurify 3.4.16 is approved for use, or the process/ticket we should raise for open-source package approval.
-2. Confirmation that the CI/CD pipeline / npm feed (e.g. Azure Artifacts upstream) can resolve this package, so the build does not fail after merge.
-3. Any additional security requirement for new packages (e.g. SCA scan, licence review) that we should complete before merging.
-
-Once confirmed, we will merge the change to QA and run a new Veracode sandbox scan to verify the findings move to Fixed.
-
-Thanks,
-Manikant
+Continue with PHASE 2 onward.

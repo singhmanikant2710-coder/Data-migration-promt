@@ -1,9 +1,27 @@
-Hi Gangai, just to clarify the branching approach and avoid any merge conflicts going forward:
+Haan, Gangai ka response clear hai. Unka branching strategy basically ye hai:
 
-We have been using the release/1.0.0 branch for QA testing from the beginning, and Geoff has also been testing on this branch. I understand that the latest changes were promoted to release/1.1.0 on Friday.
+1. release/1.0.0 → current production baseline/source of truth hai. Ab freeze rahega; isme koi new change nahi aayega.
 
-However, if release/1.0.0 and release/1.1.0 are not fully aligned, and we continue merging new changes from develop into release/1.1.0, we may eventually face conflicts when we need to merge the QA changes from release/1.0.0 into release/1.1.0.
 
-To avoid this, could we please standardize on release/1.1.0 going forward and first bring all required changes from release/1.0.0 into release/1.1.0? Once both branches are aligned, we can use release/1.1.0 as the QA branch and continue promoting changes from develop into it.
+2. develop → ab saara new development yahin hoga.
 
-Also, could you please confirm which branch we should use for QA and production going forward, so that we follow the same branching strategy and avoid conflicts during future merges?
+
+3. release/1.1.0 → develop ke required changes se bana hai aur abhi QA/next production release ke liye use hoga.
+
+
+4. release/1.0.0 → release/1.1.0 merge nahi hoga.
+
+
+5. Jab release/1.1.0 production mein successfully release ho jayega, woh bhi freeze hoga aur uske baad develop ka new baseline/source of truth release/1.1.0 banega.
+
+
+
+Important point
+
+Iska matlab ye hai ki ab aapko develop mein changes karne hain, aur next release ke liye wahi changes release/1.1.0 mein promote honge.
+
+Aap Gangai ko short confirmation ke liye ye reply kar sakte ho:
+
+> Thanks Gangai, understood. So going forward, we will continue all new development on the develop branch, and release/1.1.0 will be used for the current QA/production release. We will not merge any changes from release/1.0.0 into release/1.1.0.
+
+Once release/1.1.0 is released to production and frozen, it will become the new baseline/source of truth for develop. This clarifies the branching strategy for us. Thanks.

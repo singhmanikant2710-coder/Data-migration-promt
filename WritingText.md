@@ -1,1 +1,12 @@
-Veracode static scan (casrr/api-20261005.3, score 94): 17 open flaws in the CASRR frontend – 16 Medium (14 XSS from unsanitised HTML, 2 Open Redirect) and 1 Low (sensitive information in sent data); no High/Very High findings.
+Hi Samuel,
+
+Thank you for completing the research and for confirming there are no AppSec concerns.
+
+We'll meet the standard OSS/SCA and licence requirements:
+- Licence: dompurify is MPL-2.0 OR Apache-2.0 (plus @types/trusted-types, MIT, type-only).
+- Version is pinned to 3.4.16 with no transitive runtime dependencies.
+- After the merge, the next Veracode scan for CASRR will include the SCA results; I'll confirm there are no reported vulnerabilities or licence policy violations for dompurify and share the outcome with you.
+
+Thanks again for your help!
+
+Manikant

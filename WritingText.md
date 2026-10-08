@@ -1,1 +1,1 @@
-Hi Samuel, just a gentle follow-up on the formal approval for dompurify@3.4.16. For completeness, it also brings one optional type-only package, @types/trusted-types@2.0.7 (MIT), used only at build time. The change is ready on our side and we'll merge as soon as it's approved. Thanks!
+Veracode static scan (casrr/api-20261005.3, score 94): 17 open flaws in the CASRR frontend – 16 Medium (14 XSS from unsanitised HTML, 2 Open Redirect) and 1 Low (sensitive information in sent data); no High/Very High findings.

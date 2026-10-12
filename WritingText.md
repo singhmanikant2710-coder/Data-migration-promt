@@ -1,7 +1,7 @@
-This is a DOM node append, not an HTML sink. The anchor is created with document.createElement("a") and only href (the browser-generated same-origin blob: URL for the client-generated PDF) and download (a filename restricted to letters, digits, underscore and hyphen) are set. No string-built HTML (innerHTML, outerHTML, insertAdjacentHTML, document.write) is used. The node is appended, clicked and removed synchronously to start the PDF download.
+The iframe src is the same-origin blob: URL created by URL.createObjectURL for a PDF generated in the client by @react-pdf/renderer (content type application/pdf). The browser displays it with its built-in PDF viewer; it is never treated as an HTML document. The value is not user-controllable (application origin + browser-generated UUID), srcdoc is not used, and src is set through a React JSX attribute, not string-built HTML.
 
 
-None identified. No untrusted content can be injected into the document through this call.
+None identified. The PDF is generated from data the authenticated user is already authorised to view, and no script from review data can execute in the PDF viewer.
 
 
-Code review of ReviewPDFModal.tsx confirms createElement + property assignment only and immediate removal after click. Manual test in QA: PDF download works and no element remains in the DOM afterwards.
+Code review of ReviewPDFModal.tsx confirms the iframe src comes only from URL.createObjectURL. Manual test in QA: the PDF preview opens in the browser PDF viewer with a blob: URL of the application origin.

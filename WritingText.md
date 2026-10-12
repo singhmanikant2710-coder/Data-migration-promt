@@ -1,5 +1,6 @@
-A – false positive, no code change, Mitigate by Design text for #65 and #66 in the #47 style.
-
-Condition: in the verification, prove from the real code that the destination passed to the sink always starts with a fixed internal prefix built in code (e.g. "/review/...") so it can never begin with "//", "/\" or a scheme, for every input (URL params, API fields, ecif, section, returnTo, ids) – show the exact construction (file:line). Run the hostile inputs (//evil.com, /\evil.com, %2F%2Fevil.com, javascript:, tab/newline variants) through the real helper with each input position and show the final URL.
-If ANY input can make the final destination start with "//" or "/\" or leave the site, STOP and tell me – we will switch to option C instead of mitigating.
-Include the exact line numbers in the mitigation text. Do not commit or push.
+Go ahead with option C.
+- Tighten ensureRelativePath in lib/navigation.ts: reject any backslash, tab, newline or other control character, and a leading "//" (after trimming), falling back to "/" as today. No other behaviour change.
+- Use it in the three section copies (ReviewInfoSection ~:80, TransactionsSection ~:132, CrmFindingsAndRatingsSection ~:137): one line + one import each. No other edits.
+- Verify: real section tabs, returnTo=queue/progress/history, Save and deletes produce byte-identical URLs before vs after (also for page.tsx #43/#44/#62 call sites); the full hostile matrix shows 0 off-site results; tsc + npm run build pass.
+- Then write ready-to-paste Mitigate by Design text for #65 and #66 (TSRV format: Technique, Specifics, Remaining Risk, Verification) with the new line numbers, describing the hardened validation.
+- Delete %TEMP%\cassr-cwe601 at the end. Report ADDED / CHANGED lines (file:line), results, git status. Do not commit or push.

@@ -1,8 +1,10 @@
-Hi Samuel,
+Mitigate by Design: No untrusted input reaches this sink. blobUrl is assigned only from URL.createObjectURL(blob), where blob is the return value of pdf(...).toBlob() from @react-pdf/renderer, which produces a binary PDF with MIME type application/pdf. URL.createObjectURL returns an opaque, same-origin URL of the fixed form blob:https://<app-origin>/<UUID>. No review data, database field or user-supplied string is concatenated into this URL – its only components are the application's own origin and a browser-generated UUID – so a javascript:, data: or cross-origin URL can never occur. The taint path reported by the scanner (API review data -> PDF component -> pdf() -> Blob) ends at the PDF encoder: the data is converted into PDF drawing primitives and no HTML or script is reconstructed. The anchor element is created programmatically, is never inserted into an HTML string, and is used only to trigger the download of the generated PDF.
 
-I've proposed "Mitigate by Design" for three Veracode findings in CASRR (webapp-casrr, sandbox casrr/api-qa): #59, #60 and #61 in ReviewPDFModal.tsx (CWE-80). They are false positives – the value is a browser-generated blob: URL for a client-generated PDF, with no user or database data reaching the sink. The full justification is in each mitigation comment.
 
-Could you please review and approve, or let me know who the right approver is?
 
-Thanks,
-Manikant
+
+Mitigate by Design: This is a DOM node append, not an HTML sink. The element is created with document.createElement("a") and only two properties are set: href (the same-origin, browser-generated blob: URL for the client-generated PDF) and download (a filename restricted to letters, digits, underscore and hyphen). No string-built HTML is used anywhere in this flow (no innerHTML, outerHTML, insertAdjacentHTML or document.write). The node is appended, clicked and removed synchronously solely to start the PDF download. No untrusted content can be injected into the document through this call.
+
+
+
+Mitigate by Design: The iframe src is the same-origin, browser-generated blob: URL created by URL.createObjectURL for a PDF generated in the client by @react-pdf/renderer, with content type application/pdf. The browser renders it with its built-in PDF viewer; it is never treated as an HTML document, so no script or event handler from the underlying review data can execute. The value is not user-controllable (application origin + browser-generated UUID only), srcdoc is not used, and the src is set through a React JSX attribute rather than string-built HTML. The PDF is generated entirely in the client from data the authenticated user is already authorised to view.

@@ -1,3 +1,2 @@
-Hi Team, I’ll be on planned leave tomorrow as I have a scheduled doctor’s appointment. I’ll be back and resume work as usual the following day. Thank you for your understanding.
-
-Planned leave tomorrow due to a scheduled doctor’s appointment.
+SELECT Help_tip_id, Help_tip_topic, LEN(CAST(Help_tip AS NVARCHAR(MAX))) AS Len
+FROM dbo.[03_LIBRARY_06_Help Tips] WHERE Help_tip_id = 11;   -- Key Risks

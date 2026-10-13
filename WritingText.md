@@ -1,14 +1,13 @@
-Create a test file only – no code changes, do not commit.
+Good morning John,
 
-Goal: test the monthly-upload/save route change (stack removed, correlationId added) through the real UI on Admin > Monthly Upload Process.
+Yes, happy to take on deeper testing to move us closer to cutover. Here's what we'll do:
 
-1. First confirm from page.tsx (~:349) exactly which uploads go to /api/monthly-upload/save (file type and row threshold), so the test file really reaches route.ts and is not stopped by client-side validation.
+1. End-to-end check of one active customer per industry (all 13), comparing against legacy Access: Blackbook edit (Top Strip, Monthly Summary, Month/TTM, Cash & Charge-offs, Equity/Liabilities), view page, PDF (Fiscal YTD and Rolling 24), Add New Month and Save.
+2. Customer page: covenant order, reported, thresholds and custom fields, and that changes flow through to the Blackbook.
+3. A short daily summary to you, with each finding marked as either an application fix (we'll handle it) or a data item (for your team), including customer, month, screen, legacy value and new value.
 
-2. Generate test-data/monthly-upload-wrong-header.xlsx (test-data/ is gitignored – never stage it):
-   - Columns: the real MonthlyUploadHeaders in the correct order, EXCEPT rename one column header (e.g. "DocType" -> "DocTypeX") so the server-side header check (~route.ts:569) fails with "Header mismatch".
-   - 1,100 data rows (above the threshold you confirmed in step 1) with simple dummy values; code/ID columns as text.
-   - Use whatever library is already available in the repo (e.g. the xlsx/exceljs package the route uses); if you need a script, run it from %TEMP% and delete it afterwards.
+If the business has specific customers or scenarios they rely on most, please send them over and we'll prioritise those first.
 
-3. Also generate test-data/monthly-upload-correct-header.xlsx with the same 1,100 rows and the correct headers, only so I can compare (I will NOT click Save with it).
+Open data items on your side are still the missing monthly rows (Alan Wire, ADIR), the Keystone fiscal year relabel, Tempo Global's industry, and the NULL vs 0 check.
 
-Report: which upload path these files trigger (file:line), the exact error message the UI should show for the wrong-header file, file paths and sizes, and git status (test-data/ must not appear). Do not commit or push.
+Thanks.

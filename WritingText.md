@@ -1,23 +1,4 @@
-UAT #233 – Covenants and Policy Exceptions: prevent save data loss (same safeguard as the Collateral/PSOR/SSOR rating fix, commit 15f7638).
-
-PHASE 1 – Read-only discovery (file:line for every claim, no edits):
-1. For the Covenants tab and the Policy Exceptions tab, list everything that is saved: scalar fields (CovenantsInfo, PolicyExceptionsInfo incl. Policy_variance_mitigation) AND row tables (covenant rows, policy exception rows).
-2. Trace the full save path for each: frontend payload builder -> ReviewService -> SqlReviewRepository SQL.
-3. Scalar fields: confirm whether EVERY column already uses the CASE WHEN @hasX = 1 THEN @p ELSE [Col] END guard from 15f7638. List any column that is still overwritten unconditionally.
-4. Row tables: how are rows saved (delete-all + re-insert, merge, per-row update)? What happens when the payload has the row list undefined/missing vs an explicit empty array [] vs null? Can saving ANOTHER tab/section (e.g. RRJ, Collateral) wipe or change covenant/PE rows or fields?
-5. If everything is already safe, say so with evidence and STOP – change nothing.
-
-PHASE 2 – Plan the smallest generic fix:
-- Absent/undefined field or row list = leave stored data unchanged. Explicit [] = user removed all rows, delete is correct. Same rule as 15f7638.
-- No schema change. Do not touch other sections.
-
-PHASE 3 – Implement only what Phase 2 needs. Keep the existing save transaction.
-
-PHASE 4 – Verify and report:
-- Root cause (file:line).
-- ADDED (file:line) and REMOVED/CHANGED (file:line).
-- On-screen before/after.
-- NULL/edge cases: field undefined, null, empty string; rows undefined, [], null; saving another tab while Covenants/PE have data.
-- Other sections/screens unaffected.
-- Backend build + frontend build/tsc/lint results, git status.
-Do not commit or push.
+Read-only follow-up on UAT #233 (no edits):
+1. Covenant accuracy Yes/No fields: with your change, a NULL column now stays NULL while the UI shows "No". List every PDF/report/screen that reads Covenant_tracking_accuracy, Covenant_validation_accuracy, Covenant_breaches_addressed, Stepped_up_servicing (file:line). Does each one read through the same GET mapping (NULL shown as "No") or raw from DB (NULL shown blank)? Before/after output for a review where these are NULL.
+2. PE mitigation: how does your "nothing stored yet" check detect it (file:line)? If Policy_exception_mitigation is NULL in DB, what does the GET return – NULL or "Not Mitigated"? Confirm a brand-new review adding its first PE row still saves "Not Mitigated" and "" notes.
+Report only. Do not commit or push.

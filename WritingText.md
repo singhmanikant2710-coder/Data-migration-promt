@@ -1,144 +1,66 @@
-FHN Insurance Legacy Application to .NET — Complete Development Within 4 Months
+Update the existing FHN Insurance .NET Development Estimation PowerPoint. Keep the presentation to a maximum of 3 slides.
 
-You have already generated a PowerPoint named "FHN_Insurance_NET_Development_Estimate_One_Developer.pptx". The current presentation estimates 273.6 person-days and approximately 15 months for one developer, then recommends completing only a partial application scope in four months.
+Follow these instructions exactly. Do not add anything beyond the requested work.
 
-This does not meet the business requirement. Rework the estimation and presentation.
+1. Calculate the Complete Development Effort
 
-Primary Objective
+Use the existing FHN Insurance legacy application and current PPT to calculate the development effort for ONE developer who will develop both backend and frontend in .NET using Windsurf AI.
 
-The objective is to develop the complete agreed FHN Insurance legacy application in .NET within a maximum of 4 months, using ONE full-stack developer who will handle both backend and frontend development with Windsurf AI assistance.
+Include:
 
-The business team needs a realistic, technically justified development plan for the entire application, not a partial implementation plan.
+- All 45 screens/forms, categorized as High, Medium, and Low complexity.
+- All 29 reports and report-style exports.
+- All required modules, admin grids, shared components, and integrations.
+- Backend coding, frontend coding, and application-level integration.
 
-1. Complete Application Scope Is Mandatory
+Calculate the estimated development effort in person-days and hours for each category.
 
-Analyze the actual legacy application and existing source code to identify all required functionality, including:
+For reports, use 1 report per working day as the baseline calculation: 29 reports = 29 person-days = 232 hours. Adjust individual reports according to their complexity only where required.
 
-- All existing screens and forms, classified as High, Medium, or Low complexity.
-- All business modules, workflows, validations, and business rules.
-- All approximately 29–30 reports and report-style exports, verifying the actual count.
-- All required backend logic, data-access code, APIs, and frontend functionality.
-- Shared components, menus, authentication, grids, and reusable functionality.
-- All required application-level integrations.
+Avoid double-counting shared components or functionality.
 
-The target is the complete agreed legacy application's functional scope implemented in .NET.
+2. Fit All Development Within Four Months
 
-Do not remove screens, reports, modules, integrations, or required functionality merely to make the four-month estimate appear achievable. Do not propose Phase 1 as the final deliverable.
+The complete application development—including every screen, every report, backend, frontend, and required integration—must be planned within the same four-month timeline.
 
-2. Optimize the Development Approach for Four Months
+- Use a fixed four-month development window.
+- Distribute all screens, reports, and other development tasks across Month 1, Month 2, Month 3, and Month 4.
+- Adjust the estimated effort and task allocation to fit this timeline using Windsurf AI, reusable code, shared components, and efficient development practices.
+- Show the number of screens and reports planned for each month.
+- Ensure all required development activities are included within the four months.
+- Do not create a partial-scope plan or move remaining screens/reports to later months.
+- Do not calculate or mention annual timelines, 12–15 months, or additional development phases.
 
-Investigate how one developer can deliver the complete scope efficiently using Windsurf AI.
+3. Exclude Unrelated Activities
 
-Evaluate:
+Do not include:
 
-- Reusing existing business logic, queries, validation rules, and reusable components where feasible.
-- Generating and reviewing repetitive .NET backend and frontend code with Windsurf.
-- Creating reusable screen templates, common services, grids, forms, and report-generation components.
-- Developing similar screens and reports through repeatable implementation patterns.
-- Prioritizing technical dependencies to minimize rework and integration overhead.
-- Automating appropriate code-generation and developer-verification tasks.
-- Avoiding duplicate implementation and double-counting shared functionality.
-
-Use evidence-based productivity assumptions. Do not assume that AI eliminates the need for code review, integration, debugging, or developer verification.
-
-3. Estimate Every Screen and Report
-
-Create an internal calculation that covers the complete application.
-
-For screens, show:
-
-- High-complexity screen count and average development effort.
-- Medium-complexity screen count and average development effort.
-- Low-complexity screen count and average development effort.
-- Total screen development person-days and hours.
-
-For reports, use approximately 30 reports as the initial scope, subject to verification.
-
-Calculate a baseline of one report per working day:
-
-30 reports × 1 working day = 30 person-days = 240 hours.
-
-Then inspect actual report complexity and assess whether reuse, templates, shared data-access logic, and AI-assisted coding can make this baseline more efficient. Clearly distinguish the baseline from the validated estimate.
-
-Include shared .NET foundation, backend/frontend integration, business logic, debugging, code review, and developer-level unit/component verification. Avoid double-counting work already included in screen and report estimates.
-
-4. Four-Month Capacity and Feasibility
-
-Prepare a transparent calculation based on one full-time developer working for four months.
-
-Use realistic working days, holidays, routine overhead, and productive capacity. Calculate the available person-days and hours for the actual four-month period.
-
-Compare the total estimated effort for the complete application against this capacity.
-
-If the initial estimate exceeds the available capacity, do not automatically conclude that delivery will take 15 months or reduce the scope to a few modules. Instead, analyze and quantify opportunities to reduce implementation effort through code reuse, standardized patterns, Windsurf-assisted development, and removal of duplicated work.
-
-Recalculate the estimate using defensible assumptions and show the remaining effort gap, if any.
-
-Do not fabricate productivity savings or hide genuine technical risks. If the complete scope cannot be supported by the available evidence within four months, explicitly identify the unresolved gap rather than presenting an unsupported guarantee.
-
-5. Strict Exclusions
-
-This estimate covers application development only.
-
-Exclude all timelines and effort for:
-
-- Dedicated QA team testing.
-- UAT and business-user acceptance testing.
-- Post-UAT bug-fixing cycles and rework.
+- Leave, holidays, or absence calculations.
+- Separate QA or UAT timelines.
+- Post-UAT bug-fixing timelines.
 - DBA team activities.
-- DevOps, CI/CD ownership, and deployment execution.
-- Production deployment, production release, and go-live.
-- Post-production support.
+- DevOps activities or deployment timelines.
+- Production deployment, release, or go-live commitments.
+- Additional staffing recommendations or alternative timelines.
 
-Developer-level coding, integration, debugging, code review, and unit/component verification remain within the development scope.
+Only application development effort is required.
 
-Do not promise production delivery within four months. The four-month target refers only to completing the defined application development scope.
+4. PowerPoint Requirements
 
-6. Update the Existing PPT — Maximum 3 Slides
+Create a maximum of 3 slides:
 
-Revise the existing presentation to a maximum of three slides. Keep the full agreed application scope visible and use concise, leadership-friendly content.
+Slide 1: Project scope, total screens, total reports, complexity distribution, and four-month development timeline.
 
-Slide 1 — Complete Application: Four-Month Development Objective
+Slide 2: High/Medium/Low screen effort, report effort, other development effort, and total person-days/hours.
 
-- Verified application scope and component counts.
-- One full-stack developer using Windsurf AI.
-- Complete backend and frontend development.
-- Four-month development target.
-- Available developer capacity and key assumptions.
+Slide 3: Month-wise allocation of all screens, reports, backend, frontend, and integrations, showing that the complete development scope is scheduled within four months.
 
-Slide 2 — Complexity-Based Effort and Optimization
+Keep the slides professional, concise, readable, and suitable for business leadership.
 
-- High-, medium-, and low-complexity screen estimates.
-- Report-by-report or report-category estimate for the approximately 30 reports.
-- Shared components, integrations, and other development effort.
-- Baseline effort versus optimized effort.
-- Clear explanation of code reuse and AI-assisted development assumptions.
-- Reconciled person-day and hour totals.
+Final Instructions
 
-Slide 3 — Four-Month Development Roadmap and Risks
+Do not add feasibility warnings, unresolved gaps, business decisions, alternative staffing models, or recommendations to extend the timeline.
 
-- Month-by-month roadmap covering the complete application scope.
-- Backend, frontend, reports, and integration work scheduled realistically for one developer.
-- Development-level verification and completion activities.
-- Key assumptions, dependencies, and unresolved risks.
-- Explicit exclusions for QA, UAT, post-UAT fixes, DBA, DevOps, production deployment, and go-live.
+Do not overwrite the original PPT. Save the updated presentation as a separate editable PowerPoint file.
 
-The roadmap must cover the complete agreed application, not just a subset of screens or modules.
-
-7. Final Validation
-
-Before saving the revised PPT:
-
-1. Verify that every required screen, report, module, and integration remains in scope.
-2. Reconcile the screen, report, shared-component, and integration estimates.
-3. Ensure all totals and conversions are mathematically correct.
-4. Check the optimized estimate against one developer's four-month capacity.
-5. Remove the existing unsupported 15-month recommendation unless it is clearly identified as the original unoptimized baseline.
-6. Do not present partial development as complete application delivery.
-7. Do not include any excluded team's effort or promise a production release.
-8. Keep the presentation readable, professional, and limited to three slides.
-9. Save the revised PPTX as a separate editable file, preserving the original.
-
-Deliver the revised PowerPoint and a concise explanation of the baseline effort, optimized effort, four-month capacity, and any remaining feasibility gap.
-
-Business priority: Complete FHN Insurance application development in .NET within four months. Optimize the implementation approach first; do not silently reduce scope or make unsupported delivery promises.
+Deliver only the updated PPT and a short summary of the final development effort and four-month allocation.

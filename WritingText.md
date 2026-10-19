@@ -1,50 +1,22 @@
-#233 – Covenants / Policy Exceptions Save Errors
+UAT #250 – Review Queue "Completed" column shows the Mgr Approved date instead of the CRO Complete date when the Approved, Distributed or Finalized status box is selected. It is correct only for "Draft Completed".
 
-Status: Fixed. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+Examples from Geoff: Approved box shows 10/13/26 (Mgr Approval) instead of CRO Complete 9/24/26; Distributed shows 10/14/26 instead of 10/9/26; Finalized shows 10/14/26 instead of 10/8/26.
 
-What was wrong:
-The database save logic for both tabs already had the same protection added for Collateral, PSOR and SSOR. The data loss came from the screen side, which was sending values the user had not changed:
-- Policy Exceptions: adding a new exception reset the saved Notes to blank and Exception Mitigation to "Not Mitigated". If a review had no exception rows, the stored Notes/Mitigation could also be overwritten on the first save.
-- Covenants: saving only the Covenant Information text also wrote "No" into blank Yes/No questions (Tracking Accuracy, Validation Accuracy, Breaches Addressed, Stepped-up Servicing) and could re-save the dates.
+PHASE 1 – Read-only discovery (file:line):
+1. Trace the "Completed" column end to end: Review Queue SQL (SqlReviewRepository / ReviewQueue.cs), API model, reviews.ts, review-queue/page.tsx. Which DB column feeds "Completed" for each status box? Is there a CASE/COALESCE or per-status mapping that substitutes the Mgr Approval date?
+2. Check the other date columns in the same grid (Approved, Distributed, Finalized) – is each one sourced from the correct column for every status box?
+3. Is the same logic used by Review Progress, Review History, sorting/filtering on Completed, and the status box counts? List every place.
+4. Data check (give a read-only SQL in the report, do not save it as a script): how many reviews have a Mgr Approval date but no CRO Complete date? What would "Completed" show for them after the fix?
 
-What changed:
-- Both tabs now save only the fields the user actually changed. Everything else keeps its stored value.
-- Stored Policy Exception Notes and Mitigation are never replaced by default values.
+PHASE 2 – Smallest generic fix: "Completed" must always show the CRO Complete date, whichever status box is selected; every other date column keeps its own source. No schema change. If the bug sits in shared SQL used by other screens, fix it there once and list every screen affected.
 
-What you may notice:
-- Screens and PDFs look the same as before.
-- In the raw CSV data export, Covenant Yes/No questions that were never answered now show as empty instead of "No"/"False", which reflects that no answer was given.
+PHASE 3 – Implement only that.
 
-#235 – Policy Exceptions: E00 default selection
-
-Status: Fixed. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
-
-What changed:
-- The tab now works like Covenants. No row appears automatically in Edit mode; the reviewer clicks "+ Add Policy Exception" and selects E00 (or any exception). E00 now saves on the first selection.
-- This removes the automatic E00 row added under #206.
-- With no exception rows, Exception Mitigation and Notes are disabled with the hint "Add a policy exception to enter mitigation and notes." Previously these fields looked editable, but anything typed was not saved.
-
-Related issues found and fixed during testing:
-- Deleting a newly added, unsaved exception could also delete a saved exception with the same code.
-- An exception that was edited and then deleted could reappear after Save.
-- The same exception type could be selected twice on one review, which silently overwrote the saved row. Already-used types are now greyed out in the dropdown.
-- Notes typed before deleting a row are no longer lost.
-
-Please note:
-- Exception Mitigation and Notes apply to the whole review, not to each exception row. A newly added row shows the review's current Notes and Mitigation, and deleting all rows does not clear them.
-
-#241 – CAS Linesheet paragraph spacing
-
-Status: Fixed. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
-
-What was wrong:
-The CAS Linesheet converted finding comments to plain text, removing paragraph breaks and formatting. The Initial/Final Memos did not.
-
-What changed:
-- CRM Findings and Observations comments in the CAS Linesheet now display paragraphs, line breaks and rich text formatting the same way as the Initial/Final Memos.
-- A very long comment that does not fit on one page now continues onto the next page, with the table header repeated, instead of being cut off or missing from the PDF.
-- Automatic word hyphenation (e.g. "how- / ever") is turned off, so text wraps consistently whichever screen the Linesheet is opened from.
-
-Verified in Dev against review Gator Millworks Inc, comparing the CAS Linesheet with the Initial and Final Memos.
-
-Next step for all three: I will confirm here once these are deployed to QA for your testing.
+PHASE 4 – Verify and report:
+- Root cause (file:line).
+- ADDED and REMOVED/CHANGED (file:line).
+- On-screen before/after for each status box (Draft Completed, Approved, Distributed, Finalized, and All).
+- NULL/edge cases: CRO Complete NULL with Mgr Approval set; both NULL; date-only values not shifted by a day (timezone); sorting by Completed.
+- Status box counts, Review Progress, Review History and other screens unchanged unless they had the same bug (list them).
+- Backend build + tsc + frontend build, git status.
+Do not commit or push.

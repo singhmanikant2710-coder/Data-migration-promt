@@ -1,22 +1,11 @@
-#250 – Review Queue: Completed Dates
+UAT #251 – Review Progress: when the "Borrowers Sampled" box (bucket "All Status") is selected, the date column header reads "Completed", but the column shows each row's own status date (e.g. Cancelled 10/8/2026, Approved 10/16/2026). It should read "Status Date".
 
-Status: Fixed. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+PHASE 1 – Read-only (file:line):
+1. Where is the date column header chosen per bucket (review-status/page.tsx ~94-101)? List the header text for every bucket/box: Borrowers Sampled / All Status, Unopened/Cancelled, In Progress, Draft Completed, Approved, Distributed, Finalized.
+2. For the All Status bucket, which date does each row show for each status (SqlReviewStatusRepository.cs)? Confirm "Status Date" is an accurate label for all of them.
+3. Does the same label appear anywhere else for this view (sort label, tooltip, export, PDF)?
 
-What was wrong:
-The "Completed" column in the Review Queue was not reading only the CRO Complete date. It showed the first date it found in this order: Mgr Approval, then Finalized, then CRO Complete. Draft Completed reviews looked correct only because they had no approval or finalized date yet. For Approved, Distributed and Finalized reviews, the Mgr Approval date was shown instead.
+PHASE 2/3 – Smallest change: header = "Status Date" for the All Status bucket only. Every other bucket keeps its current header. No data, SQL or sorting change.
 
-What changed:
-- The "Completed" column now always shows the CRO Complete date, whichever status box is selected (Draft Completed, Approved, Distributed, Finalized or All).
-- The Approved, Distributed and Finalized columns were already correct and are unchanged.
-- Sorting and searching on the Completed column now use the CRO Complete date as well.
-
-Verified in Dev:
-- Review 21727 (Approved): Completed now shows 6/29/2026 (CRO Complete) instead of 7/31/2026 (Mgr Approval).
-- Review 21640: Completed now shows 6/12/2026 (CRO Complete) instead of 7/31/2026 (Mgr Approval); Approved, Distributed and Finalized show their own dates.
-
-Please note:
-- Status box counts, Review Progress and Review History are not affected. Review Progress intentionally shows a different date for each status bucket, with a matching column header.
-- If a review has no CRO Complete date, the Completed column now shows blank instead of borrowing another date.
-- The planned Review Queue Excel export (#237) will use the corrected Completed date.
-
-Next step: I will confirm here once this is deployed to QA for your testing.
+PHASE 4 – Report: ADDED and REMOVED/CHANGED (file:line), on-screen header before/after for every bucket, edge cases (switching between boxes and the Bucket dropdown keeps the header in sync; rows with no date show blank; sorting by this column still works), tsc + frontend build, git status (restore next-env.d.ts / tsconfig.tsbuildinfo if the build rewrites them).
+Do not commit or push.

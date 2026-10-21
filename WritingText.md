@@ -1,66 +1,23 @@
-Update the existing FHN Insurance .NET Development Estimation PowerPoint. Keep the presentation to a maximum of 3 slides.
+UAT #249 – Review History: orphaned records from unlocked Finalized reviews in Closed samples.
 
-Follow these instructions exactly. Do not add anything beyond the requested work.
+Background: Review History shows only Finalized reviews from Closed samples. An Admin can unlock a review in a Closed sample (this clears Review_finalized_date), edit it, and re-approve it without entering a new Finalized date or a new Mgr Approval date. The review then drops out of Review History and downstream reports (orphaned).
 
-1. Calculate the Complete Development Effort
+Geoff's options:
+1. Block unlocking a Finalized review in a Closed sample until the sample is re-opened (the existing sample-closure check then confirms all reviews are Cancelled or Finalized before it can close again).
+2. Block saving an unlocked Finalized review in a Closed sample unless a new Mgr Approval date AND a new Finalized date are entered.
+3. When unlocking, keep the Distributed and Finalized dates locked (original Finalized date kept) and require the new Mgr Approval date to be on or before that Finalized date.
 
-Use the existing FHN Insurance legacy application and current PPT to calculate the development effort for ONE developer who will develop both backend and frontend in .NET using Windsurf AI.
+THIS ROUND IS READ-ONLY. Do not change any code.
 
-Include:
+PHASE 1 – Discovery (file:line):
+1. Unlock: where is the Admin unlock (UI + API + SQL)? Exactly which columns does it clear or change (Review_finalized_date, approval, distributed, status, lock flags)? Is it audited?
+2. Sample open/close: how is a sample closed and re-opened? What does the closure check validate? Who can re-open?
+3. Re-approval after unlock: which fields can the user edit, and how do the #212 date-lock rules (Distributed/Finalized locked until Mgr Approval set, IsDateChange) behave for an unlocked review?
+4. Review History: which SQL defines what appears (SqlReviewHistoryRepository.cs ~102)? Which other reports/screens filter on Review_finalized_date or sample Closed?
+5. Data check – give read-only SQL in the report (do not save it as a script): reviews in Closed samples that are neither Finalized nor Cancelled today (current orphans), with Review_id, sample, status and dates.
 
-- All 45 screens/forms, categorized as High, Medium, and Low complexity.
-- All 29 reports and report-style exports.
-- All required modules, admin grids, shared components, and integrations.
-- Backend coding, frontend coding, and application-level integration.
+PHASE 2 – Options analysis (no implementation):
+For each of Geoff's 3 options give: what changes (frontend/backend/SQL, file:line), whether a schema change is needed, how it is enforced server-side (not only in the UI), what the Admin and reviewer would see, effort (small/medium/large), and risks (e.g. re-opening a sample affecting other screens, existing orphans, the #244 retention work).
+Then recommend one option with a short reason. Also say how existing orphans should be handled (report only / one-time script for DBA review).
 
-Calculate the estimated development effort in person-days and hours for each category.
-
-For reports, use 1 report per working day as the baseline calculation: 29 reports = 29 person-days = 232 hours. Adjust individual reports according to their complexity only where required.
-
-Avoid double-counting shared components or functionality.
-
-2. Fit All Development Within Four Months
-
-The complete application development—including every screen, every report, backend, frontend, and required integration—must be planned within the same four-month timeline.
-
-- Use a fixed four-month development window.
-- Distribute all screens, reports, and other development tasks across Month 1, Month 2, Month 3, and Month 4.
-- Adjust the estimated effort and task allocation to fit this timeline using Windsurf AI, reusable code, shared components, and efficient development practices.
-- Show the number of screens and reports planned for each month.
-- Ensure all required development activities are included within the four months.
-- Do not create a partial-scope plan or move remaining screens/reports to later months.
-- Do not calculate or mention annual timelines, 12–15 months, or additional development phases.
-
-3. Exclude Unrelated Activities
-
-Do not include:
-
-- Leave, holidays, or absence calculations.
-- Separate QA or UAT timelines.
-- Post-UAT bug-fixing timelines.
-- DBA team activities.
-- DevOps activities or deployment timelines.
-- Production deployment, release, or go-live commitments.
-- Additional staffing recommendations or alternative timelines.
-
-Only application development effort is required.
-
-4. PowerPoint Requirements
-
-Create a maximum of 3 slides:
-
-Slide 1: Project scope, total screens, total reports, complexity distribution, and four-month development timeline.
-
-Slide 2: High/Medium/Low screen effort, report effort, other development effort, and total person-days/hours.
-
-Slide 3: Month-wise allocation of all screens, reports, backend, frontend, and integrations, showing that the complete development scope is scheduled within four months.
-
-Keep the slides professional, concise, readable, and suitable for business leadership.
-
-Final Instructions
-
-Do not add feasibility warnings, unresolved gaps, business decisions, alternative staffing models, or recommendations to extend the timeline.
-
-Do not overwrite the original PPT. Save the updated presentation as a separate editable PowerPoint file.
-
-Deliver only the updated PPT and a short summary of the final development effort and four-month allocation.
+Report only. Do not change code, do not commit or push.

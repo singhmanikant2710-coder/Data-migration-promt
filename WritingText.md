@@ -1,13 +1,11 @@
-Hi John,
+Thanks John. Bankers Healthcare is one of the four customers whose
+fiscal year labels in the data use the starting year instead of the
+ending year (same as Keystone). Its existing months Oct 2025 – May 2026
+are stored as FY2025, while the new month you added is labelled FY2026
+using the standard rule (October start, fiscal year named for the year
+it ends). Once Bankers' fiscal year labels are corrected in the data
+(the same relabel planned for Keystone, Nationwide and Vermeer), all of
+Oct 2025 – Sep 2026 will sit together under FY2026.
 
-During today’s call, Srinivas asked for an update on the BCAT status and the expected production release date.
-
-I informed him that all the bugs reported by the users, along with the additional issues I identified during regression testing, have been fixed and closed. I also mentioned that you tested the major fixes and confirmed that everything is working as expected. However, we are still waiting for feedback from the users.
-
-Srinivas would like more clarity on the current status, production release plan, and the next steps for BCAT.
-
-Could you please schedule a call with you, Srinivas, me, and any other relevant users or stakeholders who can provide clarity on the application’s production go-live timeline?
-
-This will help us align on the current status and agree on the next steps.
-
-Thanks for your support!
+For testing, please use a customer outside those four for now.
+I'll widen the Month field so the full month key shows.

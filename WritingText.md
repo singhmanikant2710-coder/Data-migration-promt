@@ -1,11 +1,15 @@
-Thanks John. Bankers Healthcare is one of the four customers whose
-fiscal year labels in the data use the starting year instead of the
-ending year (same as Keystone). Its existing months Oct 2025 – May 2026
-are stored as FY2025, while the new month you added is labelled FY2026
-using the standard rule (October start, fiscal year named for the year
-it ends). Once Bankers' fiscal year labels are corrected in the data
-(the same relabel planned for Keystone, Nationwide and Vermeer), all of
-Oct 2025 – Sep 2026 will sit together under FY2026.
+SELECT m.strCustomerName, m.strMonthKey, m.intFiscalYear,
+  IIf(Val(Right(m.strMonthKey,2)) >= c.intFiscalYearMonthStart,
+      Val(Left(m.strMonthKey,4)) + 1, Val(Left(m.strMonthKey,4))) AS ExpectedFY
+FROM tblMain AS m INNER JOIN tblCustomer AS c ON m.strCustomerName = c.strCustomerName
+WHERE m.strCustomerName In ("KEYSTONE PRIVATE INCOME FUND","ATHENS PAPER COMPANY INC")
+  AND m.strMonthKey In ("202104","202110","202510","202604")
+ORDER BY m.strCustomerName, m.strMonthKey;
 
-For testing, please use a customer outside those four for now.
-I'll widen the Month field so the full month key shows.
+
+SELECT m.strCustomerName, Count(*) AS TotalMonths,
+  Sum(IIf(m.intFiscalYear <> IIf(Val(Right(m.strMonthKey,2)) >= c.intFiscalYearMonthStart,
+      Val(Left(m.strMonthKey,4)) + 1, Val(Left(m.strMonthKey,4))), 1, 0)) AS WrongFY
+FROM tblMain AS m INNER JOIN tblCustomer AS c ON m.strCustomerName = c.strCustomerName
+WHERE m.strCustomerName In ("KEYSTONE PRIVATE INCOME FUND","ATHENS PAPER COMPANY INC")
+GROUP BY m.strCustomerName;

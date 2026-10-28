@@ -1,11 +1,1 @@
-Hi Team,
-
-I have been experiencing chronic pancreatitis pain since this morning, and it has been getting progressively worse. I have completed 3 out of the 16 CASSR enhancements, but due to the increasing pain, I am unable to focus on my work. Therefore, I will be logging off for now.
-
-Thank you for your understanding.
-
-
-Hi John, I’m not feeling well due to my chronic pancreatitis pain. Would it be possible to reschedule our meeting for tomorrow? Sorry for the inconvenience, and thank you for understanding.
-
-
-I’m not feeling well and will be logging off for the day.
+Thanks for your concern, Geoff. I’ve taken a painkiller, but I still need to focus on the CASSR enhancements and BCAT bugs to ensure we meet our deadlines. I’ll do my best to make progress while keeping an eye on my health. I really appreciate your understanding.

@@ -1,1 +1,1 @@
-Thanks for your concern, Geoff. I’ve taken a painkiller, but I still need to focus on the CASSR enhancements and BCAT bugs to ensure we meet our deadlines. I’ll do my best to make progress while keeping an eye on my health. I really appreciate your understanding.
+Thank you so much, Geoff. I really appreciate your kind words, prayers, and understanding. You're absolutely right, health is important, and I'll try my best to maintain a better balance. Thanks again for your support.

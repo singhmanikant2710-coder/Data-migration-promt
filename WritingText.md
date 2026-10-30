@@ -1,1 +1,2 @@
-Thanks Geoff – that's very helpful. Since Closed dates were migrated for all closed Samples, the purge will work on PROD data as expected, and we expect only a small number of eligible Samples given John's purge earlier this year. @Ashok, the queries are now just a confirmation – no rush.
+$env:RecordRetention__TestFaultAfterStep="Reviews"
+dotnet run --project backend/src/Casrr.Api/Casrr.Api.csproj

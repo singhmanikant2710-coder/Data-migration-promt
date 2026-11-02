@@ -1,6 +1,14 @@
-1: A – hide Document Type for #239/#240 notification emails only; memo emails unchanged (Document Type still required, attachments optional as today).
-2: A – apply the Bcc pre-fill to notification emails too, excluding any address already in To.
-3: A – prompt at most twice per edit session: after the second No, stop prompting for that field.
-4: A – re-entering Mgr Approval after an unlock counts as first time and prompts again.
-5 (blank CRO_email / CRO_manager_email): open the email modal with an empty To and a warning "No manager/CRO email found for this review – please enter the address." Never send automatically.
-Proceed with Phase 3 and 4.
+SELECT TOP 5 r.Review_id, r.Sample_id, r.Completed_date, r.CRO_email, r.CRO_manager_email
+FROM dbo.[02_CORE_02_Reviews] r
+JOIN dbo.[02_CORE_01_Samples] s ON s.Sample_id = r.Sample_id
+WHERE ISNULL(r.Locked, 0) = 0
+  AND ISNULL(r.Cancelled, 0) = 0
+  AND ISNULL(s.Closed, 0) = 0
+  AND r.Completed_date IS NULL
+  AND r.Review_approval_date IS NULL
+  AND ISNULL(r.CRO_manager_email, '') <> '';
+
+  http://localhost:3100/review/id-<RID>/review-info?section=review-info&reviewId=<RID>&sampleId=<SID>
+
+
+  

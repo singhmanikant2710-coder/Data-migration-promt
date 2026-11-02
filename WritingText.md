@@ -16,3 +16,7 @@ SELECT Review_id, Completed_date FROM dbo.[02_CORE_02_Reviews] WHERE Review_id =
 
 
 SELECT * FROM dbo.[02_CORE_01_Samples] WHERE Sample_id = 354;
+
+
+SELECT Review_id, Completed_date, Review_approval_date, Locked
+FROM dbo.[02_CORE_02_Reviews] WHERE Review_id = 21587;

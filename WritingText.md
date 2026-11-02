@@ -13,3 +13,6 @@ WHERE ISNULL(r.Locked, 0) = 0
 
   
 SELECT Review_id, Completed_date FROM dbo.[02_CORE_02_Reviews] WHERE Review_id = <RID>;
+
+
+SELECT * FROM dbo.[02_CORE_01_Samples] WHERE Sample_id = 354;

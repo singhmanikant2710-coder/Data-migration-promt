@@ -48,3 +48,16 @@ PHASE 4 – VERIFY + REPORT (in this chat, do not write the report to a file)
 - dotnet build, npx tsc --noEmit, npm run build results.
 - git status (restore next-env.d.ts / tsconfig.tsbuildinfo if rewritten; leave untracked scripts/sql/find-reviews-with-blanked-ratings.sql alone).
 - Do not commit or push.
+
+
+
+
+
+#244 Record Retention – Implemented.
+New Admin > Record Retention screen (CAS Admins only). The retention cutoff is calculated automatically as TODAY minus 7 years. A Sample is eligible when it is Closed and its Sample Closed date is before the cutoff.
+- Preview lists the Samples to be deleted with review and related-record counts, plus any Samples held back with the reason (no Closed date; a review neither Finalized nor Cancelled; or review activity after the Closed date).
+- 'Confirm Deletion' requires typing DELETE. All related records (Reviews, Accounts, Covenants, Policy Exceptions, Findings, Checklists) are deleted in a single all-or-nothing step; if anything fails, nothing is deleted and a clear message with next steps is shown.
+- If the data changes between Preview and Confirm (e.g. a Sample is reopened), the run is stopped and the preview refreshes.
+- Every run is recorded and shown in a Run History list (date, run by, cutoff, outcome, Samples and Reviews deleted). A warning appears if the last successful run was less than 90 days ago.
+- Up to 100 Samples are processed per run.
+Prerequisites before QA/PROD use: DBA team to run scripts/sql/create-record-retention-objects.sql (two new audit tables) and confirm backup / point-in-time restore availability. Tested end-to-end in DEV with test data, including failure rollback.

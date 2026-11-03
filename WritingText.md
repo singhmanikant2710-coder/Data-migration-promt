@@ -1,19 +1,8 @@
-Bug found while testing #232 (rowversion column NOT yet added in Dev):
-Policy Exceptions: add a row → Save → delete that row (→ Save). The deleted row stays visible on screen. It only disappears after a manual page reload (Ctrl+R). Expected: the row disappears immediately after delete/save, without a reload.
+Confirmed: I saw the row come back AFTER Save (delete → Save → row visible → Ctrl+R → gone). Matches your root cause.
 
-PHASE 1 – READ-ONLY DISCOVERY (no edits)
-- Trace the PE delete flow with file:line: delete click → frontend service → API → response handling → how the row is removed from state / how the section refreshes after delete and after Save.
-- Compare with git HEAD (before the #232 changes): did the delete response change (204 → 200 with { concurrencyToken }), and does the frontend now handle the response differently (parsing, success check, thrown error, state update skipped, reload of review data no longer triggered)?
-- Check the same for the other three delete paths changed in #232: covenant delete, CRM finding delete, account delete.
-- State clearly: regression from #232, or pre-existing behaviour? Exact root cause with file:line.
+Approved, with one change to the approach: in usePolicyExceptions.ts:156-163, keep only rows that are genuinely unsaved local additions – identified the same way handleDeleteConfirm does (isNewPolicyExceptionId or staged as new) – instead of using the previous row count. If new rows cannot be identified that way, use your count rule and explain why.
+- Rows added with Add and not yet saved must still be kept across reloads.
+- Do not change anything else (#235 rules, #254 review-level notes, #232 changes untouched).
+- Also check: staged edits are keyed by row id = position. After a delete + reload, can a staged edit end up on the wrong row? Report only, do not fix.
 
-PHASE 2/3 – FIX (smallest change)
-- If it is a #232 regression: fix it so the row disappears immediately after a successful delete, exactly as before #232, while still storing the new concurrency token. Keep the 409 behaviour (row stays + conflict dialog).
-- If it is pre-existing: report only, do not fix yet.
-- Do not change anything else.
-
-PHASE 4 – REPORT (in chat, not in a file)
-- Root cause (file:line), regression or pre-existing, ADDED/CHANGED (file:line).
-- Before/after for PE, covenant, finding and account delete: with the column missing (today) and with the column present.
-- NULL/edge cases: token null (column missing), delete of an unsaved row (no server call), delete then Save, delete failure (non-409).
-- npx tsc --noEmit, npm run build, dotnet build (if backend touched), git status. Do not commit or push.
+Report in chat: ADDED/CHANGED (file:line), before/after for: delete last row → Save; delete a middle row → Save; delete + add a new unsaved row → Save; add only → Save. npx tsc --noEmit, npm run build, git status. Do not commit or push.

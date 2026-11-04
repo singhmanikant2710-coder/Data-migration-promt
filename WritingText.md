@@ -1,8 +1,16 @@
-Confirmed: I saw the row come back AFTER Save (delete → Save → row visible → Ctrl+R → gone). Matches your root cause.
+SELECT c.name AS ColumnName, t.name AS TypeName
+FROM sys.columns c
+JOIN sys.types t ON t.user_type_id = c.user_type_id
+WHERE c.object_id = OBJECT_ID('dbo.[02_CORE_02_Reviews]')
+  AND t.name IN ('timestamp', 'rowversion');
 
-Approved, with one change to the approach: in usePolicyExceptions.ts:156-163, keep only rows that are genuinely unsaved local additions – identified the same way handleDeleteConfirm does (isNewPolicyExceptionId or staged as new) – instead of using the previous row count. If new rows cannot be identified that way, use your count rule and explain why.
-- Rows added with Add and not yet saved must still be kept across reloads.
-- Do not change anything else (#235 rules, #254 review-level notes, #232 changes untouched).
-- Also check: staged edits are keyed by row id = position. After a delete + reload, can a staged edit end up on the wrong row? Report only, do not fix.
+#232: The DBA script failed in Dev – dbo.[02_CORE_02_Reviews] already has a rowversion/timestamp column: [<COL>]. SQL Server allows only one. Nothing was changed in the DB.
 
-Report in chat: ADDED/CHANGED (file:line), before/after for: delete last row → Save; delete a middle row → Save; delete + add a new unsaved row → Save; add only → Save. npx tsc --noEmit, npm run build, git status. Do not commit or push.
+Change #232 to use the EXISTING column [<COL>] instead of adding Row_version:
+1. Replace every reference to Row_version (repository version read, TryClaimReviewVersionAsync, TouchReviewVersionAsync, deployment guard COL_LENGTH check, load queries) with [<COL>].
+2. Core Export: restore it to exactly how it was before #232 (the existing column was already part of the table, so the CSV must stay as it was before). Report what the export did with this column before.
+3. Search the repo for any existing use of [<COL>] (EF mapping, legacy Access notes, scripts) and report whether our code changes its behaviour.
+4. scripts/sql/add-reviews-row-version.sql: replace it with a read-only check script that confirms [<COL>] exists and is rowversion/timestamp (for the DBA to run in QA/Prod), or delete it if not needed – recommend which.
+5. Deployment note: since the column already exists, protection turns on as soon as the code is deployed. Confirm the guard still works and report anything that changes because of this.
+
+Report in chat: ADDED/CHANGED/REMOVED (file:line), dotnet build, npx tsc --noEmit, npm run build, git status. Do not commit or push.

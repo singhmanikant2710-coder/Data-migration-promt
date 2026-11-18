@@ -1,4 +1,17 @@
-Answers: 1A 2A 3A 4 switch 5A 6B
-4: switch only CRO Production Summary, CRM Findings & Observations and Covenants Summary to the review-level, NULL-as-No form. Dev impact checked: 1 review moves Yes→No (Review_id 21541, review = No, accounts 3 Yes / 1 No – a data-integrity case). Do not touch the other 11 reports.
-6B: on Add Account, default the new account's Special Assets to the review's current Special_assets value (NULL → No, as today). This is only a default; the user can still change it, and that change follows the normal rules (sync + 1A conflict check).
-Proceed with Phase 3 and 4.
+SELECT TOP 5 r.Review_id, r.Sample_id, r.Customer_name, COUNT(a.Account_id) AS Accounts
+FROM dbo.[02_CORE_02_Reviews] r
+JOIN dbo.[02_CORE_01_Samples] s ON s.Sample_id = r.Sample_id
+JOIN dbo.[02_CORE_04_Accounts] a ON a.Review_id = r.Review_id
+WHERE ISNULL(r.Locked,0) = 0 AND ISNULL(r.Cancelled,0) = 0 AND ISNULL(s.Closed,0) = 0
+  AND r.Special_assets = 0
+GROUP BY r.Review_id, r.Sample_id, r.Customer_name
+HAVING COUNT(a.Account_id) >= 2 AND SUM(CAST(a.Special_assets AS int)) = 0;
+
+
+DECLARE @ReviewId int = <RID>;
+SELECT 'Review' AS Src, NULL AS Account_id, CAST(r.Special_assets AS int) AS Special_assets
+FROM dbo.[02_CORE_02_Reviews] r WHERE r.Review_id = @ReviewId
+UNION ALL
+SELECT 'Account', a.Account_id, CAST(a.Special_assets AS int)
+FROM dbo.[02_CORE_04_Accounts] a WHERE a.Review_id = @ReviewId
+ORDER BY Src DESC, Account_id;

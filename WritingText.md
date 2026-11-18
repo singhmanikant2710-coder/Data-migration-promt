@@ -1,11 +1,6 @@
-#246 test result: the 15/5-minute warnings appeared (please confirm from code that nothing else is expected), the session ended at 8 minutes with sign-out. I had UNSAVED edits in Key Risks when the session ended. After signing in again and opening the same review, the "Restore unsaved changes?" prompt did NOT appear. Expected: the #177 session-expiry draft is kept and offered.
-
-READ-ONLY DISCOVERY first (no edits):
-- Trace with file:line what happens at session end: AuthProvider timer → #177 session-expiring event → draft write (which storage, which key) → sign-out → /logout page → sign-in → Review Form draft check.
-- Does anything clear the draft on the way (logout page, MSAL logout, sessionStorage/localStorage clear, auth.session removal, key that includes the user/session id so a new session cannot find it, 24h expiry check)?
-- Is the draft written before the redirect happens (async write racing the redirect)?
-- Did #246 change any of this path (AuthProvider, msal.ts dev TTL, SessionWarningProvider)? Compare with git HEAD.
-- State clearly: regression from #246, or pre-existing #177 behaviour. Exact root cause with file:line.
-
-If it is a #246 regression: fix with the smallest change. If it is pre-existing: report only, do not fix yet.
-Report in chat: root cause, regression or pre-existing, ADDED/CHANGED (file:line), npx tsc --noEmit, npm run build, git status. Do not commit or push.
+Approved: apply the #177 draft fix as a separate change (not part of #246).
+- In FormChangesContext.tsx, flushDraft must only delete a draft that THIS form instance wrote itself (no edits in this instance = never delete an existing draft from storage).
+- This must fix both: the React Strict Mode dev double-mount case, and the production case where the tab is hidden while the review is still loading.
+- Keep everything else exactly as today: drafts are still written on edit (2.5 s debounce), on session expiry, on tab hide and on unmount; "Discard draft", "Restore and save", a successful Save and the top-banner Cancel → Discard still clear the draft as they do now (check each with file:line).
+- No other files unless strictly needed.
+Report in chat: root cause recap, ADDED/CHANGED (file:line), before/after for: open review with an existing draft (dev and prod build), tab hidden while loading, Save clears draft, Discard draft clears it, Cancel → Discard clears it. npx tsc --noEmit, npm run build, npm run test:unit, git status. Do not commit or push.

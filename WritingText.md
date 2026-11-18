@@ -1,5 +1,10 @@
-1: A – no unsaved changes → cancel straight away, no dialog.
-2: A – keep today's behaviour: Discard clears the #177 draft as Cancel does now.
-3: A – rename to "Undo" only in the Review Form tab comment boxes; Email modal and Help Tips keep "Cancel".
-4: B – fix it now with the smallest change: Undo must restore the box to its last loaded/saved value and must never empty a box that has stored text, whether or not the user clicked into it first. If nothing was edited in that box, Undo does nothing and stages nothing. Report root cause and the fix separately (file:line), plus before/after for: Undo without clicking in, Undo after typing, Undo then Save (stored text unchanged), box that is genuinely empty.
-Proceed with Phase 3 and 4.
+#248 – Implemented. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+
+What changed:
+- The "Cancel" button in the comment box toolbars now reads "Undo" on every Review Form tab. Undo puts the box back to its last saved text. (The Email window and Help Tips maintenance keep their "Cancel" button.)
+- While doing this we found and fixed an existing problem: pressing the comment box button without first clicking into the box could empty it, and saving would then remove the stored text. Undo now never empties a box that was not edited.
+- Clicking "Cancel" in the top Review Form banner now asks "Discard unsaved changes?" when there are unsaved edits. "Keep editing" returns to the form with all edits kept; "Discard changes" works as Cancel did before. If there are no unsaved edits, Cancel closes edit mode straight away without asking.
+
+Tested in Dev: Undo with and without editing, Undo followed by Save, saving edits across several tabs, and the top Cancel with and without unsaved changes.
+
+I will confirm here once deployed to QA.

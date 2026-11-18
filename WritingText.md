@@ -1,20 +1,16 @@
-#232 – switch from the new Row_version column to the EXISTING timestamp column
+#232 – Implemented. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
 
-FACT (verified in Dev SSMS)
-- The DBA script failed: dbo.[02_CORE_02_Reviews] already has a timestamp column named [SSMA_TimeStamp] (type timestamp, NOT NULL, COL_LENGTH = 8). SQL Server allows only one per table, so Row_version can never be added. Nothing was changed in the DB.
-- [SSMA_TimeStamp] already changes automatically on every UPDATE, so it works as the review version without any schema change.
+What was wrong: The existing check could not tell that a review had been changed by someone else, so when two people had the same review open, the second Save silently overwrote the first person's changes.
 
-CHANGES (touch only what is needed)
-1. Replace every Row_version reference in the backend with [SSMA_TimeStamp]: version read (GetReviewRowVersionTokenAsync), TryClaimReviewVersionAsync, TouchReviewVersionAsync, the deployment-guard COL_LENGTH check, the load queries (SqlReviewRepository.cs ~156, ~323, ~2886, ~2924, ~2943-2956) and anything else found by searching the whole repo for "Row_version".
-2. ExportsController.cs: revert it to exactly how it was at git HEAD (before #232), so the Core Export CSV is unchanged. Report what the export already did with [SSMA_TimeStamp] before #232 (included, skipped, how it was formatted).
-3. Search the whole repo for existing uses of SSMA_TimeStamp (EF mappings, DTOs, SELECT * mapping, scripts, legacy notes). Report each hit with file:line and whether our version logic changes its behaviour.
-4. Replace scripts/sql/add-reviews-row-version.sql with a READ-ONLY check script named scripts/sql/check-reviews-ssma-timestamp.sql. It must confirm that [SSMA_TimeStamp] exists on dbo.[02_CORE_02_Reviews] and is timestamp/rowversion, for the DBA to run in QA/Prod before deploy. No ALTER. Delete the old file.
-5. Deployment guard: keep it, checking [SSMA_TimeStamp]. Since the column already exists, protection turns on as soon as the code is deployed. Confirm the guard still behaves as before when the column is missing (e.g. in another environment), and report anything else that changes because of this.
-Do not change anything else (#212, #233, #235, #239/#240, #249, #254 and the PE delete fix stay untouched).
+What changed:
+- CASRR now checks, on every Save and delete on the Review Form, whether the review was updated by someone else after it was opened.
+- If it was, the Save is blocked and nothing is written. The user sees: "This review was updated by another user. Please refresh to see the latest changes before saving." Their unsaved changes stay on screen.
+- Refresh loads the latest version of the review and offers the unsaved changes as a draft. "Restore and save" saves them over the latest data, so please check the latest values first; "Decide later" discards the draft.
+- Normal saving is unchanged: a user saving several times or saving different tabs one after another is not affected.
+- No database change was needed; the check uses a version column that already exists on the Reviews table.
 
-REPORT (in chat, not in a file)
-- ADDED / CHANGED / REMOVED with file:line.
-- Confirm a repo-wide search for "Row_version" now returns 0 hits.
-- dotnet build, npx tsc --noEmit, npm run build results.
-- git status (restore next-env.d.ts / tsconfig.tsbuildinfo if rewritten; leave the pre-existing SQL scripts and devin-output/ alone).
-- Do not commit or push.
+What you may notice: The same review open in two browser tabs is treated the same as two users. Users who have a review open at the moment the new version is deployed may see the message once on their next Save and simply need to refresh.
+
+Tested in Dev: two tabs saving the same review (second Save blocked, first user's changes kept); one user saving several tabs and adding/deleting covenants and policy exceptions in a row (no false warnings).
+
+I will confirm here once deployed to QA.

@@ -1,6 +1,15 @@
-1: A – inform only, no "Stay signed in" (the 4-hour limit may be a bank security control; do not change or extend it).
-2: A – use the proposed wording; include the final 15- and 5-minute texts in your report.
-3: A – show the warnings on every screen.
-4: A – "Save now" triggers the toolbar Save (same path as clicking Save, incl. #239/#240 prompts and #232 conflict handling).
-Also: add a dev-only override (off in QA/Prod) to shorten the session/warning times for testing, and tell me exactly how to use it.
-Proceed with Phase 3 and 4.
+Create a local-only test config for #246 (do not change any source code):
+
+1. Create the file frontend/.env.development.local with exactly these two lines:
+   NEXT_PUBLIC_SESSION_DEV_TTL_MINUTES=8
+   NEXT_PUBLIC_SESSION_DEV_WARNING_MINUTES=3,1
+
+2. Confirm it is git-ignored: run `git check-ignore -v frontend/.env.development.local` and show the output (the matching .gitignore rule). If it is NOT ignored, add the line `.env.development.local` to frontend/.gitignore (only that line) and report it.
+
+3. Run `git status` and confirm the new file does NOT appear as untracked. Do not stage, commit or push anything.
+
+4. Do NOT modify frontend/.env.local or any other file.
+
+5. Restart the frontend dev server on port 3100 (stop any process already using 3100 first), and confirm it starts without errors and that /api/runtime-config shows the dev session override is active (8-minute session, warnings at 3 and 1 minutes) with environment label "Local".
+
+Report in chat: file created, check-ignore output, git status, dev server status, and the runtime-config values.

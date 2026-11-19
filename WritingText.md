@@ -1,37 +1,28 @@
-UAT #243 – PD/LGD Grade Change Reconciliation report (DISCOVERY + RULES PROPOSAL ONLY – do not implement)
+Hi Geoff,
 
-REQUIREMENT (Geoff)
-A new report on the Reports Home page, run by the CAS Administrator after each monthly Data Mart upload. It compares the PRIOR month's review results with the latest loan data to confirm that PD/LGD grade changes (and scorecards) identified by CAS were updated in the bank's core systems. Inputs:
-- CAS PD/LGD vs Bank PD/LGD (review/account level),
-- Scorecard Assessment selections,
-- Scorecard Management findings SM-102, SM-103, SM-104,
-- the monthly Data Mart upload, which has current PD/LGD grades AND Prior Month PD/LGD grades.
-Output buckets:
-- Reconciled – the loan system now shows the expected PD/LGD change;
-- Not yet updated – expected change still missing (with RM/PM, review and account details);
-- Needs review – cases that cannot be reconciled automatically.
-The CAS Admin then confirms the exceptions instead of checking every borrower manually ("first tier of reconciliation").
+I have completed the analysis for #243 (PD/LGD Grade Change Reconciliation) using the Dev data. Before I build it, I need your decisions on a few business rules, because they change the results significantly. For each one I have added my recommendation – a simple "agree" is enough where you are happy with it.
 
-PHASE 1 – READ-ONLY DISCOVERY (no edits)
-- Data Mart: dbo.[01_DATA_01_Data Mart Trial] – exact columns for current and Prior Month PD/LGD (Bank PD, Bank LGD, prior-month equivalents), the account/facility/obligor keys, the as-of/month date column, RM/PM columns. Is the table truncated and reloaded each month (only one month present at a time)?
-- Accounts: dbo.[02_CORE_04_Accounts] – Bank_PD, CAS_PD, Bank_LGD/CAS_LGD (exact names), account keys, how they map to Data Mart rows.
-- Reviews: which date defines "prior month's review results" (Completed, Mgr Approval, Distributed, Finalized?) – list the candidates and what each means in the app.
-- Scorecard Assessment: tables/columns behind the Scorecards tab (selections, PD/LGD scorecard values) with file:line.
-- Findings: how SM-102, SM-103, SM-104 are stored in dbo.[02_CORE_07_Findings] (codes, level, link to review/account), and their descriptions from the CAS Findings library.
-- Existing report framework: how a new report is added (Selections entry in 03_LIBRARY_09_Selections, ReportsController, repository, PDF component, routing guard, filters, Excel export if any). Use an existing similar report as the template and name it.
-- Run a read-only SQL in Dev (give it to me) that shows, for last month's reviews, the counts of accounts where CAS PD/LGD ≠ Bank PD/LGD, and how many of those already match the current Data Mart grade.
+How the report would work (version 1):
+- The CAS Admin runs it after each monthly Data Mart upload. It compares, account by account, the CAS PD/LGD grades from reviews finalized in the chosen month against the grades in the latest Data Mart.
+- Results are grouped into Reconciled, Not yet updated, and Needs review (with the reason), with RM/PM, review, customer and account details, and the related SM-102/103/104 findings and scorecard assessment shown as reasons.
+- Important: the Data Mart only holds one month at a time, so each month's report must be run (and the Excel saved) before the next upload. It cannot be re-created afterwards.
 
-PHASE 2 – RULES PROPOSAL (no code)
-Write a clear proposal in chat:
-1. Which reviews are in scope ("prior month" definition) and which accounts.
-2. What counts as an "expected change" for PD and for LGD (CAS ≠ Bank at review; SM-102/103/104 finding present; scorecard selections) – one rule per source, with how they combine.
-3. Matching key between review accounts and Data Mart rows, and what happens when an account is missing, paid off, or appears twice.
-4. Bucket rules with examples: Reconciled, Not yet updated, Needs review (list every Needs-review case: no match, partial change, changed to a different grade than CAS, PD changed but LGD not, etc.).
-5. Role of the Data Mart "Prior Month" grades (e.g. confirm the change happened this month vs earlier).
-6. Report layout: PDF following the existing report conventions (header/footer, Applied Report Filters), columns per bucket (RM/PM, review, customer, account, CAS vs Bank vs Data Mart grades, finding codes), plus whether an Excel export is needed.
-7. "CAS Admin confirms exceptions": option A = report only (no storage, version 1), option B = store confirmations (needs a new table + DBA script). Recommend one; do not assume B.
-8. Access: Admin only? Filters needed (sample, month, segment, RM/PM)?
-9. A numbered list of open QUESTIONS for Geoff wherever the data or the requirement does not decide the rule.
-10. Effort/risk estimate for version 1.
+Questions:
+1. Which reviews are in scope? Recommendation: reviews FINALIZED in the month. (Using CRO Complete instead gives different results, e.g. in Dev, June: 8 PD differences by Completed date, 0 by Finalized date.)
+2. Which month? Recommendation: reviews finalized in the month BEFORE the Data Mart month, so the bank has had time to update its systems. (Alternative: the same month as the Data Mart.)
+3. Baseline "bank grade": reviewers can edit Bank PD/LGD on the Scorecards tab. Recommendation: compare against the original grade loaded from the Data Mart, and flag any account where the reviewer changed the bank grade as "Needs review".
+4. Expected change: Recommendation: an account is expected to change when its CAS PD or CAS LGD differs from the bank grade. SM-103/104 findings and scorecard assessments are shown as reasons only, because findings can be cited without a grade change.
+5. SM-103/104 findings with no CAS vs bank grade difference: list them separately for information only (not as exceptions)? Recommendation: yes.
+6. SM-102 (incorrect scorecard): is a new scorecard ID or a later grade date in the Data Mart acceptable evidence that the scorecard was re-run? If neither, the account goes to "Needs review". Recommendation: yes.
+7. If PD is updated but LGD is not (or the reverse): Recommendation: "Not yet updated", showing which one is still outstanding.
+8. If the bank grade already matched the CAS grade in the prior month (updated during the review): Recommendation: count as Reconciled, labelled "updated before this month".
+9. Accounts no longer in the Data Mart (paid off or renumbered): Recommendation: "Needs review", so the Admin can confirm.
+10. LGD grades: the bank data contains LGD 10–14, but the CAS LGD drop-down only goes up to 9. Should 10–14 be valid CAS grades, or should these cases go to "Needs review"?
+11. Reviews with an appeal or reconsideration after finalization: Recommendation: include them, flagged as "Needs review".
+12. Output and confirmation: Recommendation for version 1 – a PDF plus an Excel export (one sheet per result group). The Admin confirms exceptions in the saved Excel; storing confirmations inside CASRR can be added later if needed.
+13. Access: Recommendation – CAS Administrators only.
 
-STOP after Phase 2. Do not implement, do not create SQL scripts, do not change files. Report in chat only.
+If it is easier, I am happy to go through these in a short call.
+
+Thanks,
+Manikant

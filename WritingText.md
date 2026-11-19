@@ -1,5 +1,16 @@
-1: A – bold red only when ratio > tolerance (equal is not a breach).
-2: B – add one small footnote under the summary table: "Bold red = above KRI tolerance (CAS KRI, Selections Library)." Same font family, smaller size, no change to the table layout or other reports.
-3: A – strictly Selection ID = 1.
-4: A – create scripts/sql/insert-cas-kri-selections.sql (idempotent) plus a rollback script, same pattern as the existing insert-*-selection.sql scripts. Put a header comment: "DEV ONLY – Geoff enters CAS KRI tolerances manually in QA/Test and Production. Do not run in QA/Prod."
-Proceed with Phase 3 and 4.
+Subject: Request: Visual Studio 2026 Enterprise license – trial expired (CASRR)
+
+Hi Team,
+
+My Visual Studio 2026 Enterprise (version 18.6.2) extended trial has expired, and I am now unable to use the IDE.
+
+Account: aa.manikant.singh@firsthorizon.com
+
+I tried "Check for an updated license" and got this error: "We could not unlock Visual Studio with the accounts available. Please ensure that you have added an account with a valid subscription and the account is authenticated."
+
+It looks like my account does not have a Visual Studio subscription assigned. Could you please assign a Visual Studio Enterprise subscription to my account, or share the correct way to get the license?
+
+I am actively working on the CASRR project, so a quick resolution would really help. Screenshots are attached for reference.
+
+Thanks & Regards,
+Manikant Singh

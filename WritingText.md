@@ -1,35 +1,37 @@
-Subject: Request: Visual Studio 2026 Enterprise license – trial expired (CASRR)
+UAT #243 – PD/LGD Grade Change Reconciliation report (DISCOVERY + RULES PROPOSAL ONLY – do not implement)
 
-Hi Team,
+REQUIREMENT (Geoff)
+A new report on the Reports Home page, run by the CAS Administrator after each monthly Data Mart upload. It compares the PRIOR month's review results with the latest loan data to confirm that PD/LGD grade changes (and scorecards) identified by CAS were updated in the bank's core systems. Inputs:
+- CAS PD/LGD vs Bank PD/LGD (review/account level),
+- Scorecard Assessment selections,
+- Scorecard Management findings SM-102, SM-103, SM-104,
+- the monthly Data Mart upload, which has current PD/LGD grades AND Prior Month PD/LGD grades.
+Output buckets:
+- Reconciled – the loan system now shows the expected PD/LGD change;
+- Not yet updated – expected change still missing (with RM/PM, review and account details);
+- Needs review – cases that cannot be reconciled automatically.
+The CAS Admin then confirms the exceptions instead of checking every borrower manually ("first tier of reconciliation").
 
-My Visual Studio 2026 Enterprise (version 18.6.2) extended trial has expired, and I am now unable to use the IDE.
+PHASE 1 – READ-ONLY DISCOVERY (no edits)
+- Data Mart: dbo.[01_DATA_01_Data Mart Trial] – exact columns for current and Prior Month PD/LGD (Bank PD, Bank LGD, prior-month equivalents), the account/facility/obligor keys, the as-of/month date column, RM/PM columns. Is the table truncated and reloaded each month (only one month present at a time)?
+- Accounts: dbo.[02_CORE_04_Accounts] – Bank_PD, CAS_PD, Bank_LGD/CAS_LGD (exact names), account keys, how they map to Data Mart rows.
+- Reviews: which date defines "prior month's review results" (Completed, Mgr Approval, Distributed, Finalized?) – list the candidates and what each means in the app.
+- Scorecard Assessment: tables/columns behind the Scorecards tab (selections, PD/LGD scorecard values) with file:line.
+- Findings: how SM-102, SM-103, SM-104 are stored in dbo.[02_CORE_07_Findings] (codes, level, link to review/account), and their descriptions from the CAS Findings library.
+- Existing report framework: how a new report is added (Selections entry in 03_LIBRARY_09_Selections, ReportsController, repository, PDF component, routing guard, filters, Excel export if any). Use an existing similar report as the template and name it.
+- Run a read-only SQL in Dev (give it to me) that shows, for last month's reviews, the counts of accounts where CAS PD/LGD ≠ Bank PD/LGD, and how many of those already match the current Data Mart grade.
 
-Account: aa.manikant.singh@firsthorizon.com
+PHASE 2 – RULES PROPOSAL (no code)
+Write a clear proposal in chat:
+1. Which reviews are in scope ("prior month" definition) and which accounts.
+2. What counts as an "expected change" for PD and for LGD (CAS ≠ Bank at review; SM-102/103/104 finding present; scorecard selections) – one rule per source, with how they combine.
+3. Matching key between review accounts and Data Mart rows, and what happens when an account is missing, paid off, or appears twice.
+4. Bucket rules with examples: Reconciled, Not yet updated, Needs review (list every Needs-review case: no match, partial change, changed to a different grade than CAS, PD changed but LGD not, etc.).
+5. Role of the Data Mart "Prior Month" grades (e.g. confirm the change happened this month vs earlier).
+6. Report layout: PDF following the existing report conventions (header/footer, Applied Report Filters), columns per bucket (RM/PM, review, customer, account, CAS vs Bank vs Data Mart grades, finding codes), plus whether an Excel export is needed.
+7. "CAS Admin confirms exceptions": option A = report only (no storage, version 1), option B = store confirmations (needs a new table + DBA script). Recommend one; do not assume B.
+8. Access: Admin only? Filters needed (sample, month, segment, RM/PM)?
+9. A numbered list of open QUESTIONS for Geoff wherever the data or the requirement does not decide the rule.
+10. Effort/risk estimate for version 1.
 
-I tried "Check for an updated license" and got this error: "We could not unlock Visual Studio with the accounts available. Please ensure that you have added an account with a valid subscription and the account is authenticated."
-
-It looks like my account does not have a Visual Studio subscription assigned. Could you please assign a Visual Studio Enterprise subscription to my account, or share the correct way to get the license?
-
-I am actively working on the CASRR project, so a quick resolution would really help. Screenshots are attached for reference.
-
-Thanks & Regards,
-Manikant Singh
-
-
-
-#242 – Implemented. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
-
-What changed (CRM Findings Summary Table report only):
-- A ratio is shown in bold red when it is above its KRI tolerance:
-  - Unsatisfactory Transactions COUNT (# / %) for all five CRM components;
-  - Unsatisfactory Transactions EXPOSURE ($ / %) for Risk Recognition only;
-  - Borrower Finding Totals COUNT (# / %) for all five CRM components (exposure is not formatted).
-- A ratio equal to its tolerance is not treated as a breach (e.g. 5.00% against a 5% tolerance stays normal). The comparison uses the percentage exactly as printed.
-- A short note under the summary table explains the formatting: "Bold red = above KRI tolerance (CAS KRI, Selections Library)."
-- Tolerances are read from the Selections Library each time the report runs, so changes you make there apply straight away. No other report is affected.
-
-Action needed in QA/Test and Production: please add the CAS KRI tolerances in the Selections Library as described in the log – Tab "CAS KRI", Selection ID 1, with these exact Section names: RR Unsat Count, RR Unsat Dollar, RR Findings, SM Unsat Count, SM Findings, UW Unsat Count, UW Findings, CS Unsat Count, CS Findings, LA Unsat Count, LA Findings, and values such as "5%". Until a tolerance is entered, its cells simply show without formatting.
-
-Tested in Dev: report with all values within tolerance (no formatting), and with tolerances lowered in the Selections Library to force breaches (only the breached cells shown in bold red).
-
-I will confirm here once deployed to QA.
+STOP after Phase 2. Do not implement, do not create SQL scripts, do not change files. Report in chat only.

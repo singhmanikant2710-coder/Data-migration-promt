@@ -1,12 +1,22 @@
-1: split Customer Name and Review ID.
-2: both summary and detail sheets, as listed.
-3: empty cell for NULL numbers/dates; keep the PDF text labels ("Unsatisfactory"/"--", "Yes"/"No").
-4: real applied filters for all six. Do not change the Policy Exceptions PDF; I will log that bug separately.
-5: stacked 12-month blocks exactly as the PDF.
-6: leave the status date out.
-7: still download header-only sheets plus Filters, with a toast saying 0 rows.
-8: no row cap; truncation marker and 31-char sheet names as proposed.
-9: export the pure PDF helpers and reuse them; PDF output must not change (confirm).
-10: remove the old Policy Exceptions export branch only after confirming no other report can reach it (file:line).
-11: OK – do not change the old guards. Regression must confirm CRM Findings & Observations and Covenants Summary still export their own workbooks.
-Proceed with Phase 3 and 4. Report ADDED/CHANGED/REMOVED (file:line), npx tsc --noEmit, npm run build, git status. Do not commit or push.
+#256 – Implemented. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+
+What changed: "Export Report" now produces an Excel file for all six reports, using exactly the same data and filters as the PDF:
+- CRM Summary for Management – Reviews, Scorecards and Findings sheets.
+- CRM Findings for Management – Findings and Finding Counts sheets.
+- CRM Scorecard Results – Scorecard Totals and Scorecard Details sheets.
+- Credit Policy Exceptions – Exception Totals and Exception Details sheets.
+- Non-Compliant Covenants – Summary, Monitoring Totals, Performance Totals and Violation Details sheets.
+- CRO Review Production – Monthly Summary (same month/year columns and 12-month blocks as the PDF, with totals), Reviewer Details and Reviewer Totals sheets.
+Every workbook also has a Filters sheet listing the filters applied. Customer Name and Review ID are in separate columns, dates and amounts are real Excel dates and numbers, headers are frozen with filters turned on, and file names match the report titles (e.g. "Credit Policy Exceptions.xlsx").
+
+Also fixed: previously, Export on CRM Findings for Management downloaded the CRM Findings & Observations data, and Export on Non-Compliant Covenants downloaded the Covenants Summary data. Both now export their own report. The Policy Exceptions export now matches its PDF (totals plus details).
+
+Tested in Dev: all six exports compared against their PDFs (row counts and totals), plus the CRM Findings & Observations export still working as before.
+
+I will confirm here once deployed to QA.
+
+
+git add frontend/src/lib/reportExcelExport.ts frontend/src/lib/reportExcelSheets.ts frontend/src/app/reports/page.tsx frontend/src/services/api/reporting.ts frontend/src/components/pdf/CrmFindingsForManagementPDF.tsx frontend/src/components/pdf/ScorecardResultsPDF.tsx frontend/src/components/pdf/NonCompliantCovenantsPDF.tsx frontend/src/components/pdf/CroProductionSummaryPDF.tsx frontend/src/components/pdf/ReviewSummaryForManagementPDF.tsx frontend/src/components/pdf/PolicyExceptionsPDF.tsx
+git status
+git commit -m "UAT #256: Excel export for CRM Summary for Management, CRM Findings for Management, Scorecard Results, Policy Exceptions, Non-Compliant Covenants and CRO Production (same data and filters as the PDF)"
+git push origin develop

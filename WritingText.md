@@ -1,21 +1,28 @@
+UAT #260 – CRM Summary report: CRM FINDINGS & OBSERVATIONS table layout
 
+REQUIREMENT (Geoff, Issue 260 tab) – CRM Summary report run from Reports Home, table "CRM FINDINGS & OBSERVATIONS":
+1. Remove the COMPONENT column from the PDF (internal report; component is clear from the Finding Code). The CRM Component MUST still be included in the Excel export of this report.
+2. Move CODE to the first (left) column. Keep findings sorted ascending by Component, then Finding Code.
+3. Add a SEVERITY column directly right of CODE showing dbo.[02_CORE_07_Findings].Finding_level ("Finding" / "Observation"). The column must be wide enough for "Observation" without wrapping or overlapping the TYPE column.
+Final column order: CODE | SEVERITY | TYPE | DESCRIPTION.
 
-#247 – Implemented (Special Assets Managed and CCL Managed). Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+PHASE 1 – READ-ONLY DISCOVERY (no edits)
+- CRM Summary report end to end with file:line: reports page → service → API → repository → PDF component; where the CRM FINDINGS & OBSERVATIONS table is built, its column widths, and current sort order.
+- Is Finding_level already returned by the query? Exact values present in Dev (incl. NULL, different casing).
+- Does this report have an Excel export today? What columns does it contain?
+- Which other PDFs/reports share this table component or styles (memos, CRM Findings & Observations report, CRM Summary for Management, etc.) – they must not change.
 
-Special Assets Managed (approved): as described previously.
+PHASE 2/3 – PLAN + IMPLEMENT (smallest change)
+- Change only the CRM Summary PDF table: remove COMPONENT, CODE first, SEVERITY second, widths redistributed (DESCRIPTION gets the freed space), no wrapping of "Observation".
+- Sort: Component ascending, then Finding Code ascending (report if the current order already does this).
+- SEVERITY shows the stored value; NULL/blank shows empty; normalise casing only for display if values are inconsistent (report what you found).
+- Excel export of this report (if it exists): keep CRM Component and add Severity; if there is no Excel export, report it and do not build one here (#256 covers exports).
+- No change to other reports, shared defaults or pageSetup.ts.
 
-CCL Managed (per your answers):
-- New "CCL Managed" Yes/No drop-down in Customer Profile, showing CORE_Reviews.CCL. Layout as you preferred: CCL Managed below Customer Size, FHN Portfolio Segment moved below FHN Portfolio, FHN NAICS Industry below that.
-- It stays in sync with the account-level CCL fields exactly like Special Assets: a change at the customer level updates all accounts, and a change on any account updates the customer and all other accounts. Setting both Yes and No in one save is blocked with a message. Existing data is only changed when a reviewer changes CCL.
-- New accounts default to the customer's CCL value.
-- Special Assets and CCL can be changed together in one save; each is applied independently.
-
-Reports: all reports now filter CCL on the customer-level value. Three reports (CRO Production Summary, CRM Findings & Observations, Covenants Summary) previously used the account level and were switched. In Dev this changes the result for 7 reviews – 5 from No to Yes (19235, 19238, 19244, 19246, 19974) and 2 from Yes to No (21178, 21541). Only 21541 is from 2026; the others are older reviews where the customer and account CCL values differ.
-
-Tested in Dev: new layout, customer-level and account-level CCL changes, changing CCL and Special Assets in the same save.
-
-I will confirm here once deployed to QA.
-
-
-git commit -m "UAT #247: CCL Managed (Yes/No) in Customer Profile, synced with all accounts like Special Assets (shared implementation); new accounts default to customer CCL; three reports filter CCL at customer level"
-git push origin develop
+PHASE 4 – VERIFY + REPORT (in chat, not in a file)
+- ADDED (file:line), REMOVED/CHANGED (file:line), before/after column layout.
+- Edge cases: long codes, NULL Finding_level, many findings across pages (header repeats), empty table.
+- Confirm other reports unchanged.
+- npx tsc --noEmit, npm run build, dotnet build if backend touched.
+- git status (restore next-env.d.ts / tsconfig.tsbuildinfo if rewritten; leave pre-existing SQL scripts and devin-output/ alone).
+- Do not commit or push.

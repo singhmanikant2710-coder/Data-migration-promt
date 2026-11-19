@@ -1,5 +1,16 @@
-Query results from Dev (already run, no need to re-run):
-- CCL is bit, nullable, default 0 on both tables. No NULLs: Reviews 0=2277, 1=40; Accounts 0=12072, 1=147.
-- Mismatched reviews: 9 – 19235, 19238, 19240, 19244, 19246 (2024-07-05), 19482 (2024-10-16), 19974 (2024-12-06), 21178 (2025-09-11), 21541 (2026-02-04). Only 21541 is 2026+.
-- Report before/after: Yes 37→40, No 2280→2277; 5 move No→Yes, 2 move Yes→No.
-Continue with Phase 3 and 4.
+SELECT TOP 5 r.Review_id, r.Sample_id, r.Customer_name, COUNT(a.Account_id) AS Accounts
+FROM dbo.[02_CORE_02_Reviews] r
+JOIN dbo.[02_CORE_01_Samples] s ON s.Sample_id = r.Sample_id
+JOIN dbo.[02_CORE_04_Accounts] a ON a.Review_id = r.Review_id
+WHERE ISNULL(r.Locked,0) = 0 AND ISNULL(r.Cancelled,0) = 0 AND ISNULL(s.Closed,0) = 0
+  AND r.CCL = 0
+GROUP BY r.Review_id, r.Sample_id, r.Customer_name
+HAVING COUNT(a.Account_id) >= 2 AND SUM(CAST(a.CCL AS int)) = 0;
+
+DECLARE @ReviewId int = <RID>;
+SELECT 'Review' AS Src, NULL AS Account_id, CAST(r.CCL AS int) AS CCL, CAST(r.Special_assets AS int) AS Special_assets
+FROM dbo.[02_CORE_02_Reviews] r WHERE r.Review_id = @ReviewId
+UNION ALL
+SELECT 'Account', a.Account_id, CAST(a.CCL AS int), CAST(a.Special_assets AS int)
+FROM dbo.[02_CORE_04_Accounts] a WHERE a.Review_id = @ReviewId
+ORDER BY Src DESC, Account_id;

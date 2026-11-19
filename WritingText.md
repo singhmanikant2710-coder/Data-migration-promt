@@ -1,22 +1,12 @@
-UAT #256 – Excel Export for six reports (DISCOVERY + PLAN first)
-
-REQUIREMENT (Geoff)
-Add Excel Export to: CRM Summary for Management, CRM Findings for Management, Scorecard Results, Policy Exceptions, Non-Compliant Covenants, CRO Production.
-
-PHASE 1 – READ-ONLY DISCOVERY (no edits)
-- How Export Report works today in reports/page.tsx (onExport, ExcelJS usage, which reports already export and how; file:line). Note: CRO Production currently falls through to a generic "accepted" call and produces no file (#252 finding).
-- Existing export helpers to reuse: lib/reviewQueueExport.ts (#237 – formula-injection guard, dates, numbers, text keys), lib/reportFileName.ts (file-name rule: Proper Case, no date suffix), any other.
-- For each of the six reports: data source used by the PDF (service/API/type), the sections/tables the PDF shows, and whether the same data is already available in the browser after Generate PDF or must be fetched again.
-- How filters are applied, and how the PDF shows "Applied Report Filters".
-
-PHASE 2 – PLAN (smallest generic change)
-- One small shared Excel builder (reuse #237 helpers: formula-injection guard, real dates MM/DD/YYYY, numbers/currency as numbers, IDs/customer numbers as text, NULL as empty) used by all six; no new npm package.
-- Same data and same filters as the PDF; nothing extra, nothing missing.
-- Workbook layout per report: propose sheets (e.g. one sheet per PDF section/table + a "Filters" sheet), headers matching the PDF, frozen header row, autofilter, sensible widths. List the proposed sheets/columns per report for my approval.
-- CRO Production: export the monthly matrix as shown in the PDF (#252 month/year columns and 12-month blocks with totals).
-- File name: reportFileName rule (e.g. "CRM Summary for Management.xlsx").
-- The Export button must work for these six without changing PDF generation or existing exports of other reports.
-- Do NOT decide silently – list decisions with recommendations (sheet layout, detail vs summary only, 0-row behaviour, very large row counts).
-- No backend change unless a report's data is not available in the browser – ask first.
-
-STOP after Phase 2 and wait for my answers. Report in chat only.
+1: split Customer Name and Review ID.
+2: both summary and detail sheets, as listed.
+3: empty cell for NULL numbers/dates; keep the PDF text labels ("Unsatisfactory"/"--", "Yes"/"No").
+4: real applied filters for all six. Do not change the Policy Exceptions PDF; I will log that bug separately.
+5: stacked 12-month blocks exactly as the PDF.
+6: leave the status date out.
+7: still download header-only sheets plus Filters, with a toast saying 0 rows.
+8: no row cap; truncation marker and 31-char sheet names as proposed.
+9: export the pure PDF helpers and reuse them; PDF output must not change (confirm).
+10: remove the old Policy Exceptions export branch only after confirming no other report can reach it (file:line).
+11: OK – do not change the old guards. Regression must confirm CRM Findings & Observations and Covenants Summary still export their own workbooks.
+Proceed with Phase 3 and 4. Report ADDED/CHANGED/REMOVED (file:line), npx tsc --noEmit, npm run build, git status. Do not commit or push.

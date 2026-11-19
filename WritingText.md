@@ -1,3 +1,5 @@
+
+
 #247 – Implemented (Special Assets Managed and CCL Managed). Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
 
 Special Assets Managed (approved): as described previously.
@@ -13,3 +15,7 @@ Reports: all reports now filter CCL on the customer-level value. Three reports (
 Tested in Dev: new layout, customer-level and account-level CCL changes, changing CCL and Special Assets in the same save.
 
 I will confirm here once deployed to QA.
+
+
+git commit -m "UAT #247: CCL Managed (Yes/No) in Customer Profile, synced with all accounts like Special Assets (shared implementation); new accounts default to customer CCL; three reports filter CCL at customer level"
+git push origin develop

@@ -1,22 +1,29 @@
-#256 – Implemented. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+UAT #262 – Reports Home filters: Approved status, CAS Manager and Approving Manager filters, layout changes
 
-What changed: "Export Report" now produces an Excel file for all six reports, using exactly the same data and filters as the PDF:
-- CRM Summary for Management – Reviews, Scorecards and Findings sheets.
-- CRM Findings for Management – Findings and Finding Counts sheets.
-- CRM Scorecard Results – Scorecard Totals and Scorecard Details sheets.
-- Credit Policy Exceptions – Exception Totals and Exception Details sheets.
-- Non-Compliant Covenants – Summary, Monitoring Totals, Performance Totals and Violation Details sheets.
-- CRO Review Production – Monthly Summary (same month/year columns and 12-month blocks as the PDF, with totals), Reviewer Details and Reviewer Totals sheets.
-Every workbook also has a Filters sheet listing the filters applied. Customer Name and Review ID are in separate columns, dates and amounts are real Excel dates and numbers, headers are frozen with filters turned on, and file names match the report titles (e.g. "Credit Policy Exceptions.xlsx").
+REQUIREMENT (Geoff)
+1. Functional: add "Approved" to the Review Status filter. Dropdown order: Completed > Approved > Distributed > Finalized. Must apply to ALL CRM reports.
+2. Visual: move SPECIAL ASSETS MANAGED and CENTRALIZED COMMERCIAL (CCL) below PORTFOLIO INDUSTRY in the Portfolio Filters column.
+3. Visual: move CREDIT REVIEW OFFICER to the top of the General Filters list.
+4. Functional: add a "CAS MANAGER" filter below CREDIT REVIEW OFFICER.
+5. Functional: add an "APPROVING MANAGER" filter below CAS MANAGER.
+Geoff's notes from Issue 252 comments: <PASTE Geoff's comment text here, or "not available">
 
-Also fixed: previously, Export on CRM Findings for Management downloaded the CRM Findings & Observations data, and Export on Non-Compliant Covenants downloaded the Covenants Summary data. Both now export their own report. The Policy Exceptions export now matches its PDF (totals plus details).
+PHASE 1 – READ-ONLY DISCOVERY (no edits)
+- Reports Home filter UI with file:line (reports/page.tsx): how General / Portfolio filter columns are built, how the form serializes filters (ReportFilters.cs contract), and where the Review Status options come from.
+- Review Status: SqlReviewStatusHelper (ReviewStatusPredicate) with file:line – how Completed / Distributed / Finalized map to columns and the Start/End date window. List EVERY report repository that uses it and every report that filters status its own way (all must get Approved). Approved should use dbo.[02_CORE_02_Reviews].Review_approval_date – confirm.
+- CAS Manager and Approving Manager: which Reviews columns hold them (e.g. CRO_manager / CRO_manager_email for the CAS manager; Review_approver / Approver name for the approving manager – confirm exact names and sample values in Dev with a read-only SQL). Where would dropdown values come from (distinct values in Reviews, 03_LIBRARY_05_CAS Users, other)? How the existing CREDIT REVIEW OFFICER filter is sourced and applied (copy that pattern).
+- Where filters are echoed: PDF "Applied Report Filters" (pageSetup.ts buildFilterParagraph / normalizeFilterValues), the inline filter strings in Scorecard Results and CRO Production PDFs, and the #256 Excel Filters sheet.
+- Any report that ignores a given filter today (list, so the new filters can be applied consistently).
 
-Tested in Dev: all six exports compared against their PDFs (row counts and totals), plus the CRM Findings & Observations export still working as before.
+PHASE 2 – PLAN (smallest generic change)
+- Approved: one change in the shared status helper + the dropdown; any report not using the helper gets the same predicate. Same Start/End window behaviour as the other statuses.
+- CAS Manager / Approving Manager: same pattern as CREDIT REVIEW OFFICER – one shared predicate, applied in every CRM report repository; empty = no filter.
+- Layout changes are visual only; no change to filter values or payload names.
+- New filters appear in the PDF Applied Report Filters page and the Excel Filters sheet with clear labels.
+- Do NOT decide silently – list options with recommendations:
+  1. Dropdown source for CAS Manager and Approving Manager, and matching rule (exact name vs normalised name, like the RM/PM Employee ID work).
+  2. Reports where these filters do not make sense (if any).
+  3. Approved status: reviews later Distributed/Finalized – should they still match "Approved" if the approval date is in range? (Recommend: yes, same as other statuses – based on the date column only.)
+- No schema change. No SQL scripts unless needed – ask first.
 
-I will confirm here once deployed to QA.
-
-
-git add frontend/src/lib/reportExcelExport.ts frontend/src/lib/reportExcelSheets.ts frontend/src/app/reports/page.tsx frontend/src/services/api/reporting.ts frontend/src/components/pdf/CrmFindingsForManagementPDF.tsx frontend/src/components/pdf/ScorecardResultsPDF.tsx frontend/src/components/pdf/NonCompliantCovenantsPDF.tsx frontend/src/components/pdf/CroProductionSummaryPDF.tsx frontend/src/components/pdf/ReviewSummaryForManagementPDF.tsx frontend/src/components/pdf/PolicyExceptionsPDF.tsx
-git status
-git commit -m "UAT #256: Excel export for CRM Summary for Management, CRM Findings for Management, Scorecard Results, Policy Exceptions, Non-Compliant Covenants and CRO Production (same data and filters as the PDF)"
-git push origin develop
+STOP after Phase 2 and wait for my answers. Report in chat only.

@@ -1,23 +1,73 @@
-#243 – Implemented (simplified approach, as you requested). Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+Subject: CASRR – Request to create Jira ticket (QA) and CR (PROD) for Record Retention audit tables – UAT #244
 
-What changed:
-- New Excel-only report "PD/LGD Grade Changes (Excel Only)" listing every account where the Bank PD differs from the CAS PD and/or the Bank LGD differs from the CAS LGD (one row per account). Accounts without a CAS grade are not listed.
-- Columns, in the order you listed: Sample ID, Review ID, Unit, Market, CCL, Special Assets, Customer Number, Customer Name, Relationship Manager, Portfolio Manager, Facility Number, Account Number, Scorecard ID, Bank PD, CAS PD, Bank LGD, CAS LGD, Balance, Commitment, Credit Review Officer, Finalized Date. A Filters sheet lists the filters applied.
-- All standard report filters apply (sample, review status incl. Approved, dates, hierarchy, portfolio, Special Assets, CCL, Credit Review Officer, CAS Manager, Approving Manager). Cancelled reviews are excluded.
-- "Generate PDF Report" shows a message that this report is Excel only; use "Export Report".
+Hi Nitika,
 
-Action needed in QA/Test and Production: please add the report to the drop-down in the Selections Library (Tab "Reporting", Section "Report Selections") with the exact name "PD/LGD Grade Changes (Excel Only)".
+Could you please create the following for CASRR UAT enhancement #244 (Record Retention):
+1. A Jira ticket for the DBA team to execute the script in QA – today.
+2. A Change Request (CR) for PROD – to be executed at the date/time confirmed by Geoff (CAS business owner).
 
-Note: in Dev, Facility Number (CORE_Accounts.Facility_number_calc) is blank for all accounts in this report, so that column is empty – the value is not populated in the data.
+Please use the details below. The script files are attached.
 
-Tested in Dev: 281 accounts with no filters and 273 with Review Status = Finalized; both matched a direct database count.
+------------------------------------------------------------
+1) JIRA TICKET – QA
 
-I will confirm here once deployed to QA.
+Title:
+CASRR – Create Record Retention audit tables in QA (UAT #244)
 
+Description:
+Application: CASRR (Credit Assurance Services RiskReview)
+Environment: QA (CAS_RISKREVIEW_TEST)
+Requested by: Manikant Singh
+Business approver: Geoffrey Houlditch (CAS)
+Target date: Today, 20 Nov 2026
 
-git checkout -- frontend/next-env.d.ts frontend/tsconfig.tsbuildinfo
-git add -u backend frontend
-git add backend/src/Casrr.Application/Reporting/PdLgdGradeChanges backend/src/Casrr.Infrastructure/SqlServer/SqlPdLgdGradeChangesReportRepository.cs scripts/sql/insert-pd-lgd-grade-changes-selection.sql scripts/sql/rollback-insert-pd-lgd-grade-changes-selection.sql
-git status
-git commit -m "UAT #243: new PD/LGD Grade Changes (Excel Only) report – accounts where Bank and CAS PD/LGD differ, standard report filters; Dev-only selection seed script"
-git push origin develop
+Summary:
+UAT enhancement #244 adds an Admin "Record Retention" process that permanently deletes closed Samples (and their related records) whose Sample Closed date is older than 7 years, per the FHN/CAS 7-year retention policy. Every run is audited. This ticket requests creation of the two audit tables used by that process.
+
+Script to execute:
+scripts/sql/create-record-retention-objects.sql
+- Creates 2 NEW tables only: dbo.[05_AUDIT_02_Record Retention Runs] and dbo.[05_AUDIT_03_Record Retention Samples], plus 1 index.
+- No changes to existing tables, data, triggers or permissions.
+- Idempotent (safe to re-run). Ends with a verification SELECT – expected result: both tables listed.
+
+Rollback (only if required):
+scripts/sql/rollback-create-record-retention-objects.sql (dry run by default; will not drop tables containing audit data).
+
+Confirmations required from DBA:
+1. The CASRR app service account has DELETE permission on: 02_CORE_01_Samples, 02_CORE_02_Reviews, 02_CORE_04_Accounts, 02_CORE_05_Covenants, 02_CORE_06_Policy Exceptions, 02_CORE_07_Findings, 02_CORE_08_Checklists, 04_TEMP_01_Sample Load; and INSERT/SELECT on the two new audit tables.
+2. A backup / point-in-time restore is available for QA.
+
+------------------------------------------------------------
+2) CHANGE REQUEST – PROD
+
+Title:
+CASRR – Create Record Retention audit tables in PROD (UAT #244)
+
+Description:
+Application: CASRR (Credit Assurance Services RiskReview)
+Environment: PROD
+Requested by: Manikant Singh
+Business approver: Geoffrey Houlditch (CAS)
+Implementation window: Date/time to be confirmed by Geoff, in the same release window as the CASRR code deployment containing #244.
+
+Change:
+Execute scripts/sql/create-record-retention-objects.sql – creates 2 NEW audit tables (dbo.[05_AUDIT_02_Record Retention Runs], dbo.[05_AUDIT_03_Record Retention Samples]) and 1 index. No changes to existing tables or data.
+
+Risk / impact: Low. Additive objects only; no existing functionality affected. The tables are required for the new Admin "Record Retention" screen; without them the screen opens but deletion is disabled.
+
+Pre-requisites:
+- Successfully executed and verified in QA (Jira ticket above).
+- Confirm the CASRR app service account has DELETE permission on the CORE tables listed above, and INSERT/SELECT on the new audit tables.
+- Confirm a backup / point-in-time restore is available, with its retention window, before the first PROD Record Retention run (deletes performed by the process are permanent; these tables have no temporal/CDC/change tracking).
+
+Verification: the verification SELECT at the end of the script lists both new tables.
+
+Back-out plan: scripts/sql/rollback-create-record-retention-objects.sql (drops only the two new audit tables; refuses if they contain data).
+
+Testing: Tested end-to-end in DEV (CAS_RISKREVIEW_DEV) – preview, exclusion rules, full rollback on failure, successful delete with matching per-table counts, and audit rows.
+------------------------------------------------------------
+
+Please share the Jira and CR numbers once created. I will confirm the PROD window with Geoff and update the CR.
+
+Thanks,
+Manikant

@@ -1,3 +1,9 @@
-Hi Nitika, this one is for a new enhancement (UAT #244 – Record Retention), not the issue I raised yesterday. The Jira ticket I shared yesterday was for a blocker, which I have since resolved through code changes, so no DBA action is needed on that one.
+Hi Nitika, to clarify:
 
-This new request is only to create two new audit tables for the Record Retention feature: execute in QA today, and in PROD at the time Geoff confirms. Details and scripts are in my email.
+Jira 2456 is the item I mentioned in yesterday's status call as a blocker, because I was waiting on Geoff's reply. Geoff has since replied and I have completed the enhancement, so please disregard it as a blocker.
+
+What I need now is a Jira ticket (for QA) and a CR (for PROD) so the DBA team can execute the attached scripts:
+- QA: today
+- PROD: at the date/time Geoff confirms
+
+The database details, script names and descriptions are in my email. Please share the Jira and CR numbers once they are created. Thanks!

@@ -42,3 +42,28 @@ Manikant
 
 In Dev, one review matches this check: 19184 (PALAMAD LLC) – CS-104 and SM-103 with the same comment. This may be intentional, so please confirm before anything is removed. I've asked John/Ashok to run the same check in QA and Production.
 
+Hi Geoff,
+
+For #263, we ran a read-only check in QA for reviews where two different CRM finding codes have identical comments (likely duplicates from the bug). Three reviews matched:
+
+1. 19184 – PALAMAD LLC (Sample 325): CS-104 and SM-103
+2. 21592 – 198 MADISON AVE REALTY NY LLC (Sample 354): UW-106 and UW-107
+3. 21914 – THE HEIGHTS AT MATERRA LLC (Sample 368): CS-105 and SS-104
+
+Some of these may be intentional (the same comment applied to two findings), so nothing has been deleted. Please let me know which finding to keep for each review, and the DBA team can remove the duplicates.
+
+For Production, Ashok or John can run the same check using the read-only query below (it makes no changes):
+
+SELECT f1.Review_id, r.Customer_name, r.Sample_id,
+       f1.Finding_code AS Code_1, f2.Finding_code AS Code_2,
+       LEFT(CAST(f1.Finding_comments AS nvarchar(max)), 120) AS Comments
+FROM dbo.[02_CORE_07_Findings] f1 WITH (NOLOCK)
+JOIN dbo.[02_CORE_07_Findings] f2 WITH (NOLOCK)
+  ON f2.Review_id = f1.Review_id AND f2.Finding_code > f1.Finding_code
+ AND CAST(f2.Finding_comments AS nvarchar(max)) = CAST(f1.Finding_comments AS nvarchar(max))
+JOIN dbo.[02_CORE_02_Reviews] r WITH (NOLOCK) ON r.Review_id = f1.Review_id
+WHERE LEN(LTRIM(RTRIM(CAST(f1.Finding_comments AS nvarchar(max))))) > 0
+ORDER BY f1.Review_id;
+
+Thanks,
+Manikant

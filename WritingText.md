@@ -1,69 +1,32 @@
-git commit -m "UAT #263: changing the Component/Finding Code of a saved CRM finding replaces it instead of creating a duplicate; block duplicate codes, swaps and blank codes on save; unsaved-row delete is local only"
-git push origin develop
+UAT #258 – Sample upload / Load Samples only loads the first 25 sample selections
 
+ISSUE (Geoff)
+The Sample loading workflow loads only the first 25 selections from an uploaded CSV/Excel file. Files contain 1–120 selections depending on the project (most ≤ 60). Business would accept a limit of 75 (and split larger files), but prefers fewer manual splits.
 
-SELECT f1.Review_id, r.Customer_name, r.Sample_id,
-       f1.Finding_code AS Code_1, f2.Finding_code AS Code_2,
-       LEFT(CAST(f1.Finding_comments AS nvarchar(max)), 120) AS Comments
-FROM dbo.[02_CORE_07_Findings] f1 WITH (NOLOCK)
-JOIN dbo.[02_CORE_07_Findings] f2 WITH (NOLOCK)
-  ON f2.Review_id = f1.Review_id AND f2.Finding_code > f1.Finding_code
- AND CAST(f2.Finding_comments AS nvarchar(max)) = CAST(f1.Finding_comments AS nvarchar(max))
-JOIN dbo.[02_CORE_02_Reviews] r WITH (NOLOCK) ON r.Review_id = f1.Review_id
-WHERE LEN(LTRIM(RTRIM(CAST(f1.Finding_comments AS nvarchar(max))))) > 0
-ORDER BY f1.Review_id;
+PHASE 1 – READ-ONLY DISCOVERY (no edits)
+- Trace the full flow with file:line: Samples / Load Samples screen → file parse (CSV and XLSX, lib/xlsxCell.ts) → preview/grid → Add Customer / Checklist → Validate → Load (creates Reviews) → backend controller/service/repository (SqlSampleLoadRepository).
+- Find EXACTLY where 25 comes from (hardcoded constant, page size, slice, TOP 25, API paging, request size, default parameter). Is it a hard cut (rows 26+ dropped silently) or just display paging (rows exist but are not loaded)? Report every place a limit applies, frontend and backend.
+- Per-row cost of Load: queries/inserts per selection (Reviews, Accounts, checklists), transaction scope, command timeout, HTTP/request timeout (Next.js route, Kestrel, App Service ~230 s), payload size limits. Estimate time for 75 and 120 rows.
+- Duplicate protection from UAT #229 (no duplicate reviews per sample/customer) – must stay intact.
+- Is the user told today that rows beyond 25 were ignored?
 
+PHASE 2 – PLAN (smallest generic change)
+- One named constant (e.g. MAX_SAMPLE_SELECTIONS) shared by frontend and backend; no other hardcoded 25.
+- Rows above the limit must never be dropped silently: show a clear message before Load ("This file has N selections; the maximum per upload is X. Please split the file.") and block, OR load all if within the limit.
+- Keep #229 duplicate checks, validation, and existing behaviour for files ≤ 25 rows exactly as today.
+- Do NOT decide silently – list options with a recommendation:
+  1. Limit value: 75 (Geoff's minimum) or 120 (covers all known files) – based on the measured/estimated Load time and timeouts.
+  2. Over the limit: block with message, or load the first X and list the rest?
+  3. Does the grid need paging/scroll changes to show up to the limit?
+- No schema change. SQL only as idempotent scripts/sql/ if truly needed – ask first.
 
-#263 – Fixed. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+PHASE 3 – IMPLEMENT (after my answers)
 
-What was wrong: When the CRM Component or Finding Code of a previously saved finding was changed, Save added a new row for the new code but never removed the original, so both appeared with the same comments. (This has been the save behaviour since July; it only shows up when a saved finding's code is changed.)
-
-What changed:
-- Changing the Component and/or Finding Code of a saved finding now replaces that finding, keeping its comments and other details. Changing it more than once before saving keeps only the final code.
-- Save is now stopped with a clear message (and nothing is changed) when: two findings would have the same Finding Code; a Component is changed without selecting a new Finding Code; or two findings' codes are swapped in one save (please save one change at a time).
-- Deleting a finding that has not been saved yet no longer affects a saved finding with the same code.
-
-Existing duplicates: this fix prevents new duplicates but does not remove existing ones. I can provide a list of reviews where two different finding codes have identical comments (likely duplicates) from QA/Production for your team to review before deleting.
-
-Tested in Dev: your UW-105 → CS-105 scenario, the blocked cases above, and deleting a changed finding.
-
-I will confirm here once deployed to QA.
-
-
-Hi John / Ashok,
-
-Could you please run the read-only query below in QA and Production and share the results? It lists reviews where two different CRM finding codes have identical comments – likely duplicates created by the CRM Findings bug (#263). It makes no changes; the business will review the list before anything is deleted.
-
-<paste the duplicate SQL here>
-
-Thanks,
-Manikant
-
-
-In Dev, one review matches this check: 19184 (PALAMAD LLC) – CS-104 and SM-103 with the same comment. This may be intentional, so please confirm before anything is removed. I've asked John/Ashok to run the same check in QA and Production.
-
-Hi Geoff,
-
-For #263, we ran a read-only check in QA for reviews where two different CRM finding codes have identical comments (likely duplicates from the bug). Three reviews matched:
-
-1. 19184 – PALAMAD LLC (Sample 325): CS-104 and SM-103
-2. 21592 – 198 MADISON AVE REALTY NY LLC (Sample 354): UW-106 and UW-107
-3. 21914 – THE HEIGHTS AT MATERRA LLC (Sample 368): CS-105 and SS-104
-
-Some of these may be intentional (the same comment applied to two findings), so nothing has been deleted. Please let me know which finding to keep for each review, and the DBA team can remove the duplicates.
-
-For Production, Ashok or John can run the same check using the read-only query below (it makes no changes):
-
-SELECT f1.Review_id, r.Customer_name, r.Sample_id,
-       f1.Finding_code AS Code_1, f2.Finding_code AS Code_2,
-       LEFT(CAST(f1.Finding_comments AS nvarchar(max)), 120) AS Comments
-FROM dbo.[02_CORE_07_Findings] f1 WITH (NOLOCK)
-JOIN dbo.[02_CORE_07_Findings] f2 WITH (NOLOCK)
-  ON f2.Review_id = f1.Review_id AND f2.Finding_code > f1.Finding_code
- AND CAST(f2.Finding_comments AS nvarchar(max)) = CAST(f1.Finding_comments AS nvarchar(max))
-JOIN dbo.[02_CORE_02_Reviews] r WITH (NOLOCK) ON r.Review_id = f1.Review_id
-WHERE LEN(LTRIM(RTRIM(CAST(f1.Finding_comments AS nvarchar(max))))) > 0
-ORDER BY f1.Review_id;
-
-Thanks,
-Manikant
+PHASE 4 – VERIFY + REPORT (in chat, not in a file)
+- Root cause (file:line), ADDED / CHANGED / REMOVED (file:line).
+- Before/after: files with 10, 25, 26, 60, 75 (and 120 if chosen) selections, CSV and XLSX; file over the limit; duplicates within the file; customer already loaded in the sample (#229).
+- Load time measured or estimated for the largest case; confirm no timeout.
+- Read-only SQL to confirm the number of Reviews created per Sample_id matches the file.
+- dotnet build + tests, npx tsc --noEmit, npm run build.
+- git status (restore next-env.d.ts / tsconfig.tsbuildinfo; leave pre-existing SQL scripts and devin-output/ alone).
+- Do not commit or push.

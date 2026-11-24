@@ -1,7 +1,12 @@
-#261 – Fixed. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+No problem at all, Geoff – thank you for following up.
 
-What changed (CRM Summary for Management report):
-- RISK RATING JUSTIFICATION now shows the rich text as entered in the Review Form – paragraphs, bold, bullet lists and tables – including pasted pictures, the same way as the standard CRM Summary report. Long justifications and large pictures continue onto the next page instead of being cut off.
-- CRM Findings table: the CRM Component column is kept, without the "**" prefix, and the existing ascending order is unchanged. The Excel export shows the component the same way.
+A few examples would still help a lot. Could you share 3–4 review IDs where the Memo or Linesheet formatting doesn't look right – ideally one with text pasted from Word, one pasted from a PDF or web page, and one where you used blank lines for paragraph spacing? I'll use them to show you a before/after so we can confirm the result together.
 
-I will confirm here once deployed to QA.
+It would also help to confirm a few spacing preferences (my suggestion in brackets):
+1. One Enter = next line with no extra space; two Enters = a blank line between paragraphs. (Yes)
+2. Three or more Enters in a row: reduce to one blank line? (Yes)
+3. Pasted Word paragraphs: keep a blank line between them? (Yes)
+4. Keep colours/highlights added with the toolbar, but drop fonts, sizes and colours that come in with pasted text? (Yes)
+5. Empty Scorecard comments: hide the section in all three PDFs? (Yes)
+
+No rush – whenever you have a moment.

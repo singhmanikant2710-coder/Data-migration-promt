@@ -1,22 +1,24 @@
-#258 – Fixed. Tested in Dev and pushed to the develop branch. Not yet deployed to QA.
+UAT #263 follow-up (Bug) – Unsaved Scorecard comments disappear from screen after deleting a CRM finding
 
-What was wrong: The customer grid shows 25 rows per page, and Load Samples only loaded the rows on the page being viewed. The remaining uploaded selections were then discarded without any message. Loading from page 2, or with a grid filter applied, had the same effect.
+REPRO (Geoff)
+1. Edit the Scorecard comments (Scorecards tab), do NOT save.
+2. Go to CRM Findings and delete a saved finding.
+3. The Scorecard comments field now shows the previously saved text; the edit is gone from screen. Other comment fields (other tabs) keep their unsaved edits.
+4. Clicking Save then brings the Scorecard edit back (it was still staged).
 
-What changed:
-- Load Samples now loads every selection in the sample that passed validation, regardless of the page shown or any grid filter. The confirmation now says how many will be loaded (e.g. "30 of 30 selection(s) passed validation and will be loaded. Grid filters do not limit the load.").
-- The maximum is 75 selections per upload/load. A file with more than 75 is blocked with a clear message ("This file has N selections; the maximum per upload is 75. Please split the file.") and nothing is loaded.
-- The grid still shows 25 rows per page.
-- The existing duplicate checks (a customer already loaded in the sample is put on hold) are unchanged.
+PHASE 1 – READ-ONLY DISCOVERY (no edits)
+- What the CRM finding delete does after the server call (CrmFindingsAndRatingsSection.tsx – reload / router.replace / refetch, file:line).
+- How each section re-initialises its displayed values when review data reloads (ScorecardsSection.tsx and its hook vs Key Risks, Customer Background, Risk Rating Justification, etc.). Why Scorecards overwrites the screen with the reloaded value while its staged change remains.
+- List EVERY section/field with the same pattern (display reset on reload while a staged edit exists) – e.g. Transactions/account delete also reloads.
+- Exact root cause with file:line.
 
-Tested in Dev: 30 selections loaded from page 2 (all 30 reviews created), 75 selections loaded (all 75 reviews created), and a 76-selection file blocked.
+PHASE 2/3 – FIX (smallest generic change)
+- After a reload, any field with a staged (unsaved) change must keep showing the staged value; fields without staged changes show the reloaded data. Prefer one shared approach over per-field patches; apply it to every affected section found.
+- Do not change what is saved, the #233 send-only-edited rules, #177 drafts, #232 version handling, #254 PE behaviour or #263 findings logic.
 
-Note: a 75-selection load took about 1.5 minutes in Dev, so larger loads may take a minute or more to complete. Please keep the page open until the confirmation appears.
-
-I will confirm here once deployed to QA.
-
-
-git checkout -- frontend/next-env.d.ts frontend/tsconfig.tsbuildinfo
-git add backend/src/Casrr.Application/SampleLoad/ISampleLoadService.cs frontend/src/app/load-samples/page.tsx
-git status
-git commit -m "UAT #258: Load Samples loads every passing selection of the sample (not just the visible 25-row page); max 75 selections per upload/load with a clear message"
-git push origin develop
+PHASE 4 – REPORT (in chat, not in a file)
+- Root cause, list of affected sections, ADDED / CHANGED (file:line).
+- Before/after for: Geoff's repro; edits in several tabs then delete a CRM finding; same with deleting an account (Transactions); no unsaved edits (reload shows fresh data); Save after delete saves the edits once.
+- npx tsc --noEmit, npm run build.
+- git status (restore next-env.d.ts / tsconfig.tsbuildinfo; leave pre-existing SQL scripts and devin-output/ alone).
+- Do not commit or push.

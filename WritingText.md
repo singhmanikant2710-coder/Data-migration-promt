@@ -1,4 +1,5 @@
-Hi Geoff, I wanted to get your feedback on the CASSR application. Are users finding it easy to navigate and use the application? Are they comfortable with the overall experience, and is it meeting their expectations? It would be great to understand their feedback and whether they are enjoying using it.
-
-
-That makes sense – thanks for testing it so carefully, Geoff. Once the fix is in, your unsaved edits will stay visible after a finding is deleted, so you won't need to re-enter anything. I'll let you know when it's ready in QA.
+SELECT DISTINCT TOP 30 LTRIM(RTRIM(d.CUST_NUM)) AS CUST_NUM
+FROM dbo.[01_DATA_01_Data Mart Trial] d WITH (NOLOCK)
+WHERE d.CUST_NUM IS NOT NULL AND LTRIM(RTRIM(d.CUST_NUM)) <> ''
+  AND NOT EXISTS (SELECT 1 FROM dbo.[02_CORE_02_Reviews] r WITH (NOLOCK)
+                  WHERE LTRIM(RTRIM(r.Customer_number)) = LTRIM(RTRIM(d.CUST_NUM)));

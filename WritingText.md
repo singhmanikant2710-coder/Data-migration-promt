@@ -1,7 +1,5 @@
-SELECT COUNT(*) AS Expected_reviews
-FROM dbo.[02_CORE_02_Reviews] r WITH (NOLOCK)
-WHERE (r.Cancelled IS NULL OR r.Cancelled = 0)
-  AND r.Review_finalized_date IS NOT NULL
-  AND r.Segment IS NOT NULL
-  AND r.Completed_date IS NOT NULL
-  AND LTRIM(RTRIM(r.Unit)) = 'Central';
+#259 bug found in testing: Reports Home → "Final Memos" (Report Name shown in the dropdown), Sample = All samples, Unit = Central, Review Status = None, Start/End dates set → Export Report shows the toast "Report execution accepted: crm-final-memos" and no file is downloaded (falls through to the generic executeReport call). Generate PDF Report works.
+
+READ-ONLY first: trace onExport in reports/page.tsx for this report – which guard/branch should handle the Final Memos Excel export (file:line), and why it is skipped here (label "Final Memos" vs the guard text, the sample/customer check, the new #259 gate, or the #256 resolver order). Compare with git HEAD.
+Then fix with the smallest change so Export Report downloads the Excel file with the same reviews as the PDF for: a Sample only; filters only (e.g. Unit); Sample + filters. Nothing selected must show the "select a Sample or at least one filter" message. The 500 cap rule applies as for the PDF.
+Report root cause, CHANGED (file:line), npx tsc --noEmit, npm run build, git status. Do not commit or push.

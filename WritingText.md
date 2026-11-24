@@ -1,4 +1,6 @@
-Accepted, two small follow-ups:
-1. TOP(500) cap: if more reviews match than the cap, do not truncate silently – show a clear message ("N reviews match; the report is limited to 500. Please narrow the filters.") and do not generate a partial report. Same for the Excel export.
-2. Start/End dates without a Review Status must not count as a filter for the gate (they don't filter anything). Dates with a status count as before.
-Report CHANGED (file:line), dotnet build, npx tsc --noEmit, npm run build, git status. Do not commit or push.
+SELECT
+    SUM(CASE WHEN r.[Completed_date] IS NULL THEN 1 ELSE 0 END) AS Finalized_no_completed_date,
+    SUM(CASE WHEN r.[Segment] IS NULL THEN 1 ELSE 0 END) AS Finalized_no_segment
+FROM dbo.[02_CORE_02_Reviews] r WITH (NOLOCK)
+WHERE r.[Review_finalized_date] IS NOT NULL
+  AND (r.[Cancelled] IS NULL OR r.[Cancelled] = 0);

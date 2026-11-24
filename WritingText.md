@@ -1,1 +1,1 @@
-Could you please create Jira tickets for the six bugs I shared earlier related to CASRR and assign them to me? I would appreciate it. I'll take ownership of these issues and work on resolving them.
+Small addition for #261: also remove the leading "*" characters from the CRM Component text in the CRM Summary for Management Excel export (Findings sheet), display only, keeping the same row order. Reuse componentText() (export it) – no second copy. Report CHANGED (file:line), npx tsc --noEmit, npm run build, git status. Do not commit or push.
